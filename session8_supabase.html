@@ -144,15 +144,21 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
 .ss-dot.active{background:var(--accent)}
 
 /* ── Camera Overlay ─────────────────────────────────────── */
-.cam-overlay{position:fixed;inset:0;background:#000;z-index:450}
+.cam-overlay{position:fixed;inset:0;background:#000;z-index:450;display:flex;flex-direction:column;align-items:center}
+/* 1:1 square camera container */
+.cam-square{position:relative;width:100vmin;height:100vmin;flex-shrink:0;overflow:hidden}
 .cam-video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0}
 .cam-sample-ov{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:1}
 .cam-sample-ov img{width:100%;height:100%;object-fit:contain}
 .cam-grid{position:absolute;inset:0;z-index:1;pointer-events:none;background-image:linear-gradient(rgba(255,255,255,.22) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.22) 1px,transparent 1px);background-size:33.333% 33.333%}
-.cam-guide{position:absolute;top:0;left:0;right:0;background:linear-gradient(to bottom,rgba(0,0,0,.48),transparent);color:#fff;font-size:13px;text-align:center;padding:14px 16px 40px;line-height:1.7;z-index:2;font-family:'Noto Sans JP',sans-serif}
-@media(orientation:landscape){.cam-guide{top:0;bottom:68px;right:auto;width:auto;background:linear-gradient(to right,rgba(0,0,0,.45),transparent);padding:16px 28px 16px 14px;display:flex;flex-direction:column;justify-content:center;align-items:center;writing-mode:vertical-lr;transform:none;font-size:12px;text-align:center}}
+.cam-guide{width:100%;background:rgba(0,0,0,.65);color:#fff;font-size:13px;text-align:center;padding:10px 16px;line-height:1.7;z-index:2;font-family:'Noto Sans JP',sans-serif;flex-shrink:0}
+@media(orientation:landscape){
+  .cam-overlay{flex-direction:row}
+  .cam-square{width:100vmin;height:100vmin}
+  .cam-guide{width:auto;flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;writing-mode:vertical-lr;font-size:12px;padding:16px;background:rgba(0,0,0,.65)}
+}
 @media(orientation:landscape){.cam-guide div:last-child{font-size:9px;opacity:.6}}
-.cam-footer{position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,.65);padding:14px 24px 28px;display:flex;align-items:center;justify-content:space-between;z-index:2;gap:12px}
+.cam-footer{width:100%;background:rgba(0,0,0,.65);padding:14px 24px 28px;display:flex;align-items:center;justify-content:space-between;z-index:2;gap:12px;flex-shrink:0}
 .cam-cancel{background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:8px;padding:10px 16px;font-size:13px;font-family:'Noto Sans JP',sans-serif;cursor:pointer}
 .cam-shutter{width:46px;height:46px;border-radius:50%;border:3px solid #fff;background:rgba(255,255,255,.95);cursor:pointer;position:relative;box-shadow:0 0 0 2px rgba(255,255,255,.28);transition:transform .12s;flex-shrink:0}
 .cam-shutter:active{transform:scale(.91)}
@@ -191,9 +197,11 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
 
 <!-- Camera overlay -->
 <div id="cam-overlay" class="cam-overlay" style="display:none">
-  <video id="cam-video" class="cam-video" autoplay playsinline muted></video>
-  <div class="cam-sample-ov" id="cam-sample-ov"></div>
-  <div class="cam-grid"></div>
+  <div class="cam-square">
+    <video id="cam-video" class="cam-video" autoplay playsinline muted></video>
+    <div class="cam-sample-ov" id="cam-sample-ov"></div>
+    <div class="cam-grid"></div>
+  </div>
   <div class="cam-guide">
     <div>サンプルに位置を合わせて撮影してください</div>
     <div style="font-size:10px;opacity:.7">샘플 위치에 맞춰 촬영해 주세요</div>
@@ -884,17 +892,11 @@ document.addEventListener('webkitfullscreenchange', () => {
 async function capturePhoto() {
   const video = document.getElementById('cam-video');
   if (!video || !video.videoWidth) { toast('カメラの準備中です...'); return; }
-  // object-fit:cover と同じ範囲だけキャプチャ（画面に見えている部分のみ）
+  // Camera is 1:1 square → always capture center square of video
   const vw = video.videoWidth, vh = video.videoHeight;
-  const sw = window.innerWidth, sh = window.innerHeight;
-  const va = vw / vh, sa = sw / sh;
-  let cx, cy, cw, ch;
-  if (va > sa) { ch = vh; cw = vh * sa; cx = (vw - cw) / 2; cy = 0; }
-  else         { cw = vw; ch = vw / sa; cx = 0; cy = (vh - ch) / 2; }
-  // 1:1 center crop from visible area
-  const size = Math.min(cw, ch);
-  const sx = cx + (cw - size) / 2;
-  const sy = cy + (ch - size) / 2;
+  const size = Math.min(vw, vh);
+  const sx = (vw - size) / 2;
+  const sy = (vh - size) / 2;
   const outSize = Math.min(size, 1600);
   const out = document.createElement('canvas');
   out.width = outSize; out.height = outSize;
@@ -919,16 +921,24 @@ function setCamAlpha(val) {
 renderParticipant();
 </script>
 <script>
-// Remove Netlify badge
+// Remove Netlify badge (iframe + any element)
 (function() {
   function removeNetlifyBadge() {
-    document.querySelectorAll('a, div, span, p').forEach(function(el) {
-      if (el.href && el.href.includes('netlify.com')) { el.remove(); return; }
-      if (el.innerHTML && el.innerHTML.includes('Powered by Netlify')) { el.remove(); }
+    document.querySelectorAll('iframe, a, div, span').forEach(function(el) {
+      try {
+        var src = el.src || el.href || el.getAttribute('src') || '';
+        var text = el.textContent || '';
+        var id = el.id || '';
+        if (src.includes('netlify') || text.includes('Powered by Netlify') || id.includes('netlify')) {
+          el.style.display = 'none';
+          el.remove();
+        }
+      } catch(e) {}
     });
   }
   removeNetlifyBadge();
-  new MutationObserver(removeNetlifyBadge).observe(document.body, { childList: true, subtree: true });
+  setInterval(removeNetlifyBadge, 500);
+  new MutationObserver(removeNetlifyBadge).observe(document.documentElement, { childList: true, subtree: true });
 })();
 </script>
 </body>
