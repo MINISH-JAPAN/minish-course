@@ -1,0 +1,902 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Minish Course – Session 9 口腔内</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+  /* Hide Netlify promotional badge */
+  [data-netlify-badge], #netlify-badge, .netlify-badge,
+  a[href*="netlify.com"][target="_blank"] { display: none !important; }
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#edf5f3;--card:#fff;--frame:#0a1c1a;
+  --primary:#1a4060;--accent:#1e8a7a;--success:#18945e;
+  --danger:#c0392b;--muted:#557065;--sub:#3a6358;
+  --border:#b8d8d2;--text:#18302a;
+}
+body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+
+.header{background:var(--frame);color:#fff;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.3)}
+.logo{font-size:14px;font-weight:700;letter-spacing:1px}
+.logo .hl{color:var(--accent)}
+.logo .ses{opacity:.6;font-size:11px;font-weight:400;margin-left:6px}
+.nav-tabs{display:flex;gap:4px}
+.nav-tab{padding:6px 14px;border-radius:6px;border:1px solid rgba(255,255,255,.2);background:transparent;color:rgba(255,255,255,.7);cursor:pointer;font-size:12px;font-family:'Noto Sans JP',sans-serif;transition:all .2s}
+.nav-tab.active{background:var(--accent);border-color:var(--accent);color:#fff}
+
+.main{max-width:860px;margin:0 auto;padding:14px}
+
+.photo-card{background:var(--card);border-radius:12px;border:1px solid var(--border);overflow:hidden;margin-bottom:14px;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.photo-card-header{background:var(--primary);color:#fff;padding:9px 14px;display:flex;align-items:center;gap:8px}
+.cat-num{background:var(--accent);width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0}
+.cat-name{font-size:13px;font-weight:500}
+.cat-sub{font-size:10px;opacity:.65;margin-left:auto}
+.photo-pair{display:grid;grid-template-columns:1fr 1fr}
+.photo-slot{padding:4px 0 0}
+.photo-slot+.photo-slot{border-left:none}
+.slot-label{font-size:10px;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px;text-align:center}
+.photo-frame{width:100%;aspect-ratio:4/3;background:var(--bg);border-radius:6px;overflow:hidden;display:flex;align-items:center;justify-content:center;border:1px dashed var(--border);position:relative}
+.photo-frame img{width:100%;height:100%;object-fit:contain}
+.frame-ph{display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--muted);font-size:10px;text-align:center;padding:6px}
+.frame-ph .icon{font-size:22px}
+.upload-btn{width:100%;margin-top:6px;padding:7px;background:var(--accent);color:#fff;border:none;border-radius:6px;font-size:11px;font-family:'Noto Sans JP',sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;transition:background .2s}
+.upload-btn:hover{background:#167a6c}
+.upload-btn.done{background:var(--success)}
+.upload-btn input[type=file]{display:none}
+
+.submit-sec{background:var(--card);border-radius:12px;border:1px solid var(--border);padding:14px;margin-bottom:14px}
+.field-label{font-size:13px;font-weight:700;color:var(--primary);margin-bottom:8px}
+.name-input{width:100%;padding:10px 14px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-family:'Noto Sans JP',sans-serif;background:var(--bg)}
+.name-input:focus{outline:none;border-color:var(--accent)}
+.progress-bar{margin-top:10px;height:4px;background:var(--border);border-radius:2px}
+.progress-fill{height:100%;background:var(--accent);border-radius:2px;transition:width .3s}
+.progress-txt{font-size:11px;color:var(--muted);margin-top:4px;text-align:right}
+.submit-btn{width:100%;margin-top:10px;padding:11px;background:var(--primary);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:500;font-family:'Noto Sans JP',sans-serif;cursor:pointer;transition:background .2s}
+.submit-btn:not(:disabled):hover{background:var(--accent)}
+.submit-btn:disabled{opacity:.5;cursor:not-allowed}
+.hint{font-size:10px;color:var(--muted);margin-top:5px;text-align:center}
+
+.admin-tabs{display:flex;gap:6px;margin-bottom:14px}
+.admin-tab{padding:8px 16px;border:1px solid var(--border);border-radius:8px;background:var(--bg);cursor:pointer;font-size:12px;font-family:'Noto Sans JP',sans-serif;transition:all .2s}
+.admin-tab.active{background:var(--primary);color:#fff;border-color:var(--primary)}
+.section-box{background:var(--card);border-radius:12px;border:1px solid var(--border);padding:14px;margin-bottom:14px}
+.section-title{font-size:13px;font-weight:700;color:var(--primary);margin-bottom:12px;border-bottom:2px solid var(--border);padding-bottom:7px}
+.sample-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+@media(min-width:540px){.sample-grid{grid-template-columns:repeat(3,1fr)}}
+.sample-lbl{font-size:10px;font-weight:500;color:var(--sub);margin-bottom:4px}
+
+.sub-item{display:flex;align-items:center;padding:10px 12px;border:1px solid var(--border);border-radius:8px;margin-bottom:8px;cursor:pointer;background:var(--bg);transition:all .2s}
+.sub-item:hover{border-color:var(--accent);background:#e6f5f2}
+.sub-name{font-weight:500;font-size:14px;flex:1}
+.sub-meta{font-size:11px;color:var(--muted);text-align:right;line-height:1.4}
+
+.review-hdr{display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap}
+.back-btn{padding:6px 14px;border:1px solid var(--border);border-radius:6px;background:#fff;cursor:pointer;font-size:12px;font-family:'Noto Sans JP',sans-serif;flex-shrink:0}
+.review-title{flex:1;min-width:0}
+.review-actions{display:flex;gap:6px;flex-shrink:0}
+.action-btn{padding:7px 13px;border:none;border-radius:6px;font-size:12px;font-family:'Noto Sans JP',sans-serif;cursor:pointer;font-weight:500;transition:all .2s;white-space:nowrap}
+.ss-btn{background:var(--primary);color:#fff}
+.ss-btn:hover{background:var(--accent)}
+.pdf-btn{background:var(--success);color:#fff}
+.pdf-btn:hover{background:#15804f}
+.pdf-btn:disabled{opacity:.6;cursor:not-allowed}
+
+.modal-ov{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:200}
+.modal-box{background:#fff;border-radius:16px;padding:24px;width:300px;text-align:center}
+.modal-title{font-size:16px;font-weight:700;margin-bottom:6px}
+.modal-sub{font-size:12px;color:var(--muted);margin-bottom:16px;line-height:1.6}
+.modal-input{width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;font-size:14px;text-align:center;letter-spacing:2px;margin-bottom:10px;font-family:'Noto Sans JP',sans-serif}
+.modal-input:focus{outline:none;border-color:var(--accent)}
+.modal-btn{width:100%;padding:10px;background:var(--primary);color:#fff;border:none;border-radius:8px;font-size:14px;font-family:'Noto Sans JP',sans-serif;cursor:pointer}
+
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--frame);color:#fff;padding:10px 20px;border-radius:20px;font-size:13px;z-index:500;animation:fadeInOut 2.6s forwards;white-space:nowrap}
+@keyframes fadeInOut{0%{opacity:0;transform:translateX(-50%) translateY(10px)}15%{opacity:1;transform:translateX(-50%) translateY(0)}80%{opacity:1}100%{opacity:0}}
+
+.success-screen{text-align:center;padding:50px 20px}
+.success-icon{font-size:64px;margin-bottom:16px}
+.success-title{font-size:22px;font-weight:700;color:var(--success);margin-bottom:10px}
+.success-sub{font-size:13px;color:var(--muted);line-height:1.8}
+.reset-btn{margin-top:22px;padding:10px 28px;background:var(--primary);color:#fff;border:none;border-radius:8px;font-size:14px;font-family:'Noto Sans JP',sans-serif;cursor:pointer}
+
+.loading{text-align:center;padding:40px;color:var(--muted);font-size:13px}
+.guide-bar{font-size:11px;color:var(--muted);margin-bottom:10px;padding:0 2px}
+
+/* ── Slideshow Overlay ───────────────────────────────────── */
+.ss-overlay{position:fixed;inset:0;background:#000;z-index:400;display:flex;flex-direction:column}
+.ss-header{background:rgba(10,28,26,.95);padding:10px 14px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;gap:10px}
+.ss-title-block{min-width:0}
+.ss-name{color:#fff;font-size:15px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ss-cat{color:rgba(255,255,255,.65);font-size:12px;margin-top:2px}
+.ss-right{display:flex;align-items:center;gap:10px;flex-shrink:0}
+.ss-counter{color:rgba(255,255,255,.55);font-size:13px}
+.ss-close-btn{color:#fff;background:rgba(255,255,255,.15);border:none;border-radius:6px;padding:6px 13px;cursor:pointer;font-size:12px;font-family:'Noto Sans JP',sans-serif;transition:background .2s}
+.ss-close-btn:hover{background:rgba(255,255,255,.3)}
+.ss-body{flex:1;display:flex;flex-direction:row;min-height:0}
+.ss-panel{flex:1;display:flex;flex-direction:column;min-height:0}
+.ss-panel+.ss-panel{border-left:2px solid rgba(255,255,255,.1)}
+.ss-panel-label{background:rgba(255,255,255,.07);color:rgba(255,255,255,.6);font-size:10px;text-align:center;padding:5px;text-transform:uppercase;letter-spacing:.5px;flex-shrink:0;font-family:'Noto Sans JP',sans-serif}
+.ss-panel-img{flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden;padding:6px;min-height:0}
+.ss-panel-img img{max-width:100%;max-height:100%;object-fit:contain;display:block}
+.ss-panel-ph{color:rgba(255,255,255,.25);font-size:13px;text-align:center}
+.ss-nav{background:rgba(10,28,26,.95);display:flex;align-items:center;justify-content:center;gap:20px;padding:10px 16px;flex-shrink:0}
+.ss-nav-btn{background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:8px;width:46px;height:46px;font-size:24px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .2s;font-family:sans-serif;line-height:1}
+.ss-nav-btn:hover:not(:disabled){background:rgba(255,255,255,.3)}
+.ss-nav-btn:disabled{opacity:.25;cursor:not-allowed}
+.ss-dots{display:flex;gap:6px;align-items:center}
+.ss-dot{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.25);transition:background .2s;cursor:pointer}
+.ss-dot.active{background:var(--accent)}
+
+/* ── Camera Overlay ─────────────────────────────────────── */
+.cam-overlay{position:fixed;inset:0;background:#000;z-index:450}
+.cam-video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0}
+.cam-sample-ov{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:1}
+.cam-sample-ov img{width:100%;height:100%;object-fit:contain}
+.cam-grid{position:absolute;inset:0;z-index:1;pointer-events:none;background-image:linear-gradient(rgba(255,255,255,.22) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.22) 1px,transparent 1px);background-size:33.333% 33.333%}
+.cam-guide{position:absolute;top:0;left:0;right:0;background:linear-gradient(to bottom,rgba(0,0,0,.48),transparent);color:#fff;font-size:13px;text-align:center;padding:14px 16px 40px;line-height:1.7;z-index:2;font-family:'Noto Sans JP',sans-serif}
+@media(orientation:landscape){.cam-guide{top:0;bottom:68px;right:auto;width:auto;background:linear-gradient(to right,rgba(0,0,0,.45),transparent);padding:16px 28px 16px 14px;display:flex;flex-direction:column;justify-content:center;align-items:center;writing-mode:vertical-lr;transform:none;font-size:12px;text-align:center}}
+@media(orientation:landscape){.cam-guide div:last-child{font-size:9px;opacity:.6}}
+.cam-footer{position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,.65);padding:14px 24px 28px;display:flex;align-items:center;justify-content:space-between;z-index:2;gap:12px}
+.cam-cancel{background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:8px;padding:10px 16px;font-size:13px;font-family:'Noto Sans JP',sans-serif;cursor:pointer}
+.cam-shutter{width:46px;height:46px;border-radius:50%;border:3px solid #fff;background:rgba(255,255,255,.95);cursor:pointer;position:relative;box-shadow:0 0 0 2px rgba(255,255,255,.28);transition:transform .12s;flex-shrink:0}
+.cam-shutter:active{transform:scale(.91)}
+.cam-shutter::after{content:'';position:absolute;inset:4px;border-radius:50%;background:var(--accent)}
+.cam-alpha-wrap{display:flex;flex-direction:column;align-items:center;gap:5px}
+.cam-alpha-lbl{color:rgba(255,255,255,.65);font-size:11px;white-space:nowrap;font-family:'Noto Sans JP',sans-serif}
+.cam-alpha{-webkit-appearance:none;width:84px;height:4px;background:rgba(255,255,255,.3);border-radius:2px;outline:none;cursor:pointer}
+.cam-alpha::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:#fff;cursor:pointer}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">MINISH<span class="hl">COURSE</span><span class="ses">Session 9 – 口腔内</span></div>
+  <div class="nav-tabs">
+    <button class="nav-tab active" id="tab-p" onclick="switchView('participant')">参加者</button>
+    <button class="nav-tab" id="tab-a" onclick="switchView('admin')">管理者</button>
+  </div>
+</div>
+
+<div id="participant-view" class="main"></div>
+<div id="admin-view" class="main" style="display:none"></div>
+<div id="review-view" class="main" style="display:none"></div>
+
+<div id="pw-modal" class="modal-ov" style="display:none">
+  <div class="modal-box">
+    <div class="modal-title">🔐 管理者ログイン</div>
+    <div class="modal-sub">管理者パスワードを入力してください<br><span style="font-size:10px;color:#bbb">관리자 비밀번호를 입력해주세요</span></div>
+    <input type="password" id="pw-input" class="modal-input" placeholder="パスワード"
+      onkeydown="if(event.key==='Enter')checkPw()">
+    <button class="modal-btn" onclick="checkPw()">ログイン</button>
+    <div id="pw-err" style="color:var(--danger);font-size:12px;margin-top:8px;display:none">パスワードが違います</div>
+  </div>
+</div>
+
+<!-- Camera overlay -->
+<div id="cam-overlay" class="cam-overlay" style="display:none">
+  <video id="cam-video" class="cam-video" autoplay playsinline muted></video>
+  <div class="cam-sample-ov" id="cam-sample-ov"></div>
+  <div class="cam-grid"></div>
+  <div class="cam-guide">
+    <div>サンプルに位置を合わせて撮影してください</div>
+    <div style="font-size:10px;opacity:.7">샘플 위치에 맞춰 촬영해 주세요</div>
+  </div>
+  <div class="cam-footer">
+    <button class="cam-cancel" onclick="closeCameraOverlay()">✕ キャンセル</button>
+    <button class="cam-shutter" onclick="capturePhoto()"></button>
+    <div class="cam-alpha-wrap">
+      <div class="cam-alpha-lbl">透明度 / 투명도</div>
+      <input type="range" class="cam-alpha" id="cam-alpha" min="10" max="70" value="38"
+             oninput="setCamAlpha(this.value)">
+    </div>
+  </div>
+</div>
+
+<!-- Slideshow overlay -->
+<div id="ss-overlay" class="ss-overlay" style="display:none"
+     ontouchstart="ssTouchStart(event)" ontouchend="ssTouchEnd(event)">
+  <div class="ss-header">
+    <div class="ss-title-block">
+      <div id="ss-name" class="ss-name"></div>
+      <div id="ss-cat" class="ss-cat"></div>
+    </div>
+    <div class="ss-right">
+      <span id="ss-counter" class="ss-counter"></span>
+      <button class="ss-close-btn" onclick="closeSlideshow()">✕ 閉じる</button>
+    </div>
+  </div>
+  <div class="ss-body">
+    <div class="ss-panel">
+      <div class="ss-panel-label">サンプル / 샘플</div>
+      <div class="ss-panel-img" id="ss-sample-img"></div>
+    </div>
+    <div class="ss-panel">
+      <div class="ss-panel-label">提出写真 / 제출 사진</div>
+      <div class="ss-panel-img" id="ss-photo-img"></div>
+    </div>
+  </div>
+  <div class="ss-nav">
+    <button class="ss-nav-btn" id="ss-prev" onclick="prevSlide()">‹</button>
+    <div class="ss-dots" id="ss-dots"></div>
+    <button class="ss-nav-btn" id="ss-next" onclick="nextSlide()">›</button>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL   = 'https://pnwqedxqeckylpcdjsta.supabase.co';
+const SUPABASE_KEY   = 'sb_publishable_IcMY9p5gE1Z2-exY0N_qjg_8oxU3aFV';
+const SESSION_ID     = 's9';
+const SESSION_LABEL  = 'Session 9 – 口腔内';
+const ADMIN_PW       = 'minish2026';
+const PRIMARY_HEX    = '#1a4060';
+const ACCENT_HEX     = '#1e8a7a';
+const CATS = [
+  {id:'oral_front',      jp:'正面',       kr:'정면',        n:1},
+  {id:'oral_left',       jp:'左側',       kr:'좌측',        n:2},
+  {id:'oral_right',      jp:'右側',       kr:'우측',        n:3},
+  {id:'oral_upper_hook', jp:'上顎フック', kr:'상악 훅',     n:4},
+  {id:'oral_upper_occ',  jp:'上顎咬合面', kr:'상악 교합면', n:5},
+  {id:'oral_lower_hook', jp:'下顎フック', kr:'하악 훅',     n:6},
+  {id:'oral_lower_occ',  jp:'下顎咬合面', kr:'하악 교합면', n:7},
+];
+const TOTAL = 7;
+
+const {createClient} = supabase;
+const supa = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let adminUnlocked = false;
+let adminTab = 'samples';
+let myPhotos = {};
+let samples  = {};
+let submitted = false;
+let currentView = 'participant';
+// Review state
+let currentReviewPhotos  = {};
+let currentReviewSamples = {};
+let currentReviewName    = '';
+// Slideshow state
+let slideIdx  = 0;
+let ssStartX  = 0;
+
+function compress(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const img = new Image();
+      img.onload = () => {
+        const MAX = 1600;
+        let w = img.width, h = img.height;
+        if (w > MAX) { h = Math.round(h * MAX / w); w = MAX; }
+        const c = document.createElement('canvas');
+        c.width = w; c.height = h;
+        c.getContext('2d').drawImage(img, 0, 0, w, h);
+        resolve(c.toDataURL('image/jpeg', 1.0));
+      };
+      img.onerror = reject;
+      img.src = e.target.result;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+function toast(msg) {
+  const el = document.createElement('div');
+  el.className = 'toast';
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 2700);
+}
+
+function fmtDate(ts) {
+  return new Date(ts).toLocaleString('ja-JP', {month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
+}
+
+function loadImage(src) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = reject;
+    img.src = src;
+  });
+}
+
+function switchView(view) {
+  if (view === 'admin' && !adminUnlocked) {
+    document.getElementById('pw-modal').style.display = 'flex';
+    setTimeout(() => document.getElementById('pw-input').focus(), 100);
+    return;
+  }
+  currentView = view;
+  document.getElementById('participant-view').style.display = view === 'participant' ? 'block' : 'none';
+  document.getElementById('admin-view').style.display = view === 'admin' ? 'block' : 'none';
+  document.getElementById('review-view').style.display = view === 'review' ? 'block' : 'none';
+  document.getElementById('tab-p').classList.toggle('active', view === 'participant');
+  document.getElementById('tab-a').classList.toggle('active', view === 'admin');
+  if (view === 'participant') renderParticipant();
+  if (view === 'admin') renderAdmin();
+}
+
+function checkPw() {
+  const val = document.getElementById('pw-input').value;
+  if (val === ADMIN_PW) {
+    adminUnlocked = true;
+    document.getElementById('pw-modal').style.display = 'none';
+    document.getElementById('pw-input').value = '';
+    document.getElementById('pw-err').style.display = 'none';
+    switchView('admin');
+  } else {
+    document.getElementById('pw-err').style.display = 'block';
+  }
+}
+
+async function loadSamples() {
+  const {data} = await supa.from('samples').select('cat_id,data_url').eq('session_id', SESSION_ID);
+  samples = {};
+  if (data) data.forEach(s => { samples[s.cat_id] = s.data_url; });
+}
+
+async function saveSample(catId, dataUrl) {
+  await supa.from('samples').upsert({
+    id: `${SESSION_ID}_${catId}`,
+    session_id: SESSION_ID, cat_id: catId, data_url: dataUrl
+  });
+  samples[catId] = dataUrl;
+}
+
+async function renderParticipant() {
+  const v = document.getElementById('participant-view');
+  if (submitted) { renderSuccess(v); return; }
+  v.innerHTML = '<div class="loading">📸 ロード中...</div>';
+  await loadSamples();
+
+  const uploaded = Object.keys(myPhotos).length;
+  let html = `
+    <div class="submit-sec" style="margin-top:0">
+      <div class="field-label">📝 お名前 <span style="font-size:10px;font-weight:400;color:var(--muted)">（이름을 입력해 주세요）</span></div>
+      <input type="text" id="p-name" class="name-input" placeholder="お名前 / 이름" maxlength="50">
+    </div>
+    <div class="guide-bar">⬅ サンプル（見本）　|　自分の写真 ➡</div>`;
+
+  for (const cat of CATS) {
+    const s = samples[cat.id] || '';
+    const m = myPhotos[cat.id] || '';
+    html += `
+    <div class="photo-card">
+      <div class="photo-card-header">
+        <div class="cat-num">${cat.n}</div>
+        <div class="cat-name">${cat.jp}</div>
+        <div class="cat-sub">${cat.kr}</div>
+      </div>
+      <div class="photo-pair">
+        <div class="photo-slot">
+          <div class="slot-label">サンプル / 샘플</div>
+          <div class="photo-frame">
+            ${s ? `<img src="${s}" alt="sample">` : `<div class="frame-ph"><span class="icon">🖼</span><span>準備中</span></div>`}
+          </div>
+        </div>
+        <div class="photo-slot">
+          <div class="slot-label">あなたの写真 / 내 사진</div>
+          <div class="photo-frame">
+            ${m ? `<img src="${m}" alt="my photo">` : `<div class="frame-ph"><span class="icon">📷</span><span>写真を選択</span></div>`}
+          </div>
+          <button class="upload-btn${m?' done':''}" onclick="handleUploadClick('${cat.id}')">
+            ${m ? '✓ 変更する' : '📷 写真を選択'}
+          </button>
+          <input type="file" id="fi-${cat.id}" accept="image/*" capture="environment" style="display:none" onchange="handleMyPhoto('${cat.id}',this)">
+        </div>
+      </div>
+    </div>`;
+  }
+
+  html += `
+    <div class="submit-sec">
+      <div class="progress-bar"><div class="progress-fill" style="width:${(uploaded/TOTAL)*100}%"></div></div>
+      <div class="progress-txt">${uploaded} / ${TOTAL} 枚アップロード済み</div>
+      <button class="submit-btn" id="submit-btn" onclick="doSubmit()" ${uploaded===0?'disabled':''}>
+        提出する（${uploaded}/${TOTAL}枚）
+      </button>
+      <div class="hint">※ 全${TOTAL}枚でなくても提出できます / 전체가 아니어도 제출 가능합니다</div>
+    </div>`;
+
+  v.innerHTML = html;
+}
+
+async function handleMyPhoto(catId, input) {
+  if (!input.files[0]) return;
+  // ★ Fix: save name before re-render, restore after
+  const savedName = document.getElementById('p-name')?.value || '';
+  try {
+    const dataUrl = await compress(input.files[0]);
+    myPhotos[catId] = dataUrl;
+    await renderParticipant();
+    const nameEl = document.getElementById('p-name');
+    if (nameEl && savedName) nameEl.value = savedName;
+  } catch(e) { toast('画像の読み込みに失敗しました'); }
+}
+
+async function doSubmit() {
+  const name = document.getElementById('p-name')?.value?.trim();
+  if (!name) { toast('お名前を入力してください'); return; }
+  const photoCount = Object.keys(myPhotos).length;
+  if (photoCount === 0) { toast('写真を1枚以上選択してください'); return; }
+
+  const btn = document.getElementById('submit-btn');
+  if (btn) { btn.disabled = true; btn.textContent = '提出中... ⏳'; }
+
+  try {
+    const sid = `${SESSION_ID}_${Date.now()}_${Math.random().toString(36).slice(2,5)}`;
+    const categories = Object.keys(myPhotos);
+
+    const {error: e1} = await supa.from('submissions').insert({
+      id: sid, session_id: SESSION_ID,
+      participant_name: name, photo_count: photoCount, categories
+    });
+    if (e1) throw e1;
+
+    const rows = Object.entries(myPhotos).map(([catId, dataUrl]) => ({
+      id: `${sid}_${catId}`, submission_id: sid,
+      session_id: SESSION_ID, cat_id: catId, data_url: dataUrl
+    }));
+    const {error: e2} = await supa.from('photos').insert(rows);
+    if (e2) throw e2;
+
+    submitted = true;
+    renderSuccess(document.getElementById('participant-view'));
+  } catch(e) {
+    console.error(e);
+    toast('エラーが発生しました。もう一度お試しください。');
+    if (btn) { btn.disabled = false; btn.textContent = `提出する（${Object.keys(myPhotos).length}/${TOTAL}枚）`; }
+  }
+}
+
+function renderSuccess(v) {
+  v.innerHTML = `
+    <div class="success-screen">
+      <div class="success-icon">✅</div>
+      <div class="success-title">提出完了！</div>
+      <div class="success-sub">写真の提出が完了しました。<br>ありがとうございました！<br><br>사진이 제출되었습니다.<br>감사합니다!</div>
+      <button class="reset-btn" onclick="resetParticipant()">別の参加者で再提出</button>
+    </div>`;
+}
+
+function resetParticipant() {
+  submitted = false;
+  myPhotos = {};
+  renderParticipant();
+}
+
+function renderAdmin() {
+  const v = document.getElementById('admin-view');
+  v.innerHTML = `
+    <div class="admin-tabs">
+      <button class="admin-tab${adminTab==='samples'?' active':''}" onclick="setAdminTab('samples')">📸 サンプル登録</button>
+      <button class="admin-tab${adminTab==='subs'?' active':''}" onclick="setAdminTab('subs')">📋 提出一覧</button>
+    </div>
+    <div id="atab-content"><div class="loading">ロード中...</div></div>`;
+  renderAdminTab();
+}
+
+function setAdminTab(tab) {
+  adminTab = tab;
+  document.querySelectorAll('.admin-tab').forEach((el,i) =>
+    el.classList.toggle('active', (i===0&&tab==='samples')||(i===1&&tab==='subs')));
+  renderAdminTab();
+}
+
+async function renderAdminTab() {
+  const c = document.getElementById('atab-content');
+  if (!c) return;
+
+  if (adminTab === 'samples') {
+    await loadSamples();
+    let html = '<div class="section-box"><div class="section-title">サンプル写真の登録 / 샘플 사진 등록</div><div class="sample-grid">';
+    for (const cat of CATS) {
+      const src = samples[cat.id] || '';
+      html += `
+      <div>
+        <div class="sample-lbl">${cat.n}. ${cat.jp}</div>
+        <div class="photo-frame" style="margin-bottom:5px">
+          ${src ? `<img src="${src}">` : `<div class="frame-ph"><span class="icon">🖼</span><span>未登録</span></div>`}
+        </div>
+        <label class="upload-btn${src?' done':''}">
+          ${src ? '✓ 変更' : '＋ 登録'}
+          <input type="file" accept="image/*" onchange="handleSampleUpload('${cat.id}',this)">
+        </label>
+      </div>`;
+    }
+    html += '</div></div>';
+    c.innerHTML = html;
+
+  } else {
+    const {data} = await supa.from('submissions').select('*').eq('session_id', SESSION_ID).order('created_at', {ascending:false});
+    const subs = data || [];
+    let html = `<div class="section-box"><div class="section-title">提出一覧 / 제출 목록 &nbsp;(${subs.length}名)</div>`;
+    if (!subs.length) {
+      html += '<div style="text-align:center;padding:30px;color:var(--muted)">まだ提出がありません</div>';
+    } else {
+      for (const sub of subs) {
+        html += `
+        <div class="sub-item" onclick="openReview('${sub.id}','${sub.participant_name.replace(/'/g,"\\'")}')">
+          <div class="sub-name">${sub.participant_name}</div>
+          <div class="sub-meta">${sub.photo_count}枚<br>${fmtDate(sub.created_at)}</div>
+        </div>`;
+      }
+    }
+    html += '</div>';
+    c.innerHTML = html;
+  }
+}
+
+async function handleSampleUpload(catId, input) {
+  if (!input.files[0]) return;
+  toast('アップロード中...');
+  try {
+    const dataUrl = await compress(input.files[0]);
+    await saveSample(catId, dataUrl);
+    toast('✅ サンプル登録完了');
+    renderAdminTab();
+  } catch(e) { toast('エラーが発生しました'); }
+}
+
+// ── REVIEW VIEW ──────────────────────────────────────────────
+async function openReview(submissionId, name) {
+  document.getElementById('participant-view').style.display = 'none';
+  document.getElementById('admin-view').style.display = 'none';
+  const rv = document.getElementById('review-view');
+  rv.style.display = 'block';
+  currentView = 'review';
+  rv.innerHTML = '<div class="loading">ロード中...</div>';
+
+  await loadSamples();
+  const {data: photos} = await supa.from('photos').select('cat_id,data_url').eq('submission_id', submissionId);
+  const pm = {};
+  if (photos) photos.forEach(p => { pm[p.cat_id] = p.data_url; });
+
+  // Store globally for slideshow / PDF
+  currentReviewName    = name;
+  currentReviewSamples = {...samples};
+  currentReviewPhotos  = pm;
+
+  let html = `
+    <div class="review-hdr">
+      <button class="back-btn" onclick="switchView('admin')">← 戻る</button>
+      <div class="review-title">
+        <div style="font-size:16px;font-weight:700">${name}</div>
+        <div style="font-size:11px;color:var(--muted)">${SESSION_LABEL}</div>
+      </div>
+      <div class="review-actions">
+        <button class="action-btn ss-btn" onclick="openSlideshow()">⛶ 全画面</button>
+        <button class="action-btn pdf-btn" id="pdf-btn" onclick="downloadPDF()">📄 PDF</button>
+      </div>
+    </div>
+    <div class="guide-bar">⬅ サンプル　|　提出写真 ➡</div>`;
+
+  for (const cat of CATS) {
+    const s = samples[cat.id] || '';
+    const p = pm[cat.id] || '';
+    html += `
+    <div class="photo-card">
+      <div class="photo-card-header">
+        <div class="cat-num">${cat.n}</div>
+        <div class="cat-name">${cat.jp}</div>
+        <div class="cat-sub">${cat.kr}</div>
+      </div>
+      <div class="photo-pair">
+        <div class="photo-slot">
+          <div class="slot-label">サンプル / 샘플</div>
+          <div class="photo-frame">
+            ${s ? `<img src="${s}">` : `<div class="frame-ph"><span class="icon">🖼</span><span>未登録</span></div>`}
+          </div>
+        </div>
+        <div class="photo-slot">
+          <div class="slot-label">提出写真 / 제출 사진</div>
+          <div class="photo-frame">
+            ${p ? `<img src="${p}">` : `<div class="frame-ph"><span class="icon">—</span><span>未提出</span></div>`}
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  rv.innerHTML = html;
+}
+
+// ── PDF EXPORT ───────────────────────────────────────────────
+async function downloadPDF() {
+  const btn = document.getElementById('pdf-btn');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ 生成中...'; }
+  toast('PDFを生成中... しばらくお待ちください');
+
+  try {
+    const { jsPDF } = window.jspdf;
+    const PW = 1200, PH = 675;
+    const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: [PH, PW] });
+
+    for (let i = 0; i < CATS.length; i++) {
+      const cat = CATS[i];
+      if (i > 0) doc.addPage([PH, PW], 'landscape');
+
+      const canvas = await renderPageCanvas(cat,
+        currentReviewSamples[cat.id] || null,
+        currentReviewPhotos[cat.id]  || null,
+        currentReviewName);
+
+      const imgData = canvas.toDataURL('image/jpeg', 1.0);
+      doc.addImage(imgData, 'JPEG', 0, 0, PW, PH, undefined, 'FAST');
+    }
+
+    const safeName = currentReviewName.replace(/\s+/g, '_');
+    doc.save(`${safeName}_S9_口腔内.pdf`);
+    toast('✅ PDF保存完了');
+  } catch(e) {
+    console.error(e);
+    toast('PDF生成に失敗しました');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '📄 PDF'; }
+  }
+}
+
+async function renderPageCanvas(cat, sUrl, pUrl, name) {
+  const W = 1600, H = 900;
+  const canvas = document.createElement('canvas');
+  canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext('2d');
+
+  // Background
+  ctx.fillStyle = '#0a1a18';
+  ctx.fillRect(0, 0, W, H);
+
+  // Header bar
+  const HDR = 72;
+  ctx.fillStyle = PRIMARY_HEX;
+  ctx.fillRect(0, 0, W, HDR);
+
+  // Accent line
+  ctx.fillStyle = ACCENT_HEX;
+  ctx.fillRect(0, HDR, W, 3);
+
+  // Header text
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle = '#ffffff';
+  ctx.font = 'bold 26px sans-serif';
+  ctx.textAlign = 'left';
+  ctx.fillText(name, 22, HDR / 2);
+
+  ctx.font = '22px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText(`${cat.n}.  ${cat.jp}  /  ${cat.kr}`, W / 2, HDR / 2);
+
+  ctx.font = '16px sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,0.55)';
+  ctx.textAlign = 'right';
+  ctx.fillText(SESSION_LABEL, W - 22, HDR / 2);
+
+  // Column areas
+  const GAP = 4;
+  const COL_TOP = HDR + 3 + 36;
+  const COL_H = H - COL_TOP - 24;
+  const COL_W = (W - GAP) / 2;
+
+  // Column labels
+  ctx.font = '16px sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,0.45)';
+  ctx.textAlign = 'center';
+  ctx.fillText('サンプル / 샘플', COL_W / 2, HDR + 3 + 18);
+  ctx.fillText('提出写真 / 제출 사진', COL_W + GAP + COL_W / 2, HDR + 3 + 18);
+
+  // Centre divider
+  ctx.fillStyle = 'rgba(255,255,255,0.08)';
+  ctx.fillRect(COL_W, HDR + 3, GAP, H - HDR - 3);
+
+  async function drawPhoto(dataUrl, x, y, maxW, maxH, placeholder) {
+    if (!dataUrl) {
+      ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([8, 6]);
+      ctx.strokeRect(x + 10, y + 10, maxW - 20, maxH - 20);
+      ctx.setLineDash([]);
+      ctx.fillStyle = 'rgba(255,255,255,0.2)';
+      ctx.font = '20px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(placeholder, x + maxW / 2, y + maxH / 2);
+      return;
+    }
+    try {
+      const img = await loadImage(dataUrl);
+      const ratio = Math.min((maxW - 20) / img.naturalWidth, (maxH - 20) / img.naturalHeight);
+      const dw = img.naturalWidth * ratio;
+      const dh = img.naturalHeight * ratio;
+      const dx = x + (maxW - dw) / 2;
+      const dy = y + (maxH - dh) / 2;
+      ctx.drawImage(img, dx, dy, dw, dh);
+    } catch(e) {}
+  }
+
+  await drawPhoto(sUrl, 0,           COL_TOP, COL_W, COL_H, '未登録');
+  await drawPhoto(pUrl, COL_W + GAP, COL_TOP, COL_W, COL_H, '未提出');
+
+  return canvas;
+}
+
+// ── SLIDESHOW ─────────────────────────────────────────────────
+function openSlideshow() {
+  slideIdx = 0;
+  const ov = document.getElementById('ss-overlay');
+  ov.style.display = 'flex';
+  renderSlide();
+  document.addEventListener('keydown', ssKeydown);
+}
+
+function closeSlideshow() {
+  document.getElementById('ss-overlay').style.display = 'none';
+  document.removeEventListener('keydown', ssKeydown);
+}
+
+function ssKeydown(e) {
+  if (e.key === 'ArrowRight' || e.key === 'ArrowDown') nextSlide();
+  else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') prevSlide();
+  else if (e.key === 'Escape') closeSlideshow();
+}
+
+function renderSlide() {
+  const cat = CATS[slideIdx];
+  const s = currentReviewSamples[cat.id] || null;
+  const p = currentReviewPhotos[cat.id] || null;
+
+  document.getElementById('ss-name').textContent = currentReviewName;
+  document.getElementById('ss-cat').textContent  = `${cat.n}.  ${cat.jp}  /  ${cat.kr}`;
+  document.getElementById('ss-counter').textContent = `${slideIdx + 1} / ${CATS.length}`;
+
+  document.getElementById('ss-sample-img').innerHTML = s
+    ? `<img src="${s}" alt="sample">`
+    : `<span class="ss-panel-ph">未登録</span>`;
+  document.getElementById('ss-photo-img').innerHTML = p
+    ? `<img src="${p}" alt="submitted">`
+    : `<span class="ss-panel-ph">未提出</span>`;
+
+  document.getElementById('ss-prev').disabled = slideIdx === 0;
+  document.getElementById('ss-next').disabled = slideIdx === CATS.length - 1;
+
+  const dotsEl = document.getElementById('ss-dots');
+  dotsEl.innerHTML = CATS.map((c, i) =>
+    `<div class="ss-dot${i===slideIdx?' active':''}" onclick="gotoSlide(${i})"></div>`
+  ).join('');
+}
+
+function nextSlide() { if (slideIdx < CATS.length - 1) { slideIdx++; renderSlide(); } }
+function prevSlide() { if (slideIdx > 0) { slideIdx--; renderSlide(); } }
+function gotoSlide(i) { slideIdx = i; renderSlide(); }
+
+function ssTouchStart(e) { ssStartX = e.touches[0].clientX; }
+function ssTouchEnd(e) {
+  const dx = e.changedTouches[0].clientX - ssStartX;
+  if (Math.abs(dx) > 50) { dx < 0 ? nextSlide() : prevSlide(); }
+}
+
+// ── CAMERA OVERLAY ───────────────────────────────────────────
+let camStream = null;
+let camCatId  = null;
+
+async function handleUploadClick(catId) {
+  const sampleUrl = samples[catId];
+  if (sampleUrl && navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+    openCameraOverlay(catId, sampleUrl);
+  } else {
+    document.getElementById(`fi-${catId}`).click();
+  }
+}
+
+
+async function openCameraOverlay(catId, sampleUrl) {
+  camCatId = catId;
+  const sOv = document.getElementById('cam-sample-ov');
+  sOv.innerHTML = `<img src="${sampleUrl}" alt="guide" style="opacity:.38">`;
+  document.getElementById('cam-alpha').value = 38;
+  const ov = document.getElementById('cam-overlay');
+  ov.style.display = 'block';
+
+  // ── Fullscreen: hide browser chrome on mobile ──
+  try {
+    const de = document.documentElement;
+    if (de.requestFullscreen)              await de.requestFullscreen();
+    else if (de.webkitRequestFullscreen)   de.webkitRequestFullscreen();
+  } catch(e) { /* not supported – overlay still covers viewport */ }
+
+  try {
+    camStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: { ideal: 'environment' } }   // 해상도 제약 제거 (iOS 호환)
+    });
+    const vid = document.getElementById('cam-video');
+    vid.srcObject = camStream;
+    vid.addEventListener('loadedmetadata', () => {
+      vid.play().catch(() => {});
+    }, { once: true });
+    vid.play().catch(() => {});
+  } catch(e) {
+    closeCameraOverlay();
+    toast('カメラにアクセスできません。ファイルを選択してください。');
+    setTimeout(() => document.getElementById(`fi-${catId}`).click(), 300);
+  }
+}
+
+function closeCameraOverlay() {
+  // ── Exit fullscreen if active ──
+  try {
+    if (document.fullscreenElement || document.webkitFullscreenElement) {
+      (document.exitFullscreen || document.webkitExitFullscreen).call(document);
+    }
+  } catch(e) {}
+  if (camStream) { camStream.getTracks().forEach(t => t.stop()); camStream = null; }
+  const v = document.getElementById('cam-video');
+  if (v) v.srcObject = null;
+  document.getElementById('cam-overlay').style.display = 'none';
+  camCatId = null;
+}
+
+// Close overlay if user exits fullscreen externally (e.g. swipe/home)
+document.addEventListener('fullscreenchange', () => {
+  if (!document.fullscreenElement) {
+    const ov = document.getElementById('cam-overlay');
+    if (ov && ov.style.display !== 'none') closeCameraOverlay();
+  }
+});
+document.addEventListener('webkitfullscreenchange', () => {
+  if (!document.webkitFullscreenElement) {
+    const ov = document.getElementById('cam-overlay');
+    if (ov && ov.style.display !== 'none') closeCameraOverlay();
+  }
+});
+
+async function capturePhoto() {
+  const video = document.getElementById('cam-video');
+  if (!video || !video.videoWidth) { toast('カメラの準備中です...'); return; }
+  // object-fit:cover と同じ範囲だけキャプチャ（画面に見えている部分のみ）
+  const vw = video.videoWidth, vh = video.videoHeight;
+  const sw = window.innerWidth, sh = window.innerHeight;
+  const va = vw / vh, sa = sw / sh;
+  let cx, cy, cw, ch;
+  if (va > sa) { ch = vh; cw = vh * sa; cx = (vw - cw) / 2; cy = 0; }
+  else         { cw = vw; ch = vw / sa; cx = 0; cy = (vh - ch) / 2; }
+  const outW = Math.min(Math.round(cw), 1600);
+  const outH = Math.round(ch * outW / cw);
+  const out = document.createElement('canvas');
+  out.width = outW; out.height = outH;
+  out.getContext('2d').drawImage(video, cx, cy, cw, ch, 0, 0, outW, outH);
+  const dataUrl = out.toDataURL('image/jpeg', 1.0);
+  const cid = camCatId;
+  closeCameraOverlay();
+  const savedName = document.getElementById('p-name')?.value || '';
+  myPhotos[cid] = dataUrl;
+  await renderParticipant();
+  const nameEl = document.getElementById('p-name');
+  if (nameEl && savedName) nameEl.value = savedName;
+  toast('✅ 写真を撮影しました');
+}
+
+function setCamAlpha(val) {
+  const img = document.getElementById('cam-sample-ov')?.querySelector('img');
+  if (img) img.style.opacity = val / 100;
+}
+
+renderParticipant();
+</script>
+<script>
+// Remove Netlify badge
+(function() {
+  function removeNetlifyBadge() {
+    document.querySelectorAll('a, div, span, p').forEach(function(el) {
+      if (el.href && el.href.includes('netlify.com')) { el.remove(); return; }
+      if (el.innerHTML && el.innerHTML.includes('Powered by Netlify')) { el.remove(); }
+    });
+  }
+  removeNetlifyBadge();
+  new MutationObserver(removeNetlifyBadge).observe(document.body, { childList: true, subtree: true });
+})();
+</script>
+</body>
+</html>
