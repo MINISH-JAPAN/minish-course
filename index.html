@@ -173,6 +173,50 @@
     box-shadow:none;
     transform:none;
   }
+  .other-card{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    min-height:180px;
+    padding:24px 20px;
+    border:2px dashed var(--line);
+    background:#fbf8f4;
+  }
+  .other-card .card-top{
+    justify-content:center;
+    margin-bottom:10px;
+  }
+  .other-card .card-title{
+    flex:none;
+    font-size:16px;
+  }
+  .other-card p.comment{
+    text-align:center;
+  }
+  .other-card textarea{
+    display:none;
+    width:100%;
+    margin-top:14px;
+    min-height:90px;
+    padding:10px 12px;
+    border-radius:10px;
+    border:1px solid var(--line);
+    font-family:inherit;
+    font-size:13.5px;
+    resize:vertical;
+  }
+  .other-card.selected textarea{
+    display:block;
+  }
+  .other-card.selected{
+    border-style:solid;
+  }
+  .other-card textarea:focus{
+    outline:none;
+    border-color:var(--accent);
+  }
   .palette-tag{
     display:inline-block;
     font-size:11.5px;
@@ -251,7 +295,7 @@
 <header>
   <h1>🌷 MINISH with JAPAN Day — 배너 컬러/디자인 투표</h1>
   <p>다가오는 미니쉬코스 수료 소셜 네트워킹 배너, 어떤 컬러·디자인이 가장 마음에 드시나요?</p>
-  <p>아래 12개 시안 중 <strong>최대 3개까지</strong> 선택하고 제출해주세요.</p>
+  <p>아래 12개 시안 중 <strong>최대 3개까지</strong> 선택하고 제출해주세요. 마음에 드는 시안이 없다면 맨 마지막 <strong>"기타 의견"</strong> 카드에 자유롭게 남겨주셔도 됩니다.</p>
   <div class="meta-badges">
     <span class="badge">2026.10.24 (SAT)</span>
     <span class="badge">총 12개 시안</span>
@@ -420,6 +464,33 @@ DESIGNS.forEach(d => {
   grid.appendChild(card);
 });
 
+// 마지막에 "기타 의견" 카드를 추가 — 이미지 선택지가 마음에 안 들 때 자유롭게 의견을 남길 수 있음
+const otherCard = document.createElement("div");
+otherCard.className = "card other-card";
+otherCard.dataset.id = "other";
+otherCard.innerHTML = `
+  <div class="card-top">
+    <span class="card-title">💬 기타 의견 (직접 작성)</span>
+    <span class="radio-dot"></span>
+  </div>
+  <p class="comment">마음에 드는 시안이 없거나 다른 아이디어가 있다면 선택 후 자유롭게 남겨주세요.</p>
+  <textarea id="otherText" placeholder="예: 06번 그라데이션에 로고는 03번 화이트 버전으로 하면 좋을 것 같아요" maxlength="500"></textarea>
+`;
+otherCard.addEventListener("click", (e) => {
+  if (e.target.tagName === "TEXTAREA") return; // 텍스트 입력 중 클릭은 선택 토글 안 되게
+  if (otherCard.classList.contains("selected")) {
+    otherCard.classList.remove("selected");
+    selected.delete("other");
+  } else {
+    if (selected.size >= MAX_SELECT) return;
+    otherCard.classList.add("selected");
+    selected.set("other", { id: "other", title: "기타 의견", palette: "-" });
+    document.getElementById("otherText").focus();
+  }
+  updateHint();
+});
+grid.appendChild(otherCard);
+
 updateHint();
 
 const form = document.getElementById("voteForm");
@@ -429,16 +500,29 @@ form.addEventListener("submit", async (e) => {
   e.preventDefault();
   if (selected.size === 0) return;
 
+  const otherTextEl = document.getElementById("otherText");
+  if (selected.has("other") && !otherTextEl.value.trim()) {
+    statusEl.textContent = "⚠️ '기타 의견'을 선택하셨다면 내용을 입력해주세요.";
+    statusEl.className = "err";
+    otherTextEl.focus();
+    return;
+  }
+
   submitBtn.disabled = true;
   statusEl.textContent = "제출 중...";
   statusEl.className = "";
 
   const voterName = document.getElementById("voterName").value.trim();
-  const chosen = Array.from(selected.values());
+  const chosen = Array.from(selected.values()).map(d => {
+    if (d.id === "other") {
+      return { id: d.id, title: d.title, palette: d.palette, comment: otherTextEl.value.trim() };
+    }
+    return d;
+  });
 
   const payload = {
     voterName: voterName || "(익명)",
-    designs: chosen.map(d => ({ id: d.id, title: d.title, palette: d.palette })),
+    designs: chosen.map(d => ({ id: d.id, title: d.title, palette: d.palette, comment: d.comment || "" })),
     timestamp: new Date().toISOString()
   };
 
@@ -462,7 +546,7 @@ form.addEventListener("submit", async (e) => {
     form.style.display = "none";
     document.getElementById("thanks").style.display = "block";
     document.getElementById("thanksDetail").textContent =
-      `선택하신 시안: ${chosen.map(d => `${d.id}. ${d.title}`).join(" / ")}`;
+      `선택하신 항목: ${chosen.map(d => d.id === "other" ? `기타 의견 ("${d.comment}")` : `${d.id}. ${d.title}`).join(" / ")}`;
   } catch (err) {
     if (err.message === "CONFIG_NOT_SET") {
       statusEl.textContent = "⚠️ config.js에 Google Apps Script 배포 URL이 설정되지 않았습니다. README.md를 참고해 설정해주세요.";
