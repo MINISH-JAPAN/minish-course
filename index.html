@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MINISH with JAPAN Day — 배너 컬러/디자인 투표</title>
+<style>
+  :root{
+    --ink:#2b2320;
+    --sub:#7a6f68;
+    --line:#eae2da;
+    --card:#ffffff;
+    --bg:#faf6f1;
+    --accent:#b3542e;
+    --accent-ink:#ffffff;
+    --ok:#2f7a4f;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:"Pretendard","Apple SD Gothic Neo","Malgun Gothic",-apple-system,BlinkMacSystemFont,sans-serif;
+    background:var(--bg);
+    color:var(--ink);
+    line-height:1.6;
+  }
+  header{
+    padding:40px 20px 24px;
+    text-align:center;
+    max-width:760px;
+    margin:0 auto;
+  }
+  header h1{
+    font-size:26px;
+    margin:0 0 10px;
+    letter-spacing:-0.02em;
+  }
+  header p{
+    color:var(--sub);
+    font-size:14.5px;
+    margin:4px 0;
+  }
+  .meta-badges{
+    display:flex;
+    justify-content:center;
+    gap:8px;
+    flex-wrap:wrap;
+    margin-top:14px;
+  }
+  .badge{
+    font-size:12.5px;
+    padding:5px 12px;
+    border-radius:999px;
+    background:#fff;
+    border:1px solid var(--line);
+    color:var(--sub);
+  }
+  form{
+    max-width:1100px;
+    margin:0 auto;
+    padding:0 20px 80px;
+  }
+  .voter-box{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:20px 22px;
+    margin-bottom:28px;
+    max-width:480px;
+    margin-left:auto;
+    margin-right:auto;
+  }
+  .voter-box label{
+    display:block;
+    font-size:13.5px;
+    color:var(--sub);
+    margin-bottom:6px;
+  }
+  .voter-box input{
+    width:100%;
+    padding:10px 12px;
+    border-radius:8px;
+    border:1px solid var(--line);
+    font-size:14.5px;
+    font-family:inherit;
+  }
+  .grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(300px,1fr));
+    gap:20px;
+  }
+  .card{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:16px;
+    overflow:hidden;
+    cursor:pointer;
+    transition:border-color .15s ease, box-shadow .15s ease, transform .15s ease;
+    position:relative;
+  }
+  .card:hover{
+    box-shadow:0 6px 18px rgba(43,35,32,0.08);
+    transform:translateY(-2px);
+  }
+  .card.selected{
+    border-color:var(--accent);
+    box-shadow:0 0 0 3px rgba(179,84,46,0.18);
+  }
+  .card img{
+    width:100%;
+    display:block;
+    aspect-ratio:2000/961;
+    object-fit:cover;
+    background:#eee;
+  }
+  .card-body{
+    padding:14px 16px 16px;
+  }
+  .card-top{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    margin-bottom:6px;
+  }
+  .card-num{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    width:24px;height:24px;
+    border-radius:50%;
+    background:var(--ink);
+    color:#fff;
+    font-size:12px;
+    font-weight:600;
+    flex:none;
+  }
+  .card-title{
+    font-size:15.5px;
+    font-weight:700;
+    flex:1;
+  }
+  .radio-dot{
+    width:20px;height:20px;
+    border-radius:50%;
+    border:2px solid var(--line);
+    flex:none;
+    position:relative;
+  }
+  .card.selected .radio-dot{
+    border-color:var(--accent);
+  }
+  .card.selected .radio-dot::after{
+    content:"";
+    position:absolute;
+    inset:3px;
+    border-radius:50%;
+    background:var(--accent);
+  }
+  .palette-tag{
+    display:inline-block;
+    font-size:11.5px;
+    color:var(--accent);
+    background:rgba(179,84,46,0.09);
+    border-radius:999px;
+    padding:2px 9px;
+    margin-bottom:8px;
+  }
+  .comment{
+    font-size:13.2px;
+    color:#54473f;
+    margin:0;
+  }
+  .filename{
+    font-size:11px;
+    color:#b6aca3;
+    margin-top:8px;
+    font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+  }
+  .submit-bar{
+    max-width:1100px;
+    margin:30px auto 0;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:10px;
+  }
+  button[type=submit]{
+    background:var(--ink);
+    color:#fff;
+    border:none;
+    font-size:15.5px;
+    font-weight:600;
+    padding:14px 34px;
+    border-radius:999px;
+    cursor:pointer;
+    transition:opacity .15s ease;
+  }
+  button[type=submit]:disabled{
+    opacity:.45;
+    cursor:not-allowed;
+  }
+  .hint{
+    font-size:12.5px;
+    color:var(--sub);
+  }
+  #status{
+    max-width:480px;
+    margin:14px auto 0;
+    text-align:center;
+    font-size:14px;
+  }
+  #status.ok{color:var(--ok);}
+  #status.err{color:#b03a2e;}
+  .thanks{
+    max-width:520px;
+    margin:60px auto;
+    text-align:center;
+    padding:36px 30px;
+    background:#fff;
+    border-radius:16px;
+    border:1px solid var(--line);
+  }
+  .thanks h2{margin-top:0;}
+  footer{
+    text-align:center;
+    color:var(--sub);
+    font-size:12px;
+    padding:20px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🌷 MINISH with JAPAN Day — 배너 컬러/디자인 투표</h1>
+  <p>다가오는 미니쉬코스 수료 소셜 네트워킹 배너, 어떤 컬러·디자인이 가장 마음에 드시나요?</p>
+  <p>아래 12개 시안 중 <strong>가장 선호하는 1개</strong>를 선택하고 제출해주세요.</p>
+  <div class="meta-badges">
+    <span class="badge">2026.10.24 (SAT)</span>
+    <span class="badge">총 12개 시안</span>
+    <span class="badge">1인 1표</span>
+  </div>
+</header>
+
+<form id="voteForm">
+  <div class="voter-box">
+    <label for="voterName">이름 / 소속 (선택)</label>
+    <input type="text" id="voterName" name="voterName" placeholder="예: 재팬팀 김명진">
+  </div>
+
+  <div class="grid" id="grid"></div>
+
+  <div class="submit-bar">
+    <button type="submit" id="submitBtn" disabled>선택한 시안으로 투표하기</button>
+    <span class="hint">시안 카드를 클릭하면 선택됩니다</span>
+    <div id="status"></div>
+  </div>
+</form>
+
+<div class="thanks" id="thanks" style="display:none;">
+  <h2>🙌 투표해주셔서 감사합니다!</h2>
+  <p id="thanksDetail"></p>
+</div>
+
+<footer>Minish Technology · Japan Team internal poll</footer>
+
+<script src="config.js"></script>
+<script>
+const DESIGNS = [
+  {
+    id: "01",
+    file: "images/design-01.jpg",
+    title: "웜 선셋 A · 버건디 로고",
+    palette: "Amber × Burgundy",
+    comment: "따뜻한 앰버 그라데이션 배경에 버건디 톤 로고를 얹은 톤온톤 조합입니다. 은은하고 고급스러운 무드지만, 배경과 로고 색이 가까워 임팩트보다는 안정감이 강조됩니다. 정찬·격식 있는 초대장 느낌에 어울려요."
+  },
+  {
+    id: "02",
+    file: "images/design-02.jpg",
+    title: "웜 선셋 B · 솔리드 골드",
+    palette: "Gold × Burgundy",
+    comment: "01과 같은 팔레트지만 배경 대비가 더 낮아 훨씬 차분하고 균일한 골드 톤입니다. 우아하지만 텍스트 가독성은 01보다 살짝 떨어질 수 있어요."
+  },
+  {
+    id: "03",
+    file: "images/design-03.jpg",
+    title: "오렌지 화이트 로고",
+    palette: "Orange × White",
+    comment: "오렌지 솔리드 배경에 화이트 텍스트를 반전시켜 대비를 강하게 준 버전입니다. 밝고 경쾌해서 캐주얼한 네트워킹 파티 느낌을 살리기 좋아요."
+  },
+  {
+    id: "04",
+    file: "images/design-04.jpg",
+    title: "오렌지 + 네이비 포인트",
+    palette: "Orange × Navy accent",
+    comment: "03과 같은 톤이지만 좌측 하단에 네이비 웨이브가 더해져 깊이감과 리듬감이 생겼습니다. 보색 대비 덕분에 포스터·배너로 걸었을 때 시선을 가장 잘 끄는 시안 중 하나예요."
+  },
+  {
+    id: "05",
+    file: "images/design-05.jpg",
+    title: "테라코타 · 머스타드 로고",
+    palette: "Terracotta × Mustard",
+    comment: "가장 짙고 차분한 러스트/테라코타 단색 배경에 머스타드 컬러 로고를 매치했습니다. 묵직하고 프리미엄한 인상이라 저녁 시간대 격식 있는 행사 느낌에 잘 맞아요."
+  },
+  {
+    id: "06",
+    file: "images/design-06.jpg",
+    title: "네이비→오렌지 드라마틱 그라데이션",
+    palette: "Navy → Orange gradient",
+    comment: "네이비에서 오렌지로 이어지는 대각선 그라데이션이 노을을 연상시켜 12개 시안 중 가장 드라마틱하고 시각적으로 화려합니다. SNS·온라인 홍보 이미지로 눈에 잘 띄는 장점이 있어요."
+  },
+  {
+    id: "07",
+    file: "images/design-07.jpg",
+    title: "네이비 클래식 (18th 문구)",
+    palette: "Navy solid",
+    comment: "다른 시안과 달리 '18th MinishCourse'로 회차 표기가 다른 버전입니다. 네이비 단색 배경은 가장 격식 있고 신뢰감을 주는 톤으로, 비즈니스·파트너십 미팅 성격을 강조하고 싶을 때 어울려요. 회차 숫자는 최종 확정 시 확인이 필요합니다."
+  },
+  {
+    id: "08",
+    file: "images/design-08.jpg",
+    title: "오션 블루 A · 클리어 그라데이션",
+    palette: "Sky Blue gradient",
+    comment: "밝고 청량한 하늘색 그라데이션에 화이트 텍스트, 네이비 스크립트로 포인트를 준 시안입니다. 전문성과 친근함을 동시에 주는 무난하고 대중적인 톤이에요."
+  },
+  {
+    id: "09",
+    file: "images/design-09.jpg",
+    title: "오션 블루 B · 레이어드 사선",
+    palette: "Sky Blue + diagonal band",
+    comment: "08과 같은 팔레트에 좌상단 대각선 그레이 밴드가 겹쳐져 레이어드된 느낌을 더했습니다. 08보다 조금 더 모던하고 역동적인 그래픽 요소가 있어요."
+  },
+  {
+    id: "10",
+    file: "images/design-10.jpg",
+    title: "오션 블루 C · 네이비 딥 그라데이션",
+    palette: "Deep Navy → Blue gradient",
+    comment: "위쪽은 짙은 네이비, 아래쪽은 밝은 블루로 이어지는 세로 그라데이션입니다. 08·09보다 깊이감과 고급스러움이 강조되어 저녁 행사 분위기와 잘 어울려요."
+  },
+  {
+    id: "11",
+    file: "images/design-11.jpg",
+    title: "블로섬 핑크 A · 네이비 로고",
+    palette: "Pink × Purple accent",
+    comment: "부드러운 핑크와 퍼플 악센트가 어우러진 배경에 네이비 톤 로고로 포인트를 주었습니다. 온화하고 봄 느낌이 나는 조합으로, 차분하면서도 따뜻한 인상을 줘요."
+  },
+  {
+    id: "12",
+    file: "images/design-12.jpg",
+    title: "블로섬 핑크 B · 화이트 로고",
+    palette: "Pink × Purple accent (inverted)",
+    comment: "11과 동일한 팔레트지만 로고를 화이트로 반전해 배경과 대비를 부드럽게 낮춘 버전입니다. 톤온톤이라 우아하지만, 11보다는 눈에 덜 띌 수 있어요."
+  }
+];
+
+const grid = document.getElementById("grid");
+let selected = null;
+
+DESIGNS.forEach(d => {
+  const card = document.createElement("div");
+  card.className = "card";
+  card.dataset.id = d.id;
+  card.innerHTML = `
+    <img src="${d.file}" alt="${d.title}" loading="lazy">
+    <div class="card-body">
+      <div class="card-top">
+        <span class="card-num">${d.id}</span>
+        <span class="card-title">${d.title}</span>
+        <span class="radio-dot"></span>
+      </div>
+      <span class="palette-tag">${d.palette}</span>
+      <p class="comment">${d.comment}</p>
+      <div class="filename">${d.file.split("/").pop()}</div>
+    </div>
+  `;
+  card.addEventListener("click", () => {
+    document.querySelectorAll(".card").forEach(c => c.classList.remove("selected"));
+    card.classList.add("selected");
+    selected = d;
+    document.getElementById("submitBtn").disabled = false;
+  });
+  grid.appendChild(card);
+});
+
+const form = document.getElementById("voteForm");
+const statusEl = document.getElementById("status");
+
+form.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  if (!selected) return;
+
+  const submitBtn = document.getElementById("submitBtn");
+  submitBtn.disabled = true;
+  statusEl.textContent = "제출 중...";
+  statusEl.className = "";
+
+  const voterName = document.getElementById("voterName").value.trim();
+
+  const payload = {
+    voterName: voterName || "(익명)",
+    designId: selected.id,
+    designTitle: selected.title,
+    palette: selected.palette,
+    timestamp: new Date().toISOString()
+  };
+
+  try {
+    if (!SCRIPT_URL || SCRIPT_URL.includes("여기에_배포한_웹앱_URL")) {
+      throw new Error("CONFIG_NOT_SET");
+    }
+    // Apps Script 웹앱은 브라우저 CORS 프리플라이트를 지원하지 않으므로
+    // no-cors 모드로 전송합니다 (응답 본문은 읽지 않고 전송 성공 여부만 확인).
+    await fetch(SCRIPT_URL, {
+      method: "POST",
+      mode: "no-cors",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify(payload)
+    });
+
+    try {
+      localStorage.setItem("minish_vote_done", "1");
+    } catch (_) {}
+
+    form.style.display = "none";
+    document.getElementById("thanks").style.display = "block";
+    document.getElementById("thanksDetail").textContent =
+      `선택하신 시안: ${selected.id}. ${selected.title}`;
+  } catch (err) {
+    if (err.message === "CONFIG_NOT_SET") {
+      statusEl.textContent = "⚠️ config.js에 Google Apps Script 배포 URL이 설정되지 않았습니다. README.md를 참고해 설정해주세요.";
+    } else {
+      statusEl.textContent = "⚠️ 제출 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.";
+    }
+    statusEl.className = "err";
+    submitBtn.disabled = false;
+  }
+});
+
+try {
+  if (localStorage.getItem("minish_vote_done") === "1") {
+    statusEl.textContent = "이 브라우저에서는 이미 투표하셨습니다. (다시 투표하려면 그대로 제출을 눌러도 됩니다)";
+  }
+} catch (_) {}
+</script>
+</body>
+</html>
