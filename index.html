@@ -146,15 +146,32 @@
     flex:none;
     position:relative;
   }
+  .radio-dot{
+    border-radius:7px;
+  }
   .card.selected .radio-dot{
     border-color:var(--accent);
   }
   .card.selected .radio-dot::after{
-    content:"";
+    content:"✓";
     position:absolute;
-    inset:3px;
-    border-radius:50%;
+    inset:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    border-radius:7px;
     background:var(--accent);
+    color:#fff;
+    font-size:12px;
+    font-weight:700;
+  }
+  .card.disabled{
+    opacity:.4;
+    cursor:not-allowed;
+  }
+  .card.disabled:hover{
+    box-shadow:none;
+    transform:none;
   }
   .palette-tag{
     display:inline-block;
@@ -234,25 +251,25 @@
 <header>
   <h1>🌷 MINISH with JAPAN Day — 배너 컬러/디자인 투표</h1>
   <p>다가오는 미니쉬코스 수료 소셜 네트워킹 배너, 어떤 컬러·디자인이 가장 마음에 드시나요?</p>
-  <p>아래 12개 시안 중 <strong>가장 선호하는 1개</strong>를 선택하고 제출해주세요.</p>
+  <p>아래 12개 시안 중 <strong>최대 3개까지</strong> 선택하고 제출해주세요.</p>
   <div class="meta-badges">
     <span class="badge">2026.10.24 (SAT)</span>
     <span class="badge">총 12개 시안</span>
-    <span class="badge">1인 1표</span>
+    <span class="badge">최대 3개 중복 선택</span>
   </div>
 </header>
 
 <form id="voteForm">
   <div class="voter-box">
-    <label for="voterName">이름 / 소속 (선택)</label>
-    <input type="text" id="voterName" name="voterName" placeholder="예: 재팬팀 김명진">
+    <label for="voterName">이름</label>
+    <input type="text" id="voterName" name="voterName" placeholder="예: 김명진">
   </div>
 
   <div class="grid" id="grid"></div>
 
   <div class="submit-bar">
     <button type="submit" id="submitBtn" disabled>선택한 시안으로 투표하기</button>
-    <span class="hint">시안 카드를 클릭하면 선택됩니다</span>
+    <span class="hint" id="hintText">시안 카드를 클릭하면 선택됩니다 (최대 3개)</span>
     <div id="status"></div>
   </div>
 </form>
@@ -353,8 +370,24 @@ const DESIGNS = [
   }
 ];
 
+const MAX_SELECT = 3;
 const grid = document.getElementById("grid");
-let selected = null;
+const selected = new Map(); // id -> design object, preserves click order
+const submitBtn = document.getElementById("submitBtn");
+const hintText = document.getElementById("hintText");
+
+function updateHint() {
+  hintText.textContent = `${selected.size} / ${MAX_SELECT}개 선택됨`;
+  submitBtn.disabled = selected.size === 0;
+
+  // 3개가 다 선택되면 선택 안 된 카드는 비활성화 처리
+  const atLimit = selected.size >= MAX_SELECT;
+  document.querySelectorAll(".card").forEach(c => {
+    if (!c.classList.contains("selected")) {
+      c.classList.toggle("disabled", atLimit);
+    }
+  });
+}
 
 DESIGNS.forEach(d => {
   const card = document.createElement("div");
@@ -374,33 +407,38 @@ DESIGNS.forEach(d => {
     </div>
   `;
   card.addEventListener("click", () => {
-    document.querySelectorAll(".card").forEach(c => c.classList.remove("selected"));
-    card.classList.add("selected");
-    selected = d;
-    document.getElementById("submitBtn").disabled = false;
+    if (card.classList.contains("selected")) {
+      card.classList.remove("selected");
+      selected.delete(d.id);
+    } else {
+      if (selected.size >= MAX_SELECT) return; // 최대 3개 제한
+      card.classList.add("selected");
+      selected.set(d.id, d);
+    }
+    updateHint();
   });
   grid.appendChild(card);
 });
+
+updateHint();
 
 const form = document.getElementById("voteForm");
 const statusEl = document.getElementById("status");
 
 form.addEventListener("submit", async (e) => {
   e.preventDefault();
-  if (!selected) return;
+  if (selected.size === 0) return;
 
-  const submitBtn = document.getElementById("submitBtn");
   submitBtn.disabled = true;
   statusEl.textContent = "제출 중...";
   statusEl.className = "";
 
   const voterName = document.getElementById("voterName").value.trim();
+  const chosen = Array.from(selected.values());
 
   const payload = {
     voterName: voterName || "(익명)",
-    designId: selected.id,
-    designTitle: selected.title,
-    palette: selected.palette,
+    designs: chosen.map(d => ({ id: d.id, title: d.title, palette: d.palette })),
     timestamp: new Date().toISOString()
   };
 
@@ -424,7 +462,7 @@ form.addEventListener("submit", async (e) => {
     form.style.display = "none";
     document.getElementById("thanks").style.display = "block";
     document.getElementById("thanksDetail").textContent =
-      `선택하신 시안: ${selected.id}. ${selected.title}`;
+      `선택하신 시안: ${chosen.map(d => `${d.id}. ${d.title}`).join(" / ")}`;
   } catch (err) {
     if (err.message === "CONFIG_NOT_SET") {
       statusEl.textContent = "⚠️ config.js에 Google Apps Script 배포 URL이 설정되지 않았습니다. README.md를 참고해 설정해주세요.";
