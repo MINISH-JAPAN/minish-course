@@ -167,9 +167,9 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
 .cam-alpha-lbl{color:rgba(255,255,255,.65);font-size:11px;white-space:nowrap;font-family:'Noto Sans JP',sans-serif}
 .cam-alpha{-webkit-appearance:none;width:84px;height:4px;background:rgba(255,255,255,.3);border-radius:2px;outline:none;cursor:pointer}
 .cam-alpha::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:#fff;cursor:pointer}
-/* Level indicator — inside cam-crop-frame, center column only (33%~67%) */
-.cam-level-line{position:absolute;left:33.333%;right:33.333%;height:2px;z-index:4;pointer-events:none;transition:background .15s,box-shadow .15s,top .08s;background:#fff;box-shadow:0 0 6px rgba(255,255,255,.6),0 0 2px #fff}
-.cam-level-label{position:absolute;left:67%;z-index:4;background:rgba(0,0,0,.55);color:#fff;font-size:10px;padding:2px 7px;border-radius:4px;font-family:'Noto Sans JP',sans-serif;pointer-events:none;transition:color .15s,top .08s;transform:translateY(-100%)}
+/* Level indicator — iOS style: fixed center, rotates to show tilt */
+.cam-level-line{position:absolute;left:33.333%;right:33.333%;height:2px;top:50%;transform:translateY(-50%) rotate(0deg);transform-origin:center center;z-index:4;pointer-events:none;transition:background .15s,box-shadow .15s,transform .06s linear;background:#fff;box-shadow:0 0 6px rgba(255,255,255,.6),0 0 2px #fff}
+.cam-level-label{position:absolute;left:50%;top:calc(50% - 14px);transform:translateX(-50%);z-index:4;background:rgba(0,0,0,.55);color:#fff;font-size:10px;padding:2px 7px;border-radius:4px;font-family:'Noto Sans JP',sans-serif;pointer-events:none;transition:color .15s}
 
 /* ── Second photo bar ──────────────────────────────────────── */
 .sp2-bar{padding:8px 10px 10px;border-top:1px dashed var(--border);background:#edf2f8}
@@ -1114,7 +1114,7 @@ async function ssTranslate() {
   const cat = CATS[slideIdx];
   if (!cat) return;
   const key = DEEPL_API_KEY;
-  if (!key || key === '2e3d4519-10dc-4fbc-be60-da1348d590a6') { toast('DeepL APIキーを設定してください'); return; }
+  if (!key || key === 'YOUR_DEEPL_API_KEY_HERE') { toast('DeepL APIキーを設定してください'); return; }
   const txt = document.getElementById('ss-eval-comment')?.value?.trim() || '';
   if (!txt) { toast('コメントを入力してください'); return; }
   const btn = document.getElementById('ss-trans-btn');
@@ -1170,19 +1170,18 @@ function startLevelIndicator() {
   const label = document.getElementById('cam-level-label');
   if (!line) return;
   function onOrientation(e) {
-    const gamma = e.gamma || 0;                        // left-right tilt, 0 = level
-    const pct   = Math.max(10, Math.min(90, 50 + (gamma / 45) * 40));
-    const lv    = Math.abs(gamma) < 2;
-    const col   = lv ? '#ffdd00' : '#ffffff';   // iOS style: yellow=level, white=tilted
-    line.style.top        = pct + '%';
+    const gamma = e.gamma || 0;          // left-right tilt: negative=left, positive=right
+    const lv    = Math.abs(gamma) < 2;  // level threshold ±2°
+    const col   = lv ? '#ffdd00' : '#ffffff';  // iOS: yellow=level, white=tilted
+    // Line stays at center, rotates to show tilt (opposite direction to feel natural)
+    line.style.transform = `translateY(-50%) rotate(${-gamma}deg)`;
     line.style.background = col;
     line.style.boxShadow  = lv
-      ? `0 0 8px #ffdd0099,0 0 2px #ffdd00`
+      ? `0 0 10px #ffdd0099,0 0 3px #ffdd00`
       : `0 0 6px rgba(255,255,255,.5),0 0 2px #fff`;
     if (label) {
-      label.style.top   = pct + '%';
       label.style.color = col;
-      label.textContent = gamma.toFixed(1) + '°';
+      label.textContent = Math.abs(gamma).toFixed(1) + '°';
     }
   }
   levelHandler = onOrientation;
@@ -1331,7 +1330,7 @@ function setCamAlpha(val) {
 }
 
 // ── EVALUATION STATE ─────────────────────────────────────────
-const DEEPL_API_KEY = '2e3d4519-10dc-4fbc-be60-da1348d590a6'; // ← DeepL APIキーを入力 (free: ends :fx)
+const DEEPL_API_KEY = 'YOUR_DEEPL_API_KEY_HERE'; // ← DeepL APIキーを入力 (free: ends :fx)
 let evalState = {};   // { catId: {mark, comment_ko, comment_ja} }
 let drawState = {};   // { catId: transparentPNG_dataURL }
 let activeDrawCanvases = {}; // { catId: {canvas,ctx,drawing,lx,ly} }
@@ -1415,7 +1414,7 @@ function setMark(catId, mark) {
 
 async function translateComment(catId) {
   const key = DEEPL_API_KEY;
-  if (!key || key === '2e3d4519-10dc-4fbc-be60-da1348d590a6') { toast('DeepL APIキーを設定してください'); return; }
+  if (!key || key === 'YOUR_DEEPL_API_KEY_HERE') { toast('DeepL APIキーを設定してください'); return; }
   const txt = document.getElementById(`ec-${catId}`)?.value?.trim() || '';
   if (!txt) { toast('コメントを入力してください'); return; }
   const btn = document.getElementById(`et-btn-${catId}`);
