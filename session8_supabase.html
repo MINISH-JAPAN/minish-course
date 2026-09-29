@@ -294,7 +294,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
   </div>
   <div class="cam-guide">
     <div>グリッドに合わせて撮影 / 그리드에 맞춰 촬영</div>
-    <div style="font-size:10px;opacity:.7">노란선이 초록이 되면 수평 맞춤</div>
+    <div style="font-size:10px;opacity:.7">흰 선이 노란색이 되면 수평 맞춤</div>
   </div>
   <div class="cam-footer">
     <button class="cam-cancel" onclick="closeCameraOverlay()">✕ キャンセル</button>
@@ -1165,23 +1165,37 @@ let camStream = null;
 let camCatId  = null;
 
 // ─ Level indicator ─
+function getScreenTilt(e) {
+  // Returns the left-right tilt angle relative to current screen orientation
+  const gamma = e.gamma || 0;
+  const beta  = e.beta  || 0;
+  const angle = (() => {
+    if (screen.orientation && screen.orientation.angle != null) return screen.orientation.angle;
+    return (typeof window.orientation !== 'undefined' ? window.orientation : 0);
+  })();
+  const a = ((Math.round(angle) % 360) + 360) % 360;
+  if (a === 90)  return -beta;   // landscape right (rotated CW 90°)
+  if (a === 270) return  beta;   // landscape left  (rotated CCW 90°)
+  if (a === 180) return -gamma;  // portrait upside-down
+  return gamma;                  // portrait normal
+}
+
 function startLevelIndicator() {
   const line  = document.getElementById('cam-level-line');
   const label = document.getElementById('cam-level-label');
   if (!line) return;
   function onOrientation(e) {
-    const gamma = e.gamma || 0;          // left-right tilt: negative=left, positive=right
-    const lv    = Math.abs(gamma) < 2;  // level threshold ±2°
-    const col   = lv ? '#ffdd00' : '#ffffff';  // iOS: yellow=level, white=tilted
-    // Line stays at center, rotates to show tilt (opposite direction to feel natural)
-    line.style.transform = `translateY(-50%) rotate(${-gamma}deg)`;
+    const tilt = getScreenTilt(e);       // screen-relative tilt, 0 = level
+    const lv   = Math.abs(tilt) < 2;    // level threshold ±2°
+    const col  = lv ? '#ffdd00' : '#ffffff';  // iOS: yellow=level, white=tilted
+    line.style.transform = `translateY(-50%) rotate(${-tilt}deg)`;
     line.style.background = col;
     line.style.boxShadow  = lv
       ? `0 0 10px #ffdd0099,0 0 3px #ffdd00`
       : `0 0 6px rgba(255,255,255,.5),0 0 2px #fff`;
     if (label) {
       label.style.color = col;
-      label.textContent = Math.abs(gamma).toFixed(1) + '°';
+      label.textContent = Math.abs(tilt).toFixed(1) + '°';
     }
   }
   levelHandler = onOrientation;
@@ -1330,7 +1344,7 @@ function setCamAlpha(val) {
 }
 
 // ── EVALUATION STATE ─────────────────────────────────────────
-const DEEPL_API_KEY = 'YOUR_DEEPL_API_KEY_HERE'; // ← DeepL APIキーを入力 (free: ends :fx)
+const DEEPL_API_KEY = '2e3d4519-10dc-4fbc-be60-da1348d590a6';
 let evalState = {};   // { catId: {mark, comment_ko, comment_ja} }
 let drawState = {};   // { catId: transparentPNG_dataURL }
 let activeDrawCanvases = {}; // { catId: {canvas,ctx,drawing,lx,ly} }
