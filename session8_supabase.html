@@ -169,7 +169,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
 .cam-alpha::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:#fff;cursor:pointer}
 /* Level indicator — iOS style: fixed center, rotates to show tilt */
 .cam-level-line{position:absolute;left:33.333%;right:33.333%;height:2px;top:50%;transform:translateY(-50%) rotate(0deg);transform-origin:center center;z-index:4;pointer-events:none;transition:background .15s,box-shadow .15s,transform .06s linear;background:#fff;box-shadow:0 0 6px rgba(255,255,255,.6),0 0 2px #fff}
-.cam-level-label{position:absolute;left:50%;top:calc(50% - 14px);transform:translateX(-50%);z-index:4;background:rgba(0,0,0,.55);color:#fff;font-size:10px;padding:2px 7px;border-radius:4px;font-family:'Noto Sans JP',sans-serif;pointer-events:none;transition:color .15s}
+.cam-level-label{display:none}
 
 /* ── Second photo bar ──────────────────────────────────────── */
 .sp2-bar{padding:8px 10px 10px;border-top:1px dashed var(--border);background:#edf2f8}
@@ -203,6 +203,26 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
 .ss-photo-wrap{flex:1;position:relative;min-height:0;overflow:hidden}
 .ss-photo-wrap .ss-panel-img{position:absolute;inset:0;flex:none;width:100%;height:100%}
 .ss-draw-canvas-ov{position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor:crosshair;z-index:5;display:none}
+
+/* ── My Page ────────────────────────────────────────────────── */
+.mp-search{background:var(--card);border-radius:12px;border:1px solid var(--border);padding:16px;margin-bottom:14px}
+.mp-search-row{display:flex;gap:8px}
+.mp-name-input{flex:1;padding:10px 14px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-family:'Noto Sans JP',sans-serif;background:var(--bg)}
+.mp-name-input:focus{outline:none;border-color:var(--accent)}
+.mp-search-btn{padding:10px 18px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-size:13px;font-family:'Noto Sans JP',sans-serif;cursor:pointer;font-weight:500;white-space:nowrap}
+.mp-card{background:var(--card);border-radius:12px;border:1px solid var(--border);overflow:hidden;margin-bottom:12px}
+.mp-card-hdr{background:var(--primary);color:#fff;padding:8px 12px;display:flex;align-items:center;gap:8px}
+.mp-body{display:grid;grid-template-columns:1fr 1fr 1fr;gap:0}
+.mp-cell{padding:8px;display:flex;flex-direction:column;gap:5px}
+.mp-cell+.mp-cell{border-left:1px solid var(--border)}
+.mp-lbl{font-size:9px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;text-align:center}
+.mp-frame{width:100%;aspect-ratio:1/1;background:var(--bg);border-radius:6px;overflow:hidden;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--muted);position:relative}
+.mp-frame img{width:100%;height:100%;object-fit:cover}
+.mp-mark{text-align:center;font-size:22px;font-weight:700}
+.mp-comment{font-size:11px;color:var(--muted);line-height:1.5;text-align:center}
+.mp-shoot-btn{padding:6px 10px;background:var(--accent);color:#fff;border:none;border-radius:6px;font-size:11px;font-family:'Noto Sans JP',sans-serif;cursor:pointer;text-align:center}
+.mp-shoot-btn:hover{background:#1a6bbf}
+.mp-done-badge{font-size:10px;color:var(--success);text-align:center;font-weight:600}
 
 /* ── Evaluation UI ─────────────────────────────────────────── */
 .eval-section{padding:8px 10px 12px;border-top:1px dashed var(--border);background:#f5f8fc}
@@ -264,11 +284,13 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
   <div class="logo">MINISH<span class="hl">COURSE</span><span class="ses">Session 8 – 顔貌</span></div>
   <div class="nav-tabs">
     <button class="nav-tab active" id="tab-p" onclick="switchView('participant')">参加者</button>
+    <button class="nav-tab" id="tab-m" onclick="switchView('mypage')">マイページ</button>
     <button class="nav-tab" id="tab-a" onclick="switchView('admin')">管理者</button>
   </div>
 </div>
 
 <div id="participant-view" class="main"></div>
+<div id="mypage-view" class="main" style="display:none"></div>
 <div id="admin-view" class="main" style="display:none"></div>
 <div id="review-view" class="main" style="display:none"></div>
 
@@ -462,12 +484,15 @@ function switchView(view) {
   }
   currentView = view;
   document.getElementById('participant-view').style.display = view === 'participant' ? 'block' : 'none';
+  document.getElementById('mypage-view').style.display = view === 'mypage' ? 'block' : 'none';
   document.getElementById('admin-view').style.display = view === 'admin' ? 'block' : 'none';
   document.getElementById('review-view').style.display = view === 'review' ? 'block' : 'none';
   document.getElementById('tab-p').classList.toggle('active', view === 'participant');
+  document.getElementById('tab-m').classList.toggle('active', view === 'mypage');
   document.getElementById('tab-a').classList.toggle('active', view === 'admin');
   if (view === 'participant') renderParticipant();
   if (view === 'admin') renderAdmin();
+  if (view === 'mypage') renderMyPage();
 }
 
 function checkPw() {
@@ -1125,9 +1150,13 @@ async function ssTranslate() {
       : 'https://api.deepl.com/v2/translate';
     const r = await fetch(endpoint, {
       method:'POST',
-      headers:{'Content-Type':'application/x-www-form-urlencoded'},
-      body: new URLSearchParams({auth_key:key, text:txt, source_lang:'KO', target_lang:'JA'})
+      headers:{
+        'Authorization': `DeepL-Auth-Key ${key}`,
+        'Content-Type': 'application/x-www-form-urlencoded'
+      },
+      body: new URLSearchParams({text:txt, source_lang:'KO', target_lang:'JA'})
     });
+    if (!r.ok) { const t=await r.text(); console.error('DeepL error',r.status,t); toast(`翻訳エラー (${r.status})`); return; }
     const j = await r.json();
     const ja = j.translations?.[0]?.text || '';
     if (evalState[cat.id]) evalState[cat.id].comment_ja = ja;
@@ -1136,7 +1165,7 @@ async function ssTranslate() {
     // Sync to review
     const etx = document.getElementById(`etx-${cat.id}`);
     if (etx) { etx.textContent = ja; etx.className = 'eval-translated' + (ja ? ' show' : ''); }
-  } catch(e) { toast('翻訳エラーが発生しました'); }
+  } catch(e) { console.error('ssTranslate:', e); toast('翻訳エラーが発生しました'); }
   finally { if (btn) btn.textContent = 'DeepL翻訳'; }
 }
 
@@ -1323,7 +1352,9 @@ async function capturePhoto() {
   const cid = camCatId;
   const mode = camMode;
   closeCameraOverlay();
-  if (mode === 'second') {
+  if (mode === 'mypage') {
+    await mpSavePhoto2(cid, dataUrl);
+  } else if (mode === 'second') {
     secondPhotos[cid] = dataUrl;
     const frame = document.getElementById(`sp2-frame-${cid}`);
     if (frame) frame.innerHTML = `<img src="${dataUrl}">`;
@@ -1439,15 +1470,19 @@ async function translateComment(catId) {
       : 'https://api.deepl.com/v2/translate';
     const r = await fetch(endpoint, {
       method:'POST',
-      headers:{'Content-Type':'application/x-www-form-urlencoded'},
-      body: new URLSearchParams({auth_key:key, text:txt, source_lang:'KO', target_lang:'JA'})
+      headers:{
+        'Authorization': `DeepL-Auth-Key ${key}`,
+        'Content-Type': 'application/x-www-form-urlencoded'
+      },
+      body: new URLSearchParams({text:txt, source_lang:'KO', target_lang:'JA'})
     });
+    if (!r.ok) { const t=await r.text(); console.error('DeepL error',r.status,t); toast(`翻訳エラー (${r.status})`); return; }
     const j = await r.json();
     const ja = j.translations?.[0]?.text || '';
     if (evalState[catId]) evalState[catId].comment_ja = ja;
     const el = document.getElementById(`etx-${catId}`);
     if (el) { el.textContent = ja; el.className = 'eval-translated' + (ja?' show':''); }
-  } catch(e) { toast('翻訳エラーが発生しました'); }
+  } catch(e) { console.error('translateComment:', e); toast('翻訳エラーが発生しました'); }
   finally { if (btn) btn.textContent = 'DeepL翻訳'; }
 }
 
@@ -1671,6 +1706,150 @@ async function drawImgFit(ctx,url,x,y,mw,mh,ph){
     const dw=img.naturalWidth*r, dh=img.naturalHeight*r;
     ctx.drawImage(img,x+(mw-dw)/2,y+(mh-dh)/2,dw,dh);
   } catch(e){}
+}
+
+// ── MY PAGE ──────────────────────────────────────────────────
+let mpSubmissionId = '';
+let mpPhotos = {};
+let mpEvals = {};
+let mpCamCatId = null;
+
+function renderMyPage() {
+  const v = document.getElementById('mypage-view');
+  v.innerHTML = `
+    <div class="mp-search">
+      <div class="field-label" style="margin-bottom:10px">📋 マイページ <span style="font-size:11px;font-weight:400;color:var(--muted)">（내 제출 내역 / 2차 사진 촬영）</span></div>
+      <div class="mp-search-row">
+        <input type="text" id="mp-name" class="mp-name-input" placeholder="이름을 입력해 주세요 / お名前を入力"
+          onkeydown="if(event.key==='Enter')mpSearch()">
+        <button class="mp-search-btn" onclick="mpSearch()">🔍 検索</button>
+      </div>
+    </div>
+    <div id="mp-result"></div>`;
+}
+
+async function mpSearch() {
+  const name = document.getElementById('mp-name')?.value?.trim();
+  if (!name) { toast('이름을 입력해 주세요'); return; }
+  const res = document.getElementById('mp-result');
+  res.innerHTML = '<div class="loading">🔍 検索中...</div>';
+
+  // Find submission by name (case-insensitive)
+  const {data: subs, error: e1} = await supa.from('submissions')
+    .select('*')
+    .eq('session_id', SESSION_ID)
+    .ilike('participant_name', name)
+    .order('created_at', {ascending: false})
+    .limit(1);
+
+  if (e1 || !subs?.length) {
+    res.innerHTML = `<div class="section-box" style="text-align:center;color:var(--muted);padding:30px">
+      ❌ "${name}" の提出データが見つかりません<br><span style="font-size:11px">"${name}"으로 제출한 내역이 없습니다</span>
+    </div>`;
+    return;
+  }
+
+  const sub = subs[0];
+  mpSubmissionId = sub.id;
+
+  // Load photos
+  const {data: photos} = await supa.from('photos').select('*').eq('submission_id', sub.id);
+  mpPhotos = {};
+  if (photos) photos.forEach(p => { mpPhotos[p.cat_id] = p.data_url; });
+
+  // Load evaluations
+  const {data: evals} = await supa.from('evaluations').select('*').eq('submission_id', sub.id);
+  mpEvals = {};
+  if (evals) evals.forEach(ev => { mpEvals[ev.cat_id] = ev; });
+
+  // Render results
+  const submitted_at = new Date(sub.created_at).toLocaleString('ja-JP',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
+  let html = `<div class="section-box" style="padding:10px 14px;margin-bottom:12px;display:flex;align-items:center;gap:10px">
+    <div>👤 <strong>${sub.participant_name}</strong></div>
+    <div style="font-size:11px;color:var(--muted)">${submitted_at} 提出</div>
+  </div>`;
+
+  for (const cat of CATS) {
+    const photo = mpPhotos[cat.id];
+    const ev = mpEvals[cat.id];
+    const mark = ev?.mark || '';
+    const needsRetake = mark === '△' || mark === '×';
+    const hasPhoto2 = !!ev?.photo2_data_url;
+    const markColor = mark==='○'?'#18945e':mark==='△'?'#e67e22':mark==='×'?'#c0392b':'#bbb';
+
+    html += `
+    <div class="mp-card">
+      <div class="mp-card-hdr">
+        <div class="cat-num">${cat.n}</div>
+        <div class="cat-name">${cat.jp}</div>
+        <div class="cat-sub" style="margin-left:auto">${cat.kr}</div>
+      </div>
+      <div class="mp-body">
+        <div class="mp-cell">
+          <div class="mp-lbl">提出写真 / 제출사진</div>
+          <div class="mp-frame">
+            ${photo ? `<img src="${photo}">` : '<span>未提出</span>'}
+          </div>
+        </div>
+        <div class="mp-cell">
+          <div class="mp-lbl">評価 / 평가</div>
+          <div class="mp-frame" style="border:none;background:transparent">
+            <div style="text-align:center">
+              ${mark ? `<div class="mp-mark" style="color:${markColor}">${mark}</div>` : '<div style="font-size:12px;color:#bbb">未評価</div>'}
+              ${ev?.comment_ko ? `<div class="mp-comment" style="margin-top:4px">${ev.comment_ko}</div>` : ''}
+              ${ev?.comment_ja ? `<div class="mp-comment" style="font-style:italic">🇯🇵 ${ev.comment_ja}</div>` : ''}
+            </div>
+          </div>
+        </div>
+        <div class="mp-cell">
+          <div class="mp-lbl">2차 사진 / 2枚目</div>
+          <div class="mp-frame" id="mp-frame2-${cat.id}">
+            ${hasPhoto2 ? `<img src="${ev.photo2_data_url}">` : (needsRetake ? '<span style="font-size:10px;text-align:center">촬영 필요</span>' : '<span style="font-size:10px;text-align:center;color:#ccc">—</span>')}
+          </div>
+          ${needsRetake ? `
+            <button class="mp-shoot-btn" onclick="mpOpenCamera('${cat.id}')">📷 ${hasPhoto2 ? '다시 촬영' : '2차 촬영'}</button>
+            ${hasPhoto2 ? '<div class="mp-done-badge">✅ 제출됨</div>' : ''}
+          ` : (mark === '○' ? '<div style="font-size:10px;color:var(--success);text-align:center;margin-top:2px">✅ 합격</div>' : '')}
+        </div>
+      </div>
+    </div>`;
+  }
+
+  res.innerHTML = html;
+}
+
+async function mpOpenCamera(catId) {
+  mpCamCatId = catId;
+  // Reuse main camera overlay with a 'mypage' mode
+  await openCameraOverlay(catId, 'mypage');
+}
+
+async function mpSavePhoto2(catId, dataUrl) {
+  // Update mp-frame2 in UI
+  const frame = document.getElementById(`mp-frame2-${catId}`);
+  if (frame) frame.innerHTML = `<img src="${dataUrl}">`;
+  // Show spinner
+  toast('📤 アップロード中...');
+  // Upsert to evaluations
+  const evId = `${mpSubmissionId}_${catId}`;
+  const {error} = await supa.from('evaluations').upsert({
+    id: evId,
+    submission_id: mpSubmissionId,
+    session_id: SESSION_ID,
+    cat_id: catId,
+    mark: mpEvals[catId]?.mark || null,
+    comment_ko: mpEvals[catId]?.comment_ko || null,
+    comment_ja: mpEvals[catId]?.comment_ja || null,
+    photo2_data_url: dataUrl
+  });
+  if (error) { toast('保存エラー: ' + error.message); return; }
+  // Update local state
+  if (!mpEvals[catId]) mpEvals[catId] = {};
+  mpEvals[catId].photo2_data_url = dataUrl;
+  toast('✅ 2차 사진 저장 완료！');
+  // Refresh button area
+  const btn = document.querySelector(`button[onclick="mpOpenCamera('${catId}')"]`);
+  if (btn) btn.textContent = '📷 다시 촬영';
 }
 
 // ── INIT ─────────────────────────────────────────────────────
