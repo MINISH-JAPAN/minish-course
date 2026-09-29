@@ -148,6 +148,56 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
 .cam-alpha-lbl{color:rgba(255,255,255,.65);font-size:11px;white-space:nowrap;font-family:'Noto Sans JP',sans-serif}
 .cam-alpha{-webkit-appearance:none;width:84px;height:4px;background:rgba(255,255,255,.3);border-radius:2px;outline:none;cursor:pointer}
 .cam-alpha::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:#fff;cursor:pointer}
+
+/* ── Evaluation UI ─────────────────────────────────────────── */
+.eval-section{padding:8px 10px 12px;border-top:1px dashed var(--border);background:#f0f7f5}
+.eval-mark-row{display:flex;gap:8px;align-items:center;margin-bottom:8px}
+.eval-lbl{font-size:11px;color:var(--muted);font-weight:500;white-space:nowrap}
+.mark-btn{width:40px;height:40px;border-radius:8px;border:2px solid var(--border);background:#fff;font-size:19px;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center}
+.mark-btn:hover{border-color:var(--accent)}
+.mark-btn.sel-maru{border-color:#18945e!important;background:#e8f5ef;box-shadow:0 0 0 2px #18945e44}
+.mark-btn.sel-sank{border-color:#e67e22!important;background:#fef5e7;box-shadow:0 0 0 2px #e67e2244}
+.mark-btn.sel-batu{border-color:#c0392b!important;background:#fdeded;box-shadow:0 0 0 2px #c0392b44}
+.eval-comment{width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:12px;font-family:'Noto Sans JP',sans-serif;resize:none;height:56px;margin-bottom:6px;background:#fff}
+.eval-comment:focus{outline:none;border-color:var(--accent)}
+.eval-translate-row{display:flex;gap:6px;align-items:flex-start;margin-bottom:6px}
+.eval-translate-btn{flex-shrink:0;padding:6px 11px;background:var(--accent);color:#fff;border:none;border-radius:6px;font-size:11px;font-family:'Noto Sans JP',sans-serif;cursor:pointer;transition:background .2s}
+.eval-translate-btn:hover{background:#177a6b}
+.eval-translated{font-size:11px;color:var(--sub);background:#e6f4f1;padding:6px 9px;border-radius:5px;border:1px solid var(--border);line-height:1.5;display:none}
+.eval-translated.show{display:block}
+.photo-frame-wrap{position:relative;display:block}
+.draw-canvas-el{position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor:crosshair;border-radius:6px;z-index:5}
+.draw-clear-btn{position:absolute;top:4px;right:4px;z-index:10;padding:3px 7px;font-size:10px;background:rgba(0,0,0,.5);color:#fff;border:none;border-radius:4px;cursor:pointer;font-family:'Noto Sans JP',sans-serif}
+.draw-toolbar-global{display:flex;gap:6px;margin-bottom:8px;padding:7px 10px;background:#dceee9;border-radius:8px;align-items:center;flex-wrap:wrap;border:1px solid var(--border)}
+.draw-tool-btn{padding:5px 10px;border:1px solid var(--border);border-radius:5px;background:#fff;cursor:pointer;font-size:11px;font-family:'Noto Sans JP',sans-serif;transition:all .15s}
+.draw-tool-btn.active{background:var(--primary);color:#fff;border-color:var(--primary)}
+.draw-color-inp{width:28px;height:28px;border:2px solid var(--border);border-radius:4px;cursor:pointer;padding:1px}
+.draw-size-inp{width:70px}
+.eval-action-bar{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+.eval-save-btn{padding:9px 18px;background:var(--primary);color:#fff;border:none;border-radius:8px;font-size:13px;font-family:'Noto Sans JP',sans-serif;cursor:pointer;font-weight:500}
+.eval-save-btn:hover{background:var(--accent)}
+.show-participant-btn{padding:9px 18px;background:var(--success);color:#fff;border:none;border-radius:8px;font-size:13px;font-family:'Noto Sans JP',sans-serif;cursor:pointer;font-weight:500}
+.show-participant-btn:hover{background:#15804f}
+.eval-view-ov{position:fixed;inset:0;background:var(--bg);z-index:300;display:none;flex-direction:column}
+.eval-view-hdr{background:var(--frame);color:#fff;padding:10px 14px;display:flex;align-items:center;gap:10px;flex-shrink:0}
+.eval-view-hdr-title{flex:1;font-size:14px;font-weight:700}
+.eval-view-body{flex:1;overflow-y:auto;padding:12px}
+.eval-view-footer{background:rgba(0,0,0,.7);padding:10px 14px;display:flex;justify-content:center;gap:10px;flex-shrink:0}
+.eval-card{background:var(--card);border-radius:10px;border:1px solid var(--border);margin-bottom:12px;overflow:hidden}
+.eval-card-hdr{background:var(--primary);color:#fff;padding:8px 12px;display:flex;align-items:center;gap:8px}
+.eval-photo-row{display:grid;grid-template-columns:1fr 1fr}
+.eval-photo-cell{display:flex;flex-direction:column;padding:6px}
+.eval-photo-cell+.eval-photo-cell{border-left:1px solid var(--border)}
+.eval-photo-frame{width:100%;aspect-ratio:4/3;background:var(--bg);border-radius:6px;overflow:hidden;display:flex;align-items:center;justify-content:center;border:1px solid var(--border);position:relative}
+.eval-photo-frame img{width:100%;height:100%;object-fit:cover}
+.eval-result-inner{padding:8px;display:flex;flex-direction:column;gap:6px}
+.eval-mark-badge{width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:700;border:2px solid;flex-shrink:0}
+.eval-mark-badge.maru{background:#e8f5ef;border-color:#18945e;color:#18945e}
+.eval-mark-badge.sank{background:#fef5e7;border-color:#e67e22;color:#e67e22}
+.eval-mark-badge.batu{background:#fdeded;border-color:#c0392b;color:#c0392b}
+.eval-mark-badge.none{background:#f0f0f0;border-color:#bbb;color:#999;font-size:16px}
+.eval-comment-ko{font-size:12px;color:var(--text);line-height:1.5}
+.eval-comment-ja{font-size:11px;color:var(--muted);line-height:1.5;font-style:italic}
 </style>
 </head>
 <body>
@@ -222,6 +272,19 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
     <button class="ss-nav-btn" id="ss-prev" onclick="prevSlide()">‹</button>
     <div class="ss-dots" id="ss-dots"></div>
     <button class="ss-nav-btn" id="ss-next" onclick="nextSlide()">›</button>
+  </div>
+</div>
+
+<!-- Participant Eval View Overlay -->
+<div id="eval-view-ov" class="eval-view-ov">
+  <div class="eval-view-hdr">
+    <div class="eval-view-hdr-title">📋 評価結果 / 평가 결과</div>
+    <div id="eval-view-name" style="font-size:12px;opacity:.8"></div>
+  </div>
+  <div class="eval-view-body" id="eval-view-body"></div>
+  <div class="eval-view-footer">
+    <button id="eval-pdf-btn" class="action-btn pdf-btn" onclick="downloadEvalPDF()">📄 PDF保存</button>
+    <button class="action-btn ss-btn" onclick="closeParticipantEvalView()">✕ 閉じる</button>
   </div>
 </div>
 
@@ -549,17 +612,18 @@ async function openReview(submissionId, name) {
   const rv = document.getElementById('review-view');
   rv.style.display = 'block';
   currentView = 'review';
+  currentSubmissionId = submissionId;
   rv.innerHTML = '<div class="loading">ロード中...</div>';
 
   await loadSamples();
   const {data: photos} = await supa.from('photos').select('cat_id,data_url').eq('submission_id', submissionId);
   const pm = {};
   if (photos) photos.forEach(p => { pm[p.cat_id] = p.data_url; });
-
-  // Store globally for slideshow / PDF
   currentReviewName    = name;
   currentReviewSamples = {...samples};
   currentReviewPhotos  = pm;
+  initEvalState();
+  await loadEvaluations(submissionId);
 
   let html = `
     <div class="review-hdr">
@@ -570,14 +634,27 @@ async function openReview(submissionId, name) {
       </div>
       <div class="review-actions">
         <button class="action-btn ss-btn" onclick="openSlideshow()">⛶ 全画面</button>
-        <button class="action-btn pdf-btn" id="pdf-btn" onclick="downloadPDF()">📄 PDF</button>
       </div>
     </div>
-    <div class="guide-bar">⬅ サンプル　|　提出写真 ➡</div>`;
+    <div class="eval-action-bar">
+      <button class="eval-save-btn" onclick="saveAllEvaluations().then(ok=>ok&&toast('✅ 評価保存完了'))">💾 評価保存</button>
+      <button class="show-participant-btn" onclick="openParticipantEvalView()">👁 参加者に見せる</button>
+    </div>
+    <div class="draw-toolbar-global">
+      <span style="font-size:11px;color:var(--muted);font-weight:500">✏️ ドロー:</span>
+      <button class="draw-tool-btn active" data-tool="pen" onclick="setDrawTool('pen')">ペン</button>
+      <button class="draw-tool-btn" data-tool="eraser" onclick="setDrawTool('eraser')">消しゴム</button>
+      <input type="color" class="draw-color-inp" value="#ff0000" oninput="setDrawColor(this.value)" title="色">
+      <input type="range" class="draw-size-inp" min="1" max="20" value="3" oninput="setDrawWidth(this.value)" title="太さ">
+      <span style="font-size:10px;color:var(--muted)">太さ</span>
+    </div>
+    <div class="guide-bar">⬅ サンプル　|　提出写真（✏️タッチで描画） ➡</div>`;
 
   for (const cat of CATS) {
     const s = samples[cat.id] || '';
     const p = pm[cat.id] || '';
+    const ev = evalState[cat.id] || {};
+    const sym = ev.mark || '';
     html += `
     <div class="photo-card">
       <div class="photo-card-header">
@@ -594,15 +671,36 @@ async function openReview(submissionId, name) {
         </div>
         <div class="photo-slot">
           <div class="slot-label">提出写真 / 제출 사진</div>
-          <div class="photo-frame">
-            ${p ? `<img src="${p}">` : `<div class="frame-ph"><span class="icon">—</span><span>未提出</span></div>`}
+          <div class="photo-frame-wrap">
+            <div class="photo-frame">
+              ${p ? `<img src="${p}">` : `<div class="frame-ph"><span class="icon">—</span><span>未提出</span></div>`}
+            </div>
+            ${p ? `<canvas class="draw-canvas-el" id="dc-${cat.id}"></canvas>` : ''}
+            ${p ? `<button class="draw-clear-btn" onclick="clearDrawing('${cat.id}')">✕消す</button>` : ''}
           </div>
+        </div>
+      </div>
+      <div class="eval-section">
+        <div class="eval-mark-row">
+          <span class="eval-lbl">評価:</span>
+          <button class="mark-btn${sym==='○'?' sel-maru':''}" data-cat="${cat.id}" data-mark="○" onclick="setMark('${cat.id}','○')">○</button>
+          <button class="mark-btn${sym==='△'?' sel-sank':''}" data-cat="${cat.id}" data-mark="△" onclick="setMark('${cat.id}','△')">△</button>
+          <button class="mark-btn${sym==='×'?' sel-batu':''}" data-cat="${cat.id}" data-mark="×" onclick="setMark('${cat.id}','×')">×</button>
+        </div>
+        <textarea class="eval-comment" id="ec-${cat.id}" placeholder="コメント（韓国語） / 코멘트 (한국어)" oninput="if(evalState['${cat.id}'])evalState['${cat.id}'].comment_ko=this.value">${ev.comment_ko||''}</textarea>
+        <div class="eval-translate-row">
+          <button class="eval-translate-btn" id="et-btn-${cat.id}" onclick="translateComment('${cat.id}')">DeepL翻訳</button>
+          <div class="eval-translated${ev.comment_ja?' show':''}" id="etx-${cat.id}">${ev.comment_ja||''}</div>
         </div>
       </div>
     </div>`;
   }
 
   rv.innerHTML = html;
+  // Init drawing canvases after layout
+  setTimeout(() => {
+    for (const cat of CATS) { if (pm[cat.id]) initDrawCanvas(cat.id); }
+  }, 80);
 }
 
 // ── PDF EXPORT ───────────────────────────────────────────────
@@ -883,19 +981,336 @@ function setCamAlpha(val) {
   if (img) img.style.opacity = val / 100;
 }
 
+// ── EVALUATION STATE & DEEPL ─────────────────────────────────
+const DEEPL_API_KEY = 'YOUR_DEEPL_API_KEY_HERE'; // ← DeepL有料APIキーを入力
+let evalState = {};   // { catId: {mark, comment_ko, comment_ja} }
+let drawState = {};   // { catId: transparentPNG_dataURL }
+let activeDrawCanvases = {}; // { catId: {canvas,ctx,drawing,lx,ly} }
+let currentSubmissionId = '';
+let drawTool = 'pen';
+let drawColor = '#ff0000';
+let drawLineWidth = 3;
+
+function initEvalState() {
+  evalState = {}; drawState = {}; activeDrawCanvases = {};
+  for (const cat of CATS) evalState[cat.id] = {mark:'', comment_ko:'', comment_ja:''};
+}
+
+async function loadEvaluations(submissionId) {
+  try {
+    const {data} = await supa.from('evaluations').select('*').eq('submission_id', submissionId);
+    if (data) data.forEach(ev => {
+      if (!evalState[ev.cat_id]) return;
+      evalState[ev.cat_id].mark = ev.mark || '';
+      evalState[ev.cat_id].comment_ko = ev.comment_ko || '';
+      evalState[ev.cat_id].comment_ja = ev.comment_ja || '';
+      if (ev.drawing_data_url) drawState[ev.cat_id] = ev.drawing_data_url;
+    });
+  } catch(e) { console.warn('eval load:', e); }
+}
+
+async function saveAllEvaluations() {
+  for (const cat of CATS) {
+    const dc = activeDrawCanvases[cat.id];
+    if (dc) drawState[cat.id] = dc.canvas.toDataURL('image/png');
+  }
+  const rows = CATS.map(cat => ({
+    id: `${currentSubmissionId}_${cat.id}`,
+    submission_id: currentSubmissionId,
+    session_id: SESSION_ID,
+    cat_id: cat.id,
+    mark: evalState[cat.id]?.mark || null,
+    comment_ko: evalState[cat.id]?.comment_ko || null,
+    comment_ja: evalState[cat.id]?.comment_ja || null,
+    drawing_data_url: drawState[cat.id] || null
+  }));
+  const {error} = await supa.from('evaluations').upsert(rows);
+  if (error) {
+    if (error.code === '42P01') toast('⚠️ evaluationsテーブルが必要です（Supabaseで作成）');
+    else toast('保存エラー: ' + error.message);
+    return false;
+  }
+  return true;
+}
+
+function setMark(catId, mark) {
+  if (!evalState[catId]) return;
+  evalState[catId].mark = evalState[catId].mark === mark ? '' : mark;
+  const cur = evalState[catId].mark;
+  document.querySelectorAll(`.mark-btn[data-cat="${catId}"]`).forEach(btn => {
+    btn.classList.remove('sel-maru','sel-sank','sel-batu');
+    if (cur && btn.dataset.mark === cur) {
+      btn.classList.add(cur==='○'?'sel-maru':cur==='△'?'sel-sank':'sel-batu');
+    }
+  });
+}
+
+async function translateComment(catId) {
+  const key = DEEPL_API_KEY;
+  if (!key || key === 'YOUR_DEEPL_API_KEY_HERE') { toast('DeepL APIキーを設定してください'); return; }
+  const txt = document.getElementById(`ec-${catId}`)?.value?.trim() || '';
+  if (!txt) { toast('コメントを入力してください'); return; }
+  const btn = document.getElementById(`et-btn-${catId}`);
+  if (btn) btn.textContent = '翻訳中...';
+  try {
+    const r = await fetch('https://api.deepl.com/v2/translate', {
+      method:'POST',
+      headers:{'Content-Type':'application/x-www-form-urlencoded'},
+      body: new URLSearchParams({auth_key:key, text:txt, source_lang:'KO', target_lang:'JA'})
+    });
+    const j = await r.json();
+    const ja = j.translations?.[0]?.text || '';
+    if (evalState[catId]) evalState[catId].comment_ja = ja;
+    const el = document.getElementById(`etx-${catId}`);
+    if (el) { el.textContent = ja; el.className = 'eval-translated' + (ja?' show':''); }
+  } catch(e) { toast('翻訳エラーが発生しました'); }
+  finally { if (btn) btn.textContent = 'DeepL翻訳'; }
+}
+
+// ── DRAWING ──────────────────────────────────────────────────
+function setDrawTool(tool) {
+  drawTool = tool;
+  document.querySelectorAll('.draw-tool-btn').forEach(b => b.classList.toggle('active', b.dataset.tool===tool));
+}
+function setDrawColor(v) { drawColor = v; }
+function setDrawWidth(v) { drawLineWidth = parseInt(v); }
+
+function initDrawCanvas(catId) {
+  const canvas = document.getElementById(`dc-${catId}`);
+  if (!canvas) return;
+  const rect = canvas.getBoundingClientRect();
+  canvas.width  = Math.round(rect.width  * (window.devicePixelRatio||1));
+  canvas.height = Math.round(rect.height * (window.devicePixelRatio||1));
+  const ctx = canvas.getContext('2d');
+  ctx.scale(window.devicePixelRatio||1, window.devicePixelRatio||1);
+  ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  const cssW = rect.width, cssH = rect.height;
+  if (drawState[catId]) {
+    const img = new Image();
+    img.onload = () => ctx.drawImage(img, 0, 0, cssW, cssH);
+    img.src = drawState[catId];
+  }
+  const dc = {canvas, ctx, drawing:false, lx:0, ly:0};
+  activeDrawCanvases[catId] = dc;
+  function getPos(e) {
+    const r2 = canvas.getBoundingClientRect();
+    const src = e.touches ? e.touches[0] : e;
+    return {x: src.clientX - r2.left, y: src.clientY - r2.top};
+  }
+  function onStart(e) {
+    e.preventDefault();
+    const p = getPos(e); dc.drawing=true; dc.lx=p.x; dc.ly=p.y;
+  }
+  function onMove(e) {
+    e.preventDefault();
+    if (!dc.drawing) return;
+    const p = getPos(e);
+    ctx.globalCompositeOperation = drawTool==='eraser' ? 'destination-out':'source-over';
+    ctx.strokeStyle = drawColor;
+    ctx.lineWidth = drawTool==='eraser' ? drawLineWidth*4 : drawLineWidth;
+    ctx.beginPath(); ctx.moveTo(dc.lx,dc.ly); ctx.lineTo(p.x,p.y); ctx.stroke();
+    dc.lx=p.x; dc.ly=p.y;
+  }
+  function onEnd(e) {
+    e.preventDefault(); dc.drawing=false;
+    drawState[catId] = canvas.toDataURL('image/png');
+  }
+  canvas.addEventListener('pointerdown',onStart);
+  canvas.addEventListener('pointermove',onMove);
+  canvas.addEventListener('pointerup',onEnd);
+  canvas.addEventListener('pointerleave',onEnd);
+  canvas.addEventListener('touchstart',onStart,{passive:false});
+  canvas.addEventListener('touchmove',onMove,{passive:false});
+  canvas.addEventListener('touchend',onEnd,{passive:false});
+}
+
+function clearDrawing(catId) {
+  const dc = activeDrawCanvases[catId];
+  if (!dc) return;
+  const r = dc.canvas.getBoundingClientRect();
+  dc.ctx.clearRect(0, 0, r.width, r.height);
+  drawState[catId] = null;
+}
+
+// ── PARTICIPANT EVAL VIEW ─────────────────────────────────────
+function openParticipantEvalView() {
+  for (const cat of CATS) {
+    const dc = activeDrawCanvases[cat.id];
+    if (dc) drawState[cat.id] = dc.canvas.toDataURL('image/png');
+  }
+  const nameEl = document.getElementById('eval-view-name');
+  if (nameEl) nameEl.textContent = currentReviewName;
+  let html = '';
+  for (const cat of CATS) {
+    const p = currentReviewPhotos[cat.id] || '';
+    const ev = evalState[cat.id] || {};
+    const drawing = drawState[cat.id] || '';
+    const sym = ev.mark || '';
+    const markCls = sym==='○'?'maru':sym==='△'?'sank':sym==='×'?'batu':'none';
+    html += `
+    <div class="eval-card">
+      <div class="eval-card-hdr">
+        <div class="cat-num">${cat.n}</div>
+        <div class="cat-name">${cat.jp}</div>
+        <div class="cat-sub" style="margin-left:auto;font-size:10px;opacity:.7">${cat.kr}</div>
+      </div>
+      <div class="eval-photo-row">
+        <div class="eval-photo-cell">
+          <div class="slot-label">提出写真</div>
+          <div class="eval-photo-frame">
+            ${p ? `<img src="${p}">` : '<div class="frame-ph" style="font-size:11px">未提出</div>'}
+            ${drawing&&p ? `<img src="${drawing}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;pointer-events:none">` : ''}
+          </div>
+        </div>
+        <div class="eval-photo-cell">
+          <div class="slot-label">評価 / 평가</div>
+          <div class="eval-result-inner">
+            <div class="eval-mark-badge ${markCls}">${sym||'—'}</div>
+            ${ev.comment_ko ? `<div class="eval-comment-ko">${ev.comment_ko}</div>` : ''}
+            ${ev.comment_ja ? `<div class="eval-comment-ja">🇯🇵 ${ev.comment_ja}</div>` : ''}
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }
+  document.getElementById('eval-view-body').innerHTML = html;
+  document.getElementById('eval-view-ov').style.display = 'flex';
+}
+
+function closeParticipantEvalView() {
+  document.getElementById('eval-view-ov').style.display = 'none';
+}
+
+// ── EVAL PDF ─────────────────────────────────────────────────
+async function downloadEvalPDF() {
+  const btn = document.getElementById('eval-pdf-btn');
+  if (btn) { btn.disabled=true; btn.textContent='⏳ 生成中...'; }
+  toast('PDFを生成中...');
+  try {
+    const {jsPDF} = window.jspdf;
+    const PW=1200, PH=675;
+    const doc = new jsPDF({orientation:'landscape',unit:'pt',format:[PH,PW]});
+    for (let i=0; i<CATS.length; i++) {
+      if (i>0) doc.addPage([PH,PW],'landscape');
+      const cat = CATS[i];
+      const canvas = await renderEvalPageCanvas(
+        cat,
+        currentReviewSamples[cat.id]||null,
+        currentReviewPhotos[cat.id]||null,
+        drawState[cat.id]||null,
+        evalState[cat.id]||{},
+        currentReviewName
+      );
+      doc.addImage(canvas.toDataURL('image/jpeg',.92),'JPEG',0,0,PW,PH,undefined,'FAST');
+    }
+    doc.save(`${currentReviewName.replace(/\s+/g,'_')}_S9_口腔内.pdf`);
+    toast('✅ PDF保存完了');
+  } catch(e) { console.error(e); toast('PDF生成に失敗しました'); }
+  finally { if (btn) { btn.disabled=false; btn.textContent='📄 PDF保存'; } }
+}
+
+async function renderEvalPageCanvas(cat, sUrl, pUrl, drawUrl, ev, name) {
+  const W=1600, H=900;
+  const cv = document.createElement('canvas'); cv.width=W; cv.height=H;
+  const c = cv.getContext('2d');
+  c.fillStyle='#0a1a18'; c.fillRect(0,0,W,H);
+  // Header
+  const HDR=68;
+  c.fillStyle=PRIMARY_HEX; c.fillRect(0,0,W,HDR);
+  c.fillStyle=ACCENT_HEX;  c.fillRect(0,HDR,W,3);
+  c.textBaseline='middle'; c.fillStyle='#fff';
+  c.font='bold 22px sans-serif'; c.textAlign='left';   c.fillText(name,20,HDR/2);
+  c.font='19px sans-serif';       c.textAlign='center'; c.fillText(`${cat.n}. ${cat.jp} / ${cat.kr}`,W/2,HDR/2);
+  c.font='14px sans-serif';       c.fillStyle='rgba(255,255,255,.5)'; c.textAlign='right'; c.fillText(SESSION_LABEL,W-20,HDR/2);
+  // 3-column layout: sample | photo+drawing | eval
+  const BY=HDR+3, BH=H-BY-12;
+  const CW=Math.floor((W-8)/3), G=4;
+  // labels
+  c.font='13px sans-serif'; c.fillStyle='rgba(255,255,255,.4)'; c.textBaseline='top';
+  c.textAlign='center';
+  c.fillText('サンプル', CW/2, BY+6);
+  c.fillText('提出写真', CW+G+CW/2, BY+6);
+  c.fillText('評価', CW*2+G*2+CW/2, BY+6);
+  const IT=BY+26, IH=BH-26;
+  c.fillStyle='rgba(255,255,255,.07)'; c.fillRect(CW,BY,G,BH); c.fillRect(CW*2+G,BY,G,BH);
+  // Draw sample
+  await drawImgFit(c, sUrl, 0, IT, CW, IH, '未登録');
+  // Draw photo + drawing composite
+  if (pUrl) {
+    const tmp = document.createElement('canvas'); tmp.width=CW; tmp.height=IH;
+    const tc = tmp.getContext('2d');
+    await drawImgFit(tc, pUrl, 0, 0, CW, IH, '');
+    if (drawUrl) {
+      const di=new Image(); di.src=drawUrl;
+      await new Promise(r=>{di.onload=r;di.onerror=r;});
+      tc.drawImage(di,0,0,CW,IH);
+    }
+    c.drawImage(tmp, CW+G, IT);
+  } else { await drawImgFit(c, null, CW+G, IT, CW, IH, '未提出'); }
+  // Eval panel
+  const EX=CW*2+G*2, EC=EX+CW/2;
+  const sym = ev.mark||'';
+  if (sym) {
+    c.font='bold 90px sans-serif'; c.textAlign='center'; c.textBaseline='middle';
+    c.fillStyle = sym==='○'?'#18945e':sym==='△'?'#e67e22':'#c0392b';
+    c.fillText(sym, EC, IT+90);
+  }
+  let ty = IT + (sym ? 200 : 40);
+  if (ev.comment_ko) { c.fillStyle='#fff'; c.font='15px sans-serif'; c.textAlign='left'; c.textBaseline='top'; ty=wrapTxt(c,ev.comment_ko,EX+14,ty,CW-28,20)+8; }
+  if (ev.comment_ja) { c.fillStyle='rgba(255,255,255,.55)'; c.font='13px sans-serif'; wrapTxt(c,'🇯🇵 '+ev.comment_ja,EX+14,ty,CW-28,18); }
+  return cv;
+}
+
+function wrapTxt(c,text,x,y,maxW,lh) {
+  if(!text)return y;
+  let line='', ty=y;
+  for(const ch of text){
+    const t=line+ch;
+    if(c.measureText(t).width>maxW&&line){c.fillText(line,x,ty);line=ch;ty+=lh;}
+    else line=t;
+  }
+  if(line)c.fillText(line,x,ty);
+  return ty+lh;
+}
+
+async function drawImgFit(ctx,url,x,y,mw,mh,ph){
+  if(!url){
+    ctx.strokeStyle='rgba(255,255,255,.12)'; ctx.lineWidth=2;
+    ctx.setLineDash([8,6]); ctx.strokeRect(x+8,y+8,mw-16,mh-16); ctx.setLineDash([]);
+    ctx.fillStyle='rgba(255,255,255,.2)'; ctx.font='16px sans-serif';
+    ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(ph,x+mw/2,y+mh/2);
+    return;
+  }
+  try {
+    const img=await loadImage(url);
+    const r=Math.min((mw-16)/img.naturalWidth,(mh-16)/img.naturalHeight);
+    const dw=img.naturalWidth*r, dh=img.naturalHeight*r;
+    ctx.drawImage(img,x+(mw-dw)/2,y+(mh-dh)/2,dw,dh);
+  } catch(e){}
+}
+
+// ── INIT ─────────────────────────────────────────────────────
 renderParticipant();
 </script>
 <script>
-// Remove Netlify badge
+// Remove Netlify badge (iframe + any element)
 (function() {
   function removeNetlifyBadge() {
-    document.querySelectorAll('a, div, span, p').forEach(function(el) {
-      if (el.href && el.href.includes('netlify.com')) { el.remove(); return; }
-      if (el.innerHTML && el.innerHTML.includes('Powered by Netlify')) { el.remove(); }
+    document.querySelectorAll('iframe, a, div, span').forEach(function(el) {
+      try {
+        var src = el.src || el.href || el.getAttribute('src') || '';
+        var text = el.textContent || '';
+        var id = el.id || '';
+        if (src.includes('netlify') || text.includes('Powered by Netlify') || id.includes('netlify')) {
+          el.style.display = 'none';
+          el.remove();
+        }
+      } catch(e) {}
     });
   }
   removeNetlifyBadge();
-  new MutationObserver(removeNetlifyBadge).observe(document.body, { childList: true, subtree: true });
+  setInterval(removeNetlifyBadge, 500);
+  new MutationObserver(removeNetlifyBadge).observe(document.documentElement, { childList: true, subtree: true });
 })();
 </script>
 </body>
