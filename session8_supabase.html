@@ -1113,7 +1113,7 @@ async function ssTranslate() {
   const cat = CATS[slideIdx];
   if (!cat) return;
   const key = DEEPL_API_KEY;
-  if (!key || key === 'YOUR_DEEPL_API_KEY_HERE') { toast('DeepL APIキーを設定してください'); return; }
+  if (!key || key === '2e3d4519-10dc-4fbc-be60-da1348d590a6') { toast('DeepL APIキーを設定してください'); return; }
   const txt = document.getElementById('ss-eval-comment')?.value?.trim() || '';
   if (!txt) { toast('コメントを入力してください'); return; }
   const btn = document.getElementById('ss-trans-btn');
