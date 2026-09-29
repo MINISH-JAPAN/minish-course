@@ -210,19 +210,31 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
 .mp-name-input{flex:1;padding:10px 14px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-family:'Noto Sans JP',sans-serif;background:var(--bg)}
 .mp-name-input:focus{outline:none;border-color:var(--accent)}
 .mp-search-btn{padding:10px 18px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-size:13px;font-family:'Noto Sans JP',sans-serif;cursor:pointer;font-weight:500;white-space:nowrap}
+/* card */
 .mp-card{background:var(--card);border-radius:12px;border:1px solid var(--border);overflow:hidden;margin-bottom:12px}
 .mp-card-hdr{background:var(--primary);color:#fff;padding:8px 12px;display:flex;align-items:center;gap:8px}
-.mp-body{display:grid;grid-template-columns:1fr 1fr 1fr;gap:0}
-.mp-cell{padding:8px;display:flex;flex-direction:column;gap:5px}
-.mp-cell+.mp-cell{border-left:1px solid var(--border)}
-.mp-lbl{font-size:9px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;text-align:center}
-.mp-frame{width:100%;aspect-ratio:1/1;background:var(--bg);border-radius:6px;overflow:hidden;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--muted);position:relative}
-.mp-frame img{width:100%;height:100%;object-fit:cover}
-.mp-mark{text-align:center;font-size:22px;font-weight:700}
-.mp-comment{font-size:11px;color:var(--muted);line-height:1.5;text-align:center}
-.mp-shoot-btn{padding:6px 10px;background:var(--accent);color:#fff;border:none;border-radius:6px;font-size:11px;font-family:'Noto Sans JP',sans-serif;cursor:pointer;text-align:center}
+/* photo row — 2 or 3 cols */
+.mp-photos{display:grid;gap:0;border-bottom:1px solid var(--border)}
+.mp-photos.cols2{grid-template-columns:1fr 1fr}
+.mp-photos.cols3{grid-template-columns:1fr 1fr 1fr}
+.mp-pcell{padding:6px;display:flex;flex-direction:column;gap:4px}
+.mp-pcell+.mp-pcell{border-left:1px solid var(--border)}
+.mp-plbl{font-size:9px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;text-align:center}
+.mp-frame{width:100%;aspect-ratio:1/1;background:var(--bg);border-radius:6px;overflow:hidden;border:1px dashed var(--border);display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--muted);position:relative}
+.mp-frame img{width:100%;height:100%;object-fit:cover;border-radius:5px}
+.mp-shoot-btn{width:100%;padding:5px 8px;background:var(--accent);color:#fff;border:none;border-radius:5px;font-size:10px;font-family:'Noto Sans JP',sans-serif;cursor:pointer;margin-top:2px}
 .mp-shoot-btn:hover{background:#1a6bbf}
-.mp-done-badge{font-size:10px;color:var(--success);text-align:center;font-weight:600}
+/* eval row */
+.mp-eval{padding:8px 10px 10px;display:flex;gap:10px;align-items:flex-start}
+.mp-mark-badge{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;border:2px solid;flex-shrink:0}
+.mp-mark-badge.maru{background:#e8f5ef;border-color:#18945e;color:#18945e}
+.mp-mark-badge.sank{background:#fef5e7;border-color:#e67e22;color:#e67e22}
+.mp-mark-badge.batu{background:#fdeded;border-color:#c0392b;color:#c0392b}
+.mp-mark-badge.none{background:#f0f0f0;border-color:#ccc;color:#aaa;font-size:13px}
+.mp-comments{flex:1;display:flex;flex-direction:column;gap:4px}
+.mp-cmt-ko{font-size:12px;color:var(--text);line-height:1.6}
+.mp-cmt-ja{font-size:11px;color:var(--muted);line-height:1.5;font-style:italic}
+.mp-translating{font-size:10px;color:var(--accent);font-style:italic}
 
 /* ── Evaluation UI ─────────────────────────────────────────── */
 .eval-section{padding:8px 10px 12px;border-top:1px dashed var(--border);background:#f5f8fc}
@@ -360,10 +372,8 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
       <div class="ss-eval-lbl">コメント (한국어)</div>
       <textarea class="ss-eval-comment" id="ss-eval-comment" placeholder="코멘트를 입력해주세요" oninput="ssSyncComment()"></textarea>
       <div style="display:flex;gap:6px">
-        <button class="ss-trans-btn" style="flex:1" id="ss-trans-btn" onclick="ssTranslate()">DeepL翻訳</button>
-        <button class="ss-trans-btn" style="background:rgba(255,255,255,.2);color:#fff" onclick="ssClearDraw()">✕消す</button>
+        <button class="ss-trans-btn" style="background:rgba(255,255,255,.2);color:#fff;flex:1" onclick="ssClearDraw()">✕消す</button>
       </div>
-      <div class="ss-trans-result" id="ss-trans-result"></div>
       <button class="ss-save-btn-inner" onclick="ssSaveEval().then(ok=>ok&&toast('✅ 評価保存完了'))">💾 保存</button>
     </div>
   </div>
@@ -805,10 +815,6 @@ async function openReview(submissionId, name) {
           <button class="mark-btn${sym==='×'?' sel-batu':''}" data-cat="${cat.id}" data-mark="×" onclick="setMark('${cat.id}','×')">×</button>
         </div>
         <textarea class="eval-comment" id="ec-${cat.id}" placeholder="コメント（韓国語） / 코멘트 (한국어)" oninput="if(evalState['${cat.id}'])evalState['${cat.id}'].comment_ko=this.value">${ev.comment_ko||''}</textarea>
-        <div class="eval-translate-row">
-          <button class="eval-translate-btn" id="et-btn-${cat.id}" onclick="translateComment('${cat.id}')">DeepL翻訳</button>
-          <div class="eval-translated${ev.comment_ja?' show':''}" id="etx-${cat.id}">${ev.comment_ja||''}</div>
-        </div>
       </div>
       <div class="sp2-bar" id="sp2-bar-${cat.id}" style="display:${(sym==='△'||sym==='×')?'block':'none'}">
         <div class="sp2-grid">
@@ -1712,13 +1718,13 @@ async function drawImgFit(ctx,url,x,y,mw,mh,ph){
 let mpSubmissionId = '';
 let mpPhotos = {};
 let mpEvals = {};
-let mpCamCatId = null;
+let mpSamples = {};
 
 function renderMyPage() {
   const v = document.getElementById('mypage-view');
   v.innerHTML = `
     <div class="mp-search">
-      <div class="field-label" style="margin-bottom:10px">📋 マイページ <span style="font-size:11px;font-weight:400;color:var(--muted)">（내 제출 내역 / 2차 사진 촬영）</span></div>
+      <div class="field-label" style="margin-bottom:10px">📋 マイページ <span style="font-size:11px;font-weight:400;color:var(--muted)">（내 제출 내역 · 2차 사진 촬영）</span></div>
       <div class="mp-search-row">
         <input type="text" id="mp-name" class="mp-name-input" placeholder="이름을 입력해 주세요 / お名前を入力"
           onkeydown="if(event.key==='Enter')mpSearch()">
@@ -1728,23 +1734,41 @@ function renderMyPage() {
     <div id="mp-result"></div>`;
 }
 
+async function mpDeepL(text) {
+  if (!text) return '';
+  const key = DEEPL_API_KEY;
+  const endpoint = key.endsWith(':fx')
+    ? 'https://api-free.deepl.com/v2/translate'
+    : 'https://api.deepl.com/v2/translate';
+  try {
+    const r = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Authorization': `DeepL-Auth-Key ${key}`,
+        'Content-Type': 'application/x-www-form-urlencoded'
+      },
+      body: new URLSearchParams({text, source_lang:'KO', target_lang:'JA'})
+    });
+    if (!r.ok) return '';
+    const j = await r.json();
+    return j.translations?.[0]?.text || '';
+  } catch(e) { return ''; }
+}
+
 async function mpSearch() {
   const name = document.getElementById('mp-name')?.value?.trim();
   if (!name) { toast('이름을 입력해 주세요'); return; }
   const res = document.getElementById('mp-result');
   res.innerHTML = '<div class="loading">🔍 検索中...</div>';
 
-  // Find submission by name (case-insensitive)
   const {data: subs, error: e1} = await supa.from('submissions')
-    .select('*')
-    .eq('session_id', SESSION_ID)
+    .select('*').eq('session_id', SESSION_ID)
     .ilike('participant_name', name)
-    .order('created_at', {ascending: false})
-    .limit(1);
+    .order('created_at', {ascending:false}).limit(1);
 
   if (e1 || !subs?.length) {
     res.innerHTML = `<div class="section-box" style="text-align:center;color:var(--muted);padding:30px">
-      ❌ "${name}" の提出データが見つかりません<br><span style="font-size:11px">"${name}"으로 제출한 내역이 없습니다</span>
+      ❌ "${name}"으로 제출한 내역이 없습니다<br><span style="font-size:11px">「${name}」の提出データが見つかりません</span>
     </div>`;
     return;
   }
@@ -1752,30 +1776,47 @@ async function mpSearch() {
   const sub = subs[0];
   mpSubmissionId = sub.id;
 
-  // Load photos
-  const {data: photos} = await supa.from('photos').select('*').eq('submission_id', sub.id);
-  mpPhotos = {};
-  if (photos) photos.forEach(p => { mpPhotos[p.cat_id] = p.data_url; });
+  // Load samples, photos, evals in parallel
+  const [samplesRes, photosRes, evalsRes] = await Promise.all([
+    supa.from('samples').select('cat_id,data_url').eq('session_id', SESSION_ID),
+    supa.from('photos').select('cat_id,data_url').eq('submission_id', sub.id),
+    supa.from('evaluations').select('*').eq('submission_id', sub.id)
+  ]);
+  mpSamples = {}; mpPhotos = {}; mpEvals = {};
+  if (samplesRes.data) samplesRes.data.forEach(s => { mpSamples[s.cat_id] = s.data_url; });
+  if (photosRes.data)  photosRes.data.forEach(p => { mpPhotos[p.cat_id] = p.data_url; });
+  if (evalsRes.data)   evalsRes.data.forEach(ev => { mpEvals[ev.cat_id] = {...ev}; });
 
-  // Load evaluations
-  const {data: evals} = await supa.from('evaluations').select('*').eq('submission_id', sub.id);
-  mpEvals = {};
-  if (evals) evals.forEach(ev => { mpEvals[ev.cat_id] = ev; });
+  // Auto-translate Korean comments that don't have Japanese yet
+  res.innerHTML = '<div class="loading">🌐 번역 중...</div>';
+  const toTranslate = CATS.filter(cat => {
+    const ev = mpEvals[cat.id];
+    return ev?.comment_ko && !ev?.comment_ja;
+  });
+  if (toTranslate.length) {
+    await Promise.all(toTranslate.map(async cat => {
+      const ja = await mpDeepL(mpEvals[cat.id].comment_ko);
+      if (ja) mpEvals[cat.id].comment_ja = ja;
+    }));
+  }
 
-  // Render results
-  const submitted_at = new Date(sub.created_at).toLocaleString('ja-JP',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
-  let html = `<div class="section-box" style="padding:10px 14px;margin-bottom:12px;display:flex;align-items:center;gap:10px">
+  // Build HTML
+  const ts = new Date(sub.created_at).toLocaleString('ja-JP',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
+  let html = `<div class="section-box" style="padding:10px 14px;margin-bottom:12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
     <div>👤 <strong>${sub.participant_name}</strong></div>
-    <div style="font-size:11px;color:var(--muted)">${submitted_at} 提出</div>
+    <div style="font-size:11px;color:var(--muted)">${ts} 提出</div>
   </div>`;
 
   for (const cat of CATS) {
-    const photo = mpPhotos[cat.id];
-    const ev = mpEvals[cat.id];
-    const mark = ev?.mark || '';
+    const sample  = mpSamples[cat.id] || '';
+    const photo   = mpPhotos[cat.id]  || '';
+    const ev      = mpEvals[cat.id]   || {};
+    const mark    = ev.mark || '';
     const needsRetake = mark === '△' || mark === '×';
-    const hasPhoto2 = !!ev?.photo2_data_url;
-    const markColor = mark==='○'?'#18945e':mark==='△'?'#e67e22':mark==='×'?'#c0392b':'#bbb';
+    const hasPhoto2   = !!ev.photo2_data_url;
+    const show3col    = needsRetake || hasPhoto2;
+    const markCls     = mark==='○'?'maru':mark==='△'?'sank':mark==='×'?'batu':'none';
+    const markLabel   = mark || '—';
 
     html += `
     <div class="mp-card">
@@ -1784,32 +1825,27 @@ async function mpSearch() {
         <div class="cat-name">${cat.jp}</div>
         <div class="cat-sub" style="margin-left:auto">${cat.kr}</div>
       </div>
-      <div class="mp-body">
-        <div class="mp-cell">
-          <div class="mp-lbl">提出写真 / 제출사진</div>
-          <div class="mp-frame">
-            ${photo ? `<img src="${photo}">` : '<span>未提出</span>'}
-          </div>
+      <div class="mp-photos ${show3col?'cols3':'cols2'}">
+        <div class="mp-pcell">
+          <div class="mp-plbl">サンプル / 샘플</div>
+          <div class="mp-frame">${sample?`<img src="${sample}">`:'<span>未登録</span>'}</div>
         </div>
-        <div class="mp-cell">
-          <div class="mp-lbl">評価 / 평가</div>
-          <div class="mp-frame" style="border:none;background:transparent">
-            <div style="text-align:center">
-              ${mark ? `<div class="mp-mark" style="color:${markColor}">${mark}</div>` : '<div style="font-size:12px;color:#bbb">未評価</div>'}
-              ${ev?.comment_ko ? `<div class="mp-comment" style="margin-top:4px">${ev.comment_ko}</div>` : ''}
-              ${ev?.comment_ja ? `<div class="mp-comment" style="font-style:italic">🇯🇵 ${ev.comment_ja}</div>` : ''}
-            </div>
-          </div>
+        <div class="mp-pcell">
+          <div class="mp-plbl">提出写真 / 제출사진</div>
+          <div class="mp-frame">${photo?`<img src="${photo}">`:'<span>未提出</span>'}</div>
         </div>
-        <div class="mp-cell">
-          <div class="mp-lbl">2차 사진 / 2枚目</div>
-          <div class="mp-frame" id="mp-frame2-${cat.id}">
-            ${hasPhoto2 ? `<img src="${ev.photo2_data_url}">` : (needsRetake ? '<span style="font-size:10px;text-align:center">촬영 필요</span>' : '<span style="font-size:10px;text-align:center;color:#ccc">—</span>')}
-          </div>
-          ${needsRetake ? `
-            <button class="mp-shoot-btn" onclick="mpOpenCamera('${cat.id}')">📷 ${hasPhoto2 ? '다시 촬영' : '2차 촬영'}</button>
-            ${hasPhoto2 ? '<div class="mp-done-badge">✅ 제출됨</div>' : ''}
-          ` : (mark === '○' ? '<div style="font-size:10px;color:var(--success);text-align:center;margin-top:2px">✅ 합격</div>' : '')}
+        ${show3col ? `
+        <div class="mp-pcell">
+          <div class="mp-plbl">2차사진 / 2枚目</div>
+          <div class="mp-frame" id="mp-frame2-${cat.id}">${hasPhoto2?`<img src="${ev.photo2_data_url}">`:'<span style="font-size:9px;text-align:center">촬영 필요</span>'}</div>
+          <button class="mp-shoot-btn" onclick="mpOpenCamera('${cat.id}')">📷 ${hasPhoto2?'다시 촬영':'2차 촬영'}</button>
+        </div>` : ''}
+      </div>
+      <div class="mp-eval">
+        <div class="mp-mark-badge ${markCls}">${markLabel}</div>
+        <div class="mp-comments">
+          ${ev.comment_ko ? `<div class="mp-cmt-ko">${ev.comment_ko}</div>` : (!mark ? `<div style="font-size:11px;color:#bbb">평가 전</div>` : '')}
+          ${ev.comment_ja ? `<div class="mp-cmt-ja">🇯🇵 ${ev.comment_ja}</div>` : ''}
         </div>
       </div>
     </div>`;
@@ -1819,18 +1855,13 @@ async function mpSearch() {
 }
 
 async function mpOpenCamera(catId) {
-  mpCamCatId = catId;
-  // Reuse main camera overlay with a 'mypage' mode
   await openCameraOverlay(catId, 'mypage');
 }
 
 async function mpSavePhoto2(catId, dataUrl) {
-  // Update mp-frame2 in UI
   const frame = document.getElementById(`mp-frame2-${catId}`);
   if (frame) frame.innerHTML = `<img src="${dataUrl}">`;
-  // Show spinner
-  toast('📤 アップロード中...');
-  // Upsert to evaluations
+  toast('📤 저장 중...');
   const evId = `${mpSubmissionId}_${catId}`;
   const {error} = await supa.from('evaluations').upsert({
     id: evId,
@@ -1843,11 +1874,9 @@ async function mpSavePhoto2(catId, dataUrl) {
     photo2_data_url: dataUrl
   });
   if (error) { toast('保存エラー: ' + error.message); return; }
-  // Update local state
   if (!mpEvals[catId]) mpEvals[catId] = {};
   mpEvals[catId].photo2_data_url = dataUrl;
   toast('✅ 2차 사진 저장 완료！');
-  // Refresh button area
   const btn = document.querySelector(`button[onclick="mpOpenCamera('${catId}')"]`);
   if (btn) btn.textContent = '📷 다시 촬영';
 }
