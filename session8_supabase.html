@@ -167,6 +167,42 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
 .cam-alpha-lbl{color:rgba(255,255,255,.65);font-size:11px;white-space:nowrap;font-family:'Noto Sans JP',sans-serif}
 .cam-alpha{-webkit-appearance:none;width:84px;height:4px;background:rgba(255,255,255,.3);border-radius:2px;outline:none;cursor:pointer}
 .cam-alpha::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:#fff;cursor:pointer}
+/* Level indicator */
+.cam-level-line{position:absolute;left:0;right:0;height:2px;z-index:4;pointer-events:none;transition:background .12s,box-shadow .12s,top .08s;background:#ffdd00;box-shadow:0 0 6px #ffdd0088,0 0 2px #ffdd00}
+.cam-level-label{position:absolute;right:12px;z-index:4;background:rgba(0,0,0,.55);color:#ffdd00;font-size:10px;padding:2px 7px;border-radius:4px;font-family:'Noto Sans JP',sans-serif;pointer-events:none;transition:color .12s,top .08s;transform:translateY(-100%)}
+
+/* ── Second photo bar ──────────────────────────────────────── */
+.sp2-bar{padding:8px 10px 10px;border-top:1px dashed var(--border);background:#edf2f8}
+.sp2-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:8px}
+.sp2-cell{display:flex;flex-direction:column}
+.sp2-label{font-size:9px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px;text-align:center}
+.sp2-frame{width:100%;aspect-ratio:1/1;background:var(--bg);border-radius:5px;overflow:hidden;border:1px dashed var(--border);display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--muted);position:relative}
+.sp2-frame img{width:100%;height:100%;object-fit:cover}
+.sp2-shoot-btn{padding:7px 14px;background:var(--accent);color:#fff;border:none;border-radius:6px;font-size:12px;font-family:'Noto Sans JP',sans-serif;cursor:pointer;transition:background .2s}
+.sp2-shoot-btn:hover{background:#1a6bbf}
+
+/* ── Slideshow eval panel ──────────────────────────────────── */
+.ss-eval-panel{flex:0 0 200px;display:flex;flex-direction:column;padding:10px;background:rgba(0,0,0,.45);border-left:2px solid rgba(255,255,255,.1);gap:8px;overflow-y:auto;min-width:0}
+.ss-mark-row{display:flex;gap:6px;justify-content:center}
+.ss-mark-btn{width:46px;height:46px;border-radius:8px;border:2px solid rgba(255,255,255,.3);background:rgba(255,255,255,.1);font-size:20px;cursor:pointer;color:#fff;transition:all .15s;display:flex;align-items:center;justify-content:center}
+.ss-mark-btn:hover{border-color:rgba(255,255,255,.7)}
+.ss-mark-btn.sel-maru{border-color:#18945e!important;background:#18945e55;box-shadow:0 0 0 2px #18945e}
+.ss-mark-btn.sel-sank{border-color:#e67e22!important;background:#e67e2255;box-shadow:0 0 0 2px #e67e22}
+.ss-mark-btn.sel-batu{border-color:#c0392b!important;background:#c0392b55;box-shadow:0 0 0 2px #c0392b}
+.ss-eval-lbl{color:rgba(255,255,255,.55);font-size:10px;font-family:'Noto Sans JP',sans-serif}
+.ss-eval-comment{width:100%;padding:7px 9px;border:1px solid rgba(255,255,255,.2);border-radius:6px;font-size:12px;font-family:'Noto Sans JP',sans-serif;resize:none;height:68px;background:rgba(255,255,255,.1);color:#fff}
+.ss-eval-comment::placeholder{color:rgba(255,255,255,.3)}
+.ss-eval-comment:focus{outline:none;border-color:rgba(255,255,255,.5)}
+.ss-trans-btn{padding:6px 10px;background:var(--accent);color:#fff;border:none;border-radius:6px;font-size:11px;font-family:'Noto Sans JP',sans-serif;cursor:pointer;transition:background .2s}
+.ss-trans-btn:hover{background:#1a6bbf}
+.ss-trans-result{font-size:11px;color:rgba(255,255,255,.7);background:rgba(255,255,255,.1);padding:5px 8px;border-radius:5px;line-height:1.5;display:none}
+.ss-trans-result.show{display:block}
+.ss-save-btn-inner{width:100%;padding:8px;background:var(--primary);color:#fff;border:none;border-radius:6px;font-size:12px;font-family:'Noto Sans JP',sans-serif;cursor:pointer;margin-top:auto}
+.ss-save-btn-inner:hover{background:var(--accent)}
+/* Photo+draw wrap in slideshow */
+.ss-photo-wrap{flex:1;position:relative;min-height:0;overflow:hidden}
+.ss-photo-wrap .ss-panel-img{position:absolute;inset:0;flex:none;width:100%;height:100%}
+.ss-draw-canvas-ov{position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor:crosshair;z-index:5;display:none}
 
 /* ── Evaluation UI ─────────────────────────────────────────── */
 .eval-section{padding:8px 10px 12px;border-top:1px dashed var(--border);background:#f5f8fc}
@@ -251,21 +287,18 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
 <!-- Camera overlay -->
 <div id="cam-overlay" class="cam-overlay" style="display:none">
   <video id="cam-video" class="cam-video" autoplay playsinline muted></video>
-  <div class="cam-sample-ov" id="cam-sample-ov"></div>
   <div class="cam-grid"></div>
   <div class="cam-crop-frame"></div>
+  <div class="cam-level-line" id="cam-level-line"></div>
+  <div class="cam-level-label" id="cam-level-label">0.0°</div>
   <div class="cam-guide">
-    <div>サンプルに位置を合わせて撮影してください</div>
-    <div style="font-size:10px;opacity:.7">샘플 위치에 맞춰 촬영해 주세요</div>
+    <div>グリッドに合わせて撮影 / 그리드에 맞춰 촬영</div>
+    <div style="font-size:10px;opacity:.7">노란선이 초록이 되면 수평 맞춤</div>
   </div>
   <div class="cam-footer">
     <button class="cam-cancel" onclick="closeCameraOverlay()">✕ キャンセル</button>
     <button class="cam-shutter" onclick="capturePhoto()"></button>
-    <div class="cam-alpha-wrap">
-      <div class="cam-alpha-lbl">透明度 / 투명도</div>
-      <input type="range" class="cam-alpha" id="cam-alpha" min="10" max="70" value="38"
-             oninput="setCamAlpha(this.value)">
-    </div>
+    <div style="width:84px"></div>
   </div>
 </div>
 
@@ -287,9 +320,28 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
       <div class="ss-panel-label">サンプル / 샘플</div>
       <div class="ss-panel-img" id="ss-sample-img"></div>
     </div>
-    <div class="ss-panel">
+    <div class="ss-panel" style="position:relative">
       <div class="ss-panel-label">提出写真 / 제출 사진</div>
-      <div class="ss-panel-img" id="ss-photo-img"></div>
+      <div class="ss-photo-wrap">
+        <div class="ss-panel-img" id="ss-photo-img"></div>
+        <canvas class="ss-draw-canvas-ov" id="ss-draw-canvas"></canvas>
+      </div>
+    </div>
+    <div class="ss-eval-panel" id="ss-eval-panel">
+      <div class="ss-eval-lbl">評価 / 평가</div>
+      <div class="ss-mark-row">
+        <button class="ss-mark-btn" id="ss-mark-maru" data-mark="○" onclick="ssMark('○')">○</button>
+        <button class="ss-mark-btn" id="ss-mark-sank" data-mark="△" onclick="ssMark('△')">△</button>
+        <button class="ss-mark-btn" id="ss-mark-batu" data-mark="×" onclick="ssMark('×')">×</button>
+      </div>
+      <div class="ss-eval-lbl">コメント (한국어)</div>
+      <textarea class="ss-eval-comment" id="ss-eval-comment" placeholder="코멘트를 입력해주세요" oninput="ssSyncComment()"></textarea>
+      <div style="display:flex;gap:6px">
+        <button class="ss-trans-btn" style="flex:1" id="ss-trans-btn" onclick="ssTranslate()">DeepL翻訳</button>
+        <button class="ss-trans-btn" style="background:rgba(255,255,255,.2);color:#fff" onclick="ssClearDraw()">✕消す</button>
+      </div>
+      <div class="ss-trans-result" id="ss-trans-result"></div>
+      <button class="ss-save-btn-inner" onclick="ssSaveEval().then(ok=>ok&&toast('✅ 評価保存完了'))">💾 保存</button>
     </div>
   </div>
   <div class="ss-nav">
@@ -732,6 +784,32 @@ async function openReview(submissionId, name) {
           <div class="eval-translated${ev.comment_ja?' show':''}" id="etx-${cat.id}">${ev.comment_ja||''}</div>
         </div>
       </div>
+      <div class="sp2-bar" id="sp2-bar-${cat.id}" style="display:${(sym==='△'||sym==='×')?'block':'none'}">
+        <div class="sp2-grid">
+          <div class="sp2-cell">
+            <div class="sp2-label">サンプル / 샘플</div>
+            <div class="sp2-frame">
+              ${s ? `<img src="${s}">` : '<span style="font-size:9px">未登録</span>'}
+            </div>
+          </div>
+          <div class="sp2-cell">
+            <div class="sp2-label">1차사진</div>
+            <div class="sp2-frame">
+              ${p ? `<img src="${p}">` : '<span style="font-size:9px">未提出</span>'}
+            </div>
+          </div>
+          <div class="sp2-cell">
+            <div class="sp2-label">2차사진</div>
+            <div class="sp2-frame" id="sp2-frame-${cat.id}">
+              ${secondPhotos[cat.id] ? `<img src="${secondPhotos[cat.id]}">` : '<span style="font-size:9px">—</span>'}
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;gap:6px;align-items:center">
+          <button class="sp2-shoot-btn" onclick="openSecondCamera('${cat.id}')">📷 2枚目撮影</button>
+          <input type="file" id="fi2-${cat.id}" accept="image/*" style="display:none" onchange="handleSecondPhoto('${cat.id}',this)">
+        </div>
+      </div>
     </div>`;
   }
 
@@ -866,15 +944,19 @@ async function renderPageCanvas(cat, sUrl, pUrl, name) {
 // ── SLIDESHOW ─────────────────────────────────────────────────
 function openSlideshow() {
   slideIdx = 0;
+  ssCanvasHandlersAttached = false; // reset so setupSsDrawCanvas re-attaches
   const ov = document.getElementById('ss-overlay');
   ov.style.display = 'flex';
+  setupSsDrawCanvas();
   renderSlide();
   document.addEventListener('keydown', ssKeydown);
 }
 
 function closeSlideshow() {
+  saveCurrentSsDrawing();
   document.getElementById('ss-overlay').style.display = 'none';
   document.removeEventListener('keydown', ssKeydown);
+  ssDrawCatId = null;
 }
 
 function ssKeydown(e) {
@@ -884,6 +966,7 @@ function ssKeydown(e) {
 }
 
 function renderSlide() {
+  saveCurrentSsDrawing(); // persist drawing for the slide we're leaving
   const cat = CATS[slideIdx];
   const s = currentReviewSamples[cat.id] || null;
   const p = currentReviewPhotos[cat.id] || null;
@@ -907,6 +990,20 @@ function renderSlide() {
   dotsEl.innerHTML = CATS.map((c, i) =>
     `<div class="ss-dot${i===slideIdx?' active':''}" onclick="gotoSlide(${i})"></div>`
   ).join('');
+
+  // Populate eval panel
+  const ev = evalState[cat.id] || {};
+  const cur = ev.mark || '';
+  document.getElementById('ss-mark-maru')?.classList.toggle('sel-maru', cur === '○');
+  document.getElementById('ss-mark-sank')?.classList.toggle('sel-sank', cur === '△');
+  document.getElementById('ss-mark-batu')?.classList.toggle('sel-batu', cur === '×');
+  const commentEl = document.getElementById('ss-eval-comment');
+  if (commentEl) commentEl.value = ev.comment_ko || '';
+  const transEl = document.getElementById('ss-trans-result');
+  if (transEl) { transEl.textContent = ev.comment_ja || ''; transEl.className = 'ss-trans-result' + (ev.comment_ja ? ' show' : ''); }
+
+  // Init draw canvas for this slide (after a brief layout tick)
+  setTimeout(() => initSsDrawCanvas(cat.id), 30);
 }
 
 function nextSlide() { if (slideIdx < CATS.length - 1) { slideIdx++; renderSlide(); } }
@@ -919,53 +1016,249 @@ function ssTouchEnd(e) {
   if (Math.abs(dx) > 50) { dx < 0 ? nextSlide() : prevSlide(); }
 }
 
+// ── SLIDESHOW DRAW + EVAL ─────────────────────────────────────
+function setupSsDrawCanvas() {
+  if (ssCanvasHandlersAttached) return;
+  const canvas = document.getElementById('ss-draw-canvas');
+  if (!canvas) return;
+  ssDrawCanvas = canvas;
+  function getPos(e) {
+    const r = canvas.getBoundingClientRect();
+    const src = e.touches ? e.touches[0] : e;
+    return { x: (src.clientX - r.left) * (canvas.width / r.width),
+             y: (src.clientY - r.top)  * (canvas.height / r.height) };
+  }
+  function onStart(e) { e.preventDefault(); const p = getPos(e); ssDrawing=true; ssDrawLX=p.x; ssDrawLY=p.y; }
+  function onMove(e) {
+    e.preventDefault();
+    if (!ssDrawing) return;
+    const p = getPos(e);
+    const ctx = ssDrawCanvas.getContext('2d');
+    ctx.globalCompositeOperation = drawTool==='eraser' ? 'destination-out' : 'source-over';
+    ctx.strokeStyle = drawColor;
+    ctx.lineWidth   = drawTool==='eraser' ? drawLineWidth*4 : drawLineWidth;
+    ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    ctx.beginPath(); ctx.moveTo(ssDrawLX, ssDrawLY); ctx.lineTo(p.x, p.y); ctx.stroke();
+    ssDrawLX=p.x; ssDrawLY=p.y;
+  }
+  function onEnd(e) {
+    e.preventDefault(); ssDrawing=false;
+    if (ssDrawCatId) drawState[ssDrawCatId] = ssDrawCanvas.toDataURL('image/png');
+  }
+  canvas.addEventListener('pointerdown',  onStart);
+  canvas.addEventListener('pointermove',  onMove);
+  canvas.addEventListener('pointerup',    onEnd);
+  canvas.addEventListener('pointerleave', onEnd);
+  canvas.addEventListener('touchstart',   onStart, {passive:false});
+  canvas.addEventListener('touchmove',    onMove,  {passive:false});
+  canvas.addEventListener('touchend',     onEnd,   {passive:false});
+  ssCanvasHandlersAttached = true;
+}
+
+function initSsDrawCanvas(catId) {
+  ssDrawCatId = catId;
+  const canvas = document.getElementById('ss-draw-canvas');
+  if (!canvas) return;
+  ssDrawCanvas = canvas;
+  const wrap = canvas.parentElement;
+  const r = wrap.getBoundingClientRect();
+  if (r.width === 0) return; // not visible yet
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width  = Math.round(r.width  * dpr);
+  canvas.height = Math.round(r.height * dpr);
+  canvas.style.display = 'block';
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  if (drawState[catId]) {
+    const img = new Image();
+    img.onload = () => ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    img.src = drawState[catId];
+  }
+}
+
+function saveCurrentSsDrawing() {
+  if (!ssDrawCatId || !ssDrawCanvas || ssDrawCanvas.width === 0) return;
+  drawState[ssDrawCatId] = ssDrawCanvas.toDataURL('image/png');
+}
+
+function ssMark(mark) {
+  const cat = CATS[slideIdx];
+  if (!cat || !evalState[cat.id]) return;
+  evalState[cat.id].mark = evalState[cat.id].mark === mark ? '' : mark;
+  const cur = evalState[cat.id].mark;
+  document.getElementById('ss-mark-maru')?.classList.toggle('sel-maru', cur === '○');
+  document.getElementById('ss-mark-sank')?.classList.toggle('sel-sank', cur === '△');
+  document.getElementById('ss-mark-batu')?.classList.toggle('sel-batu', cur === '×');
+  // Sync to review page mark buttons
+  document.querySelectorAll(`.mark-btn[data-cat="${cat.id}"]`).forEach(btn => {
+    btn.classList.remove('sel-maru','sel-sank','sel-batu');
+    if (cur && btn.dataset.mark === cur)
+      btn.classList.add(cur==='○'?'sel-maru':cur==='△'?'sel-sank':'sel-batu');
+  });
+  // Show/hide sp2-bar in review
+  const sp2 = document.getElementById(`sp2-bar-${cat.id}`);
+  if (sp2) sp2.style.display = (cur === '△' || cur === '×') ? 'block' : 'none';
+}
+
+function ssSyncComment() {
+  const cat = CATS[slideIdx];
+  if (!cat || !evalState[cat.id]) return;
+  const val = document.getElementById('ss-eval-comment')?.value || '';
+  evalState[cat.id].comment_ko = val;
+  const ec = document.getElementById(`ec-${cat.id}`);
+  if (ec) ec.value = val;
+}
+
+async function ssTranslate() {
+  const cat = CATS[slideIdx];
+  if (!cat) return;
+  const key = DEEPL_API_KEY;
+  if (!key || key === 'YOUR_DEEPL_API_KEY_HERE') { toast('DeepL APIキーを設定してください'); return; }
+  const txt = document.getElementById('ss-eval-comment')?.value?.trim() || '';
+  if (!txt) { toast('コメントを入力してください'); return; }
+  const btn = document.getElementById('ss-trans-btn');
+  if (btn) btn.textContent = '翻訳中...';
+  try {
+    const endpoint = key.endsWith(':fx')
+      ? 'https://api-free.deepl.com/v2/translate'
+      : 'https://api.deepl.com/v2/translate';
+    const r = await fetch(endpoint, {
+      method:'POST',
+      headers:{'Content-Type':'application/x-www-form-urlencoded'},
+      body: new URLSearchParams({auth_key:key, text:txt, source_lang:'KO', target_lang:'JA'})
+    });
+    const j = await r.json();
+    const ja = j.translations?.[0]?.text || '';
+    if (evalState[cat.id]) evalState[cat.id].comment_ja = ja;
+    const el = document.getElementById('ss-trans-result');
+    if (el) { el.textContent = ja; el.className = 'ss-trans-result' + (ja ? ' show' : ''); }
+    // Sync to review
+    const etx = document.getElementById(`etx-${cat.id}`);
+    if (etx) { etx.textContent = ja; etx.className = 'eval-translated' + (ja ? ' show' : ''); }
+  } catch(e) { toast('翻訳エラーが発生しました'); }
+  finally { if (btn) btn.textContent = 'DeepL翻訳'; }
+}
+
+function ssClearDraw() {
+  if (!ssDrawCanvas) return;
+  const ctx = ssDrawCanvas.getContext('2d');
+  ctx.clearRect(0, 0, ssDrawCanvas.width, ssDrawCanvas.height);
+  if (ssDrawCatId) {
+    drawState[ssDrawCatId] = null;
+    // Also clear the review-page canvas
+    const dc = activeDrawCanvases[ssDrawCatId];
+    if (dc) {
+      const r = dc.canvas.getBoundingClientRect();
+      dc.ctx.clearRect(0, 0, r.width, r.height);
+    }
+  }
+}
+
+async function ssSaveEval() {
+  saveCurrentSsDrawing();
+  return await saveAllEvaluations();
+}
+
 // ── CAMERA OVERLAY ───────────────────────────────────────────
 let camStream = null;
 let camCatId  = null;
 
+// ─ Level indicator ─
+function startLevelIndicator() {
+  const line  = document.getElementById('cam-level-line');
+  const label = document.getElementById('cam-level-label');
+  if (!line) return;
+  function onOrientation(e) {
+    const gamma = e.gamma || 0;                        // left-right tilt, 0 = level
+    const pct   = Math.max(10, Math.min(90, 50 + (gamma / 45) * 40));
+    const lv    = Math.abs(gamma) < 2;
+    const col   = lv ? '#00ff88' : '#ffdd00';
+    line.style.top        = pct + '%';
+    line.style.background = col;
+    line.style.boxShadow  = `0 0 8px ${col}88,0 0 2px ${col}`;
+    if (label) {
+      label.style.top   = pct + '%';
+      label.style.color = col;
+      label.textContent = gamma.toFixed(1) + '°';
+    }
+  }
+  levelHandler = onOrientation;
+  window.addEventListener('deviceorientation', levelHandler);
+}
+
+function stopLevelIndicator() {
+  if (levelHandler) { window.removeEventListener('deviceorientation', levelHandler); levelHandler = null; }
+}
+
 async function handleUploadClick(catId) {
-  const sampleUrl = samples[catId];
-  if (sampleUrl && navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-    openCameraOverlay(catId, sampleUrl);
+  if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+    openCameraOverlay(catId, 'main');
   } else {
     document.getElementById(`fi-${catId}`).click();
   }
 }
 
+function openSecondCamera(catId) {
+  if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+    openCameraOverlay(catId, 'second');
+  } else {
+    const fi = document.getElementById(`fi2-${catId}`);
+    if (fi) fi.click();
+  }
+}
 
-async function openCameraOverlay(catId, sampleUrl) {
+async function handleSecondPhoto(catId, input) {
+  if (!input.files[0]) return;
+  try {
+    const dataUrl = await compress(input.files[0]);
+    secondPhotos[catId] = dataUrl;
+    const frame = document.getElementById(`sp2-frame-${catId}`);
+    if (frame) frame.innerHTML = `<img src="${dataUrl}">`;
+    toast('✅ 2枚目を追加しました');
+  } catch(e) { toast('画像の読み込みに失敗しました'); }
+}
+
+async function openCameraOverlay(catId, mode) {
   camCatId = catId;
-  const sOv = document.getElementById('cam-sample-ov');
-  sOv.innerHTML = `<img src="${sampleUrl}" alt="guide" style="opacity:.38">`;
-  document.getElementById('cam-alpha').value = 38;
+  camMode  = mode || 'main';
   const ov = document.getElementById('cam-overlay');
   ov.style.display = 'block';
+
+  // Request gyroscope permission on iOS 13+
+  if (typeof DeviceOrientationEvent !== 'undefined' &&
+      typeof DeviceOrientationEvent.requestPermission === 'function') {
+    try {
+      const perm = await DeviceOrientationEvent.requestPermission();
+      if (perm === 'granted') startLevelIndicator();
+    } catch(e) { startLevelIndicator(); }
+  } else {
+    startLevelIndicator();
+  }
 
   // ── Fullscreen: hide browser chrome on mobile ──
   try {
     const de = document.documentElement;
-    if (de.requestFullscreen)              await de.requestFullscreen();
-    else if (de.webkitRequestFullscreen)   de.webkitRequestFullscreen();
-  } catch(e) { /* not supported – overlay still covers viewport */ }
+    if (de.requestFullscreen)            await de.requestFullscreen();
+    else if (de.webkitRequestFullscreen) de.webkitRequestFullscreen();
+  } catch(e) {}
 
   try {
     camStream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: { ideal: 'environment' } }   // 해상도 제약 제거 (iOS 호환)
+      video: { facingMode: { ideal: 'environment' } }
     });
     const vid = document.getElementById('cam-video');
     vid.srcObject = camStream;
-    vid.addEventListener('loadedmetadata', () => {
-      vid.play().catch(() => {});
-    }, { once: true });
+    vid.addEventListener('loadedmetadata', () => { vid.play().catch(() => {}); }, { once: true });
     vid.play().catch(() => {});
   } catch(e) {
     closeCameraOverlay();
     toast('カメラにアクセスできません。ファイルを選択してください。');
-    setTimeout(() => document.getElementById(`fi-${catId}`).click(), 300);
+    if (camMode === 'main') setTimeout(() => document.getElementById(`fi-${catId}`).click(), 300);
   }
 }
 
 function closeCameraOverlay() {
+  stopLevelIndicator();
   // ── Exit fullscreen if active ──
   try {
     if (document.fullscreenElement || document.webkitFullscreenElement) {
@@ -1012,13 +1305,21 @@ async function capturePhoto() {
   out.getContext('2d').drawImage(video, sx, sy, size, size, 0, 0, outSize, outSize);
   const dataUrl = out.toDataURL('image/jpeg', 1.0);
   const cid = camCatId;
+  const mode = camMode;
   closeCameraOverlay();
-  const savedName = document.getElementById('p-name')?.value || '';
-  myPhotos[cid] = dataUrl;
-  await renderParticipant();
-  const nameEl = document.getElementById('p-name');
-  if (nameEl && savedName) nameEl.value = savedName;
-  toast('✅ 写真を撮影しました');
+  if (mode === 'second') {
+    secondPhotos[cid] = dataUrl;
+    const frame = document.getElementById(`sp2-frame-${cid}`);
+    if (frame) frame.innerHTML = `<img src="${dataUrl}">`;
+    toast('✅ 2枚目を撮影しました');
+  } else {
+    const savedName = document.getElementById('p-name')?.value || '';
+    myPhotos[cid] = dataUrl;
+    await renderParticipant();
+    const nameEl = document.getElementById('p-name');
+    if (nameEl && savedName) nameEl.value = savedName;
+    toast('✅ 写真を撮影しました');
+  }
 }
 
 function setCamAlpha(val) {
@@ -1027,7 +1328,7 @@ function setCamAlpha(val) {
 }
 
 // ── EVALUATION STATE ─────────────────────────────────────────
-const DEEPL_API_KEY = 'Y2e3d4519-10dc-4fbc-be60-da1348d590a6'; // ← DeepL有料APIキーを入力
+const DEEPL_API_KEY = 'YOUR_DEEPL_API_KEY_HERE'; // ← DeepL APIキーを入力 (free: ends :fx)
 let evalState = {};   // { catId: {mark, comment_ko, comment_ja} }
 let drawState = {};   // { catId: transparentPNG_dataURL }
 let activeDrawCanvases = {}; // { catId: {canvas,ctx,drawing,lx,ly} }
@@ -1035,9 +1336,20 @@ let currentSubmissionId = '';
 let drawTool = 'pen';
 let drawColor = '#ff0000';
 let drawLineWidth = 3;
+// Camera extras
+let camMode = 'main';   // 'main' | 'second'
+let secondPhotos = {};  // { catId: dataUrl }
+let levelHandler = null;
+// Slideshow draw extras
+let ssDrawCatId = null;
+let ssDrawCanvas = null;
+let ssDrawCtx = null;
+let ssDrawing = false;
+let ssDrawLX = 0, ssDrawLY = 0;
+let ssCanvasHandlersAttached = false;
 
 function initEvalState() {
-  evalState = {}; drawState = {}; activeDrawCanvases = {};
+  evalState = {}; drawState = {}; activeDrawCanvases = {}; secondPhotos = {};
   for (const cat of CATS) evalState[cat.id] = {mark:'', comment_ko:'', comment_ja:''};
 }
 
@@ -1050,15 +1362,19 @@ async function loadEvaluations(submissionId) {
       evalState[ev.cat_id].comment_ko = ev.comment_ko || '';
       evalState[ev.cat_id].comment_ja = ev.comment_ja || '';
       if (ev.drawing_data_url) drawState[ev.cat_id] = ev.drawing_data_url;
+      if (ev.photo2_data_url)  secondPhotos[ev.cat_id] = ev.photo2_data_url;
     });
   } catch(e) { console.warn('eval load:', e); }
 }
 
 async function saveAllEvaluations() {
+  // Save active draw canvases
   for (const cat of CATS) {
     const dc = activeDrawCanvases[cat.id];
     if (dc) drawState[cat.id] = dc.canvas.toDataURL('image/png');
   }
+  // Save slideshow canvas if active
+  saveCurrentSsDrawing();
   const rows = CATS.map(cat => ({
     id: `${currentSubmissionId}_${cat.id}`,
     submission_id: currentSubmissionId,
@@ -1067,7 +1383,8 @@ async function saveAllEvaluations() {
     mark: evalState[cat.id]?.mark || null,
     comment_ko: evalState[cat.id]?.comment_ko || null,
     comment_ja: evalState[cat.id]?.comment_ja || null,
-    drawing_data_url: drawState[cat.id] || null
+    drawing_data_url: drawState[cat.id] || null,
+    photo2_data_url: secondPhotos[cat.id] || null
   }));
   const {error} = await supa.from('evaluations').upsert(rows);
   if (error) {
@@ -1088,6 +1405,9 @@ function setMark(catId, mark) {
       btn.classList.add(cur==='○'?'sel-maru':cur==='△'?'sel-sank':'sel-batu');
     }
   });
+  // Show 2nd-photo bar only for △ and ×
+  const sp2 = document.getElementById(`sp2-bar-${catId}`);
+  if (sp2) sp2.style.display = (cur === '△' || cur === '×') ? 'block' : 'none';
 }
 
 async function translateComment(catId) {
@@ -1098,7 +1418,10 @@ async function translateComment(catId) {
   const btn = document.getElementById(`et-btn-${catId}`);
   if (btn) btn.textContent = '翻訳中...';
   try {
-    const r = await fetch('https://api.deepl.com/v2/translate', {
+    const endpoint = key.endsWith(':fx')
+      ? 'https://api-free.deepl.com/v2/translate'
+      : 'https://api.deepl.com/v2/translate';
+    const r = await fetch(endpoint, {
       method:'POST',
       headers:{'Content-Type':'application/x-www-form-urlencoded'},
       body: new URLSearchParams({auth_key:key, text:txt, source_lang:'KO', target_lang:'JA'})
