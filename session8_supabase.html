@@ -235,6 +235,23 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
 .mp-cmt-ko{font-size:12px;color:var(--text);line-height:1.6}
 .mp-cmt-ja{font-size:11px;color:var(--muted);line-height:1.5;font-style:italic}
 .mp-translating{font-size:10px;color:var(--accent);font-style:italic}
+.mp-action-btn{padding:7px 12px;border:none;border-radius:7px;font-size:12px;font-family:'Noto Sans JP',sans-serif;cursor:pointer;font-weight:500;transition:all .2s;white-space:nowrap}
+.mp-trans-all-btn{background:#f0f7ff;color:var(--accent);border:1px solid var(--accent)}
+.mp-trans-all-btn:hover{background:var(--accent);color:#fff}
+.mp-pdf-btn{background:var(--success);color:#fff}
+.mp-pdf-btn:hover{background:#15804f}
+.mp-mini-trans-btn{padding:3px 8px;background:#f0f7ff;color:var(--accent);border:1px solid var(--accent);border-radius:5px;font-size:10px;font-family:'Noto Sans JP',sans-serif;cursor:pointer}
+
+@media print {
+  .header,.mp-search,.mp-action-btn,.mp-shoot-btn,.mp-mini-trans-btn,
+  .nav-tabs,.toast-msg{display:none!important}
+  body{background:#fff}
+  .main{padding:4px;max-width:100%}
+  .mp-card{break-inside:avoid;page-break-inside:avoid;margin-bottom:8px;box-shadow:none;border:1px solid #ccc}
+  .mp-result-hdr{display:flex!important}
+  .mp-frame{border:1px solid #ddd}
+  .mp-cmt-ja{color:#333!important;font-style:normal!important}
+}
 
 /* ── Evaluation UI ─────────────────────────────────────────── */
 .eval-section{padding:8px 10px 12px;border-top:1px dashed var(--border);background:#f5f8fc}
@@ -1734,25 +1751,32 @@ function renderMyPage() {
     <div id="mp-result"></div>`;
 }
 
-async function mpDeepL(text) {
+async function translateKoJa(text) {
   if (!text) return '';
-  const key = DEEPL_API_KEY;
-  const endpoint = key.endsWith(':fx')
-    ? 'https://api-free.deepl.com/v2/translate'
-    : 'https://api.deepl.com/v2/translate';
+  // Primary: Google Translate (browser-friendly, no CORS issues)
   try {
-    const r = await fetch(endpoint, {
+    const url = 'https://translate.googleapis.com/translate_a/single?client=gtx&sl=ko&tl=ja&dt=t&q=' + encodeURIComponent(text);
+    const r = await fetch(url);
+    if (r.ok) {
+      const j = await r.json();
+      if (j && j[0]) {
+        const result = j[0].map(p => (p && p[0]) ? p[0] : '').join('');
+        if (result) return result;
+      }
+    }
+  } catch(e) {}
+  // Fallback: DeepL
+  try {
+    const key = DEEPL_API_KEY;
+    const ep = key.endsWith(':fx') ? 'https://api-free.deepl.com/v2/translate' : 'https://api.deepl.com/v2/translate';
+    const r = await fetch(ep, {
       method: 'POST',
-      headers: {
-        'Authorization': `DeepL-Auth-Key ${key}`,
-        'Content-Type': 'application/x-www-form-urlencoded'
-      },
+      headers: {'Authorization': `DeepL-Auth-Key ${key}`, 'Content-Type': 'application/x-www-form-urlencoded'},
       body: new URLSearchParams({text, source_lang:'KO', target_lang:'JA'})
     });
-    if (!r.ok) return '';
-    const j = await r.json();
-    return j.translations?.[0]?.text || '';
-  } catch(e) { return ''; }
+    if (r.ok) { const j = await r.json(); return j.translations?.[0]?.text || ''; }
+  } catch(e) {}
+  return '';
 }
 
 async function mpSearch() {
@@ -1795,16 +1819,17 @@ async function mpSearch() {
   });
   if (toTranslate.length) {
     await Promise.all(toTranslate.map(async cat => {
-      const ja = await mpDeepL(mpEvals[cat.id].comment_ko);
+      const ja = await translateKoJa(mpEvals[cat.id].comment_ko);
       if (ja) mpEvals[cat.id].comment_ja = ja;
     }));
   }
 
   // Build HTML
   const ts = new Date(sub.created_at).toLocaleString('ja-JP',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
-  let html = `<div class="section-box" style="padding:10px 14px;margin-bottom:12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-    <div>👤 <strong>${sub.participant_name}</strong></div>
-    <div style="font-size:11px;color:var(--muted)">${ts} 提出</div>
+  let html = `<div class="section-box mp-result-hdr" style="padding:10px 14px;margin-bottom:12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+    <div style="flex:1">👤 <strong>${sub.participant_name}</strong> <span style="font-size:11px;color:var(--muted);margin-left:6px">${ts} 提出</span></div>
+    <button class="mp-action-btn mp-trans-all-btn" onclick="mpRetranslate()" id="mp-trans-all-btn">🌐 번역</button>
+    <button class="mp-action-btn mp-pdf-btn" onclick="mpPrint()">📄 PDF저장</button>
   </div>`;
 
   for (const cat of CATS) {
@@ -1845,13 +1870,52 @@ async function mpSearch() {
         <div class="mp-mark-badge ${markCls}">${markLabel}</div>
         <div class="mp-comments">
           ${ev.comment_ko ? `<div class="mp-cmt-ko">${ev.comment_ko}</div>` : (!mark ? `<div style="font-size:11px;color:#bbb">평가 전</div>` : '')}
-          ${ev.comment_ja ? `<div class="mp-cmt-ja">🇯🇵 ${ev.comment_ja}</div>` : ''}
+          ${ev.comment_ja
+            ? `<div class="mp-cmt-ja" id="mp-ja-${cat.id}">🇯🇵 ${ev.comment_ja}</div>`
+            : ev.comment_ko
+              ? `<div id="mp-ja-${cat.id}"><button class="mp-mini-trans-btn" onclick="mpTransCard('${cat.id}',this)">🌐 번역하기</button></div>`
+              : ''}
         </div>
       </div>
     </div>`;
   }
 
   res.innerHTML = html;
+}
+
+function mpPrint() {
+  window.print();
+}
+
+async function mpRetranslate() {
+  const btn = document.getElementById('mp-trans-all-btn');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ 번역 중...'; }
+  const tasks = CATS.filter(cat => mpEvals[cat.id]?.comment_ko);
+  await Promise.all(tasks.map(async cat => {
+    const ja = await translateKoJa(mpEvals[cat.id].comment_ko);
+    if (ja) {
+      mpEvals[cat.id].comment_ja = ja;
+      const el = document.getElementById(`mp-ja-${cat.id}`);
+      if (el) el.outerHTML = `<div class="mp-cmt-ja" id="mp-ja-${cat.id}">🇯🇵 ${ja}</div>`;
+    }
+  }));
+  if (btn) { btn.disabled = false; btn.textContent = '🌐 번역'; }
+  toast('✅ 번역 완료');
+}
+
+async function mpTransCard(catId, btn) {
+  if (btn) { btn.disabled = true; btn.textContent = '번역 중...'; }
+  const ko = mpEvals[catId]?.comment_ko;
+  if (!ko) return;
+  const ja = await translateKoJa(ko);
+  if (ja) {
+    mpEvals[catId].comment_ja = ja;
+    const el = document.getElementById(`mp-ja-${catId}`);
+    if (el) el.outerHTML = `<div class="mp-cmt-ja" id="mp-ja-${catId}">🇯🇵 ${ja}</div>`;
+  } else {
+    if (btn) { btn.disabled = false; btn.textContent = '🌐 번역하기'; }
+    toast('번역 실패 — 다시 시도해 주세요');
+  }
 }
 
 async function mpOpenCamera(catId) {
