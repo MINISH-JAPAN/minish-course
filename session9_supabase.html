@@ -208,11 +208,11 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
 .cam-level-label{display:none}
 
 /* ── My Page ────────────────────────────────────────── */
-.mp-search{background:var(--card);border-radius:12px;border:1px solid var(--border);padding:16px;margin-bottom:14px}
-.mp-search-row{display:flex;gap:8px}
-.mp-name-input{flex:1;padding:10px 14px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-family:'Noto Sans JP',sans-serif;background:var(--bg)}
+.mp-search{background:var(--card);border-radius:12px;border:1px solid var(--border);padding:14px;margin-bottom:14px}
+.mp-search-row{display:flex;gap:6px;width:100%;min-width:0;box-sizing:border-box}
+.mp-name-input{flex:1;min-width:0;padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-family:'Noto Sans JP',sans-serif;background:var(--bg)}
 .mp-name-input:focus{outline:none;border-color:var(--accent)}
-.mp-search-btn{padding:10px 18px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-size:13px;font-family:'Noto Sans JP',sans-serif;cursor:pointer;font-weight:500;white-space:nowrap}
+.mp-search-btn{flex-shrink:0;width:44px;height:44px;padding:0;background:var(--accent);color:#fff;border:none;border-radius:8px;font-size:18px;font-family:'Noto Sans JP',sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center}
 .mp-card{background:var(--card);border-radius:12px;border:1px solid var(--border);overflow:hidden;margin-bottom:12px}
 .mp-card-hdr{background:var(--primary);color:#fff;padding:8px 12px;display:flex;align-items:center;gap:8px}
 .mp-photos{display:grid;gap:0;border-bottom:1px solid var(--border)}
@@ -1210,7 +1210,7 @@ function renderMyPage() {
       <div class="mp-search-row">
         <input type="text" id="mp-name" class="mp-name-input" placeholder="이름을 입력해 주세요 / お名前を入力"
           onkeydown="if(event.key==='Enter')mpSearch()">
-        <button class="mp-search-btn" onclick="mpSearch()">🔍 検索</button>
+        <button class="mp-search-btn" onclick="mpSearch()" title="検索">🔍</button>
       </div>
     </div>
     <div id="mp-result"></div>`;
