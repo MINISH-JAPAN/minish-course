@@ -18,14 +18,14 @@
   --danger:#c0392b;--muted:#557065;--sub:#3a6358;
   --border:#b8d8d2;--text:#18302a;
 }
-body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
 
-.header{background:var(--frame);color:#fff;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.3)}
-.logo{font-size:14px;font-weight:700;letter-spacing:1px}
+.header{background:var(--frame);color:#fff;padding:10px 12px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.3);gap:8px}
+.logo{font-size:13px;font-weight:700;letter-spacing:.5px;min-width:0;flex-shrink:1}
 .logo .hl{color:var(--accent)}
 .logo .ses{opacity:.6;font-size:11px;font-weight:400;margin-left:6px}
-.nav-tabs{display:flex;gap:4px}
-.nav-tab{padding:6px 14px;border-radius:6px;border:1px solid rgba(255,255,255,.2);background:transparent;color:rgba(255,255,255,.7);cursor:pointer;font-size:12px;font-family:'Noto Sans JP',sans-serif;transition:all .2s}
+.nav-tabs{display:flex;gap:3px;flex-shrink:0}
+.nav-tab{padding:6px 10px;border-radius:6px;border:1px solid rgba(255,255,255,.2);background:transparent;color:rgba(255,255,255,.7);cursor:pointer;font-size:12px;font-family:'Noto Sans JP',sans-serif;transition:all .2s;white-space:nowrap}
 .nav-tab.active{background:var(--accent);border-color:var(--accent);color:#fff}
 
 .main{max-width:860px;margin:0 auto;padding:14px}
@@ -757,6 +757,11 @@ async function openReview(submissionId, name) {
     </div>`;
   }
 
+  html += `<div class="eval-action-bar" style="margin-top:14px">
+    <button class="eval-save-btn" onclick="saveAllEvaluations().then(ok=>ok&&toast('✅ 評価保存完了'))">💾 評価保存</button>
+    <button class="show-participant-btn" onclick="openParticipantEvalView()">👁 参加者に見せる</button>
+  </div>`;
+
   rv.innerHTML = html;
   // Init drawing canvases after layout
   setTimeout(() => {
@@ -1241,13 +1246,14 @@ async function mpSearch() {
   // Load evals
   const {data: evs} = await supa.from('evaluations').select('*').eq('submission_id', sub.id);
   mpEvals = {};
-  CATS.forEach(cat => { mpEvals[cat.id] = {mark:'', comment_ko:'', comment_ja:'', photo2_data_url:''}; });
+  CATS.forEach(cat => { mpEvals[cat.id] = {mark:'', comment_ko:'', comment_ja:'', photo2_data_url:'', drawing_data_url:''}; });
   if (evs) evs.forEach(ev => {
     if (!mpEvals[ev.cat_id]) return;
     mpEvals[ev.cat_id].mark = ev.mark || '';
     mpEvals[ev.cat_id].comment_ko = ev.comment_ko || '';
     mpEvals[ev.cat_id].comment_ja = ev.comment_ja || '';
     mpEvals[ev.cat_id].photo2_data_url = ev.photo2_data_url || '';
+    mpEvals[ev.cat_id].drawing_data_url = ev.drawing_data_url || '';
   });
 
   // Auto-translate missing
@@ -1293,7 +1299,8 @@ async function mpSearch() {
         </div>
         <div class="mp-pcell">
           <div class="mp-plbl">提出写真</div>
-          <div class="mp-frame">${hasPhoto?`<img src="${mpPhotos[cat.id]}">`:'<span style="font-size:9px">未提出</span>'}</div>
+          <div class="mp-frame">${hasPhoto?`<img src="${mpPhotos[cat.id]}">`:'<span style="font-size:9px">未提出</span>'}${hasPhoto&&ev.drawing_data_url?`<img src="${ev.drawing_data_url}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;pointer-events:none">`:''}
+          </div>
         </div>
         ${show3col ? `
         <div class="mp-pcell">
