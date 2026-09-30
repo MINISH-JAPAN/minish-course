@@ -960,11 +960,21 @@ async function handleUploadClick(catId, mode) {
 async function openCameraOverlay(catId, sampleUrl) {
   camCatId = catId;
   const sOv = document.getElementById('cam-sample-ov');
-  sOv.innerHTML = `<img src="${sampleUrl}" alt="guide" style="opacity:.38">`;
+  sOv.innerHTML = sampleUrl ? `<img src="${sampleUrl}" alt="guide" style="opacity:.38">` : '';
   document.getElementById('cam-alpha').value = 38;
   const ov = document.getElementById('cam-overlay');
   ov.style.display = 'block';
-  await startLevelIndicator();
+
+  // iOS 13+: must request DeviceOrientation permission inside user gesture
+  if (typeof DeviceOrientationEvent !== 'undefined' &&
+      typeof DeviceOrientationEvent.requestPermission === 'function') {
+    try {
+      const perm = await DeviceOrientationEvent.requestPermission();
+      if (perm === 'granted') startLevelIndicator();
+    } catch(e) { startLevelIndicator(); }
+  } else {
+    startLevelIndicator();
+  }
 
   // ── Fullscreen: hide browser chrome on mobile ──
   try {
@@ -1089,6 +1099,15 @@ async function translateKoJa(text) {
   return '';
 }
 
+async function translateKoJaRetry(text, retries = 3) {
+  for (let i = 0; i < retries; i++) {
+    if (i > 0) await new Promise(r => setTimeout(r, 1000 * i));
+    const ja = await translateKoJa(text);
+    if (ja) return ja;
+  }
+  return '';
+}
+
 let evalState = {};   // { catId: {mark, comment_ko, comment_ja} }
 let drawState = {};   // { catId: transparentPNG_dataURL }
 let activeDrawCanvases = {}; // { catId: {canvas,ctx,drawing,lx,ly} }
@@ -1166,17 +1185,9 @@ function getScreenTilt(e) {
   return gamma;
 }
 
-async function startLevelIndicator() {
+function startLevelIndicator() {
   const line = document.getElementById('cam-level-line');
   if (!line) return;
-  // iOS 13+ requires explicit permission for DeviceOrientationEvent
-  if (typeof DeviceOrientationEvent !== 'undefined' &&
-      typeof DeviceOrientationEvent.requestPermission === 'function') {
-    try {
-      const perm = await DeviceOrientationEvent.requestPermission();
-      if (perm !== 'granted') { line.style.display = 'none'; return; }
-    } catch(e) { line.style.display = 'none'; return; }
-  }
   line.style.display = '';
   function onOrientation(e) {
     const tilt = getScreenTilt(e);
@@ -1255,9 +1266,9 @@ async function mpSearch() {
   });
   if (toTranslate.length) {
     for (const cat of toTranslate) {
-      const ja = await translateKoJa(mpEvals[cat.id].comment_ko);
+      const ja = await translateKoJaRetry(mpEvals[cat.id].comment_ko);
       if (ja) mpEvals[cat.id].comment_ja = ja;
-      await new Promise(r => setTimeout(r, 500));
+      await new Promise(r => setTimeout(r, 1000));
     }
   }
 
@@ -1324,13 +1335,13 @@ async function mpRetranslate() {
   if (btn) { btn.disabled = true; btn.textContent = '⏳ 번역 중...'; }
   const tasks = CATS.filter(cat => mpEvals[cat.id]?.comment_ko);
   for (const cat of tasks) {
-    const ja = await translateKoJa(mpEvals[cat.id].comment_ko);
+    const ja = await translateKoJaRetry(mpEvals[cat.id].comment_ko);
     if (ja) {
       mpEvals[cat.id].comment_ja = ja;
       const el = document.getElementById(`mp-ja-${cat.id}`);
       if (el) el.outerHTML = `<div class="mp-cmt-ja" id="mp-ja-${cat.id}">🇯🇵 ${ja}</div>`;
     }
-    await new Promise(r => setTimeout(r, 500));
+    await new Promise(r => setTimeout(r, 1000));
   }
   if (btn) { btn.disabled = false; btn.textContent = '🌐 번역'; }
   toast('✅ 번역 완료');
