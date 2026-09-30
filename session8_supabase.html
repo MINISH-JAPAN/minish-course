@@ -1754,15 +1754,14 @@ function renderMyPage() {
 
 async function translateKoJa(text) {
   if (!text) return '';
-  // Primary: Google Translate (browser-friendly, no CORS issues)
+  // Primary: MyMemory (free public API, no CORS issues, no key required)
   try {
-    const url = 'https://translate.googleapis.com/translate_a/single?client=gtx&sl=ko&tl=ja&dt=t&q=' + encodeURIComponent(text);
+    const url = 'https://api.mymemory.translated.net/get?q=' + encodeURIComponent(text) + '&langpair=ko|ja&de=myungjin.kim@minishtech.com';
     const r = await fetch(url);
     if (r.ok) {
       const j = await r.json();
-      if (j && j[0]) {
-        const result = j[0].map(p => (p && p[0]) ? p[0] : '').join('');
-        if (result) return result;
+      if (j?.responseStatus === 200 && j?.responseData?.translatedText) {
+        return j.responseData.translatedText;
       }
     }
   } catch(e) {}
