@@ -258,8 +258,8 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
   <div class="logo">MINISH<span class="hl">COURSE</span><span class="ses">Session 9 – 口腔内</span></div>
   <div class="nav-tabs">
     <button class="nav-tab active" id="tab-p" onclick="switchView('participant')">参加者</button>
-    <button class="nav-tab" id="tab-a" onclick="switchView('admin')">管理者</button>
     <button class="nav-tab" id="tab-m" onclick="switchView('mypage')">マイページ</button>
+    <button class="nav-tab" id="tab-a" onclick="switchView('admin')">管理者</button>
   </div>
 </div>
 
@@ -283,22 +283,17 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
 <div id="cam-overlay" class="cam-overlay" style="display:none">
   <video id="cam-video" class="cam-video" autoplay playsinline muted></video>
   <div class="cam-crop-frame">
-    <div class="cam-sample-ov" id="cam-sample-ov"></div>
     <div class="cam-grid"></div>
     <div class="cam-level-line" id="cam-level-line"></div>
   </div>
   <div class="cam-guide">
-    <div>サンプルに位置を合わせて撮影してください</div>
-    <div style="font-size:10px;opacity:.7">샘플 위치에 맞춰 촬영해 주세요</div>
+    <div>グリッドに合わせて撮影 / 그리드에 맞춰 촬영</div>
+    <div style="font-size:10px;opacity:.7">흰 선이 노란색이 되면 수평 맞춤</div>
   </div>
   <div class="cam-footer">
     <button class="cam-cancel" onclick="closeCameraOverlay()">✕ キャンセル</button>
     <button class="cam-shutter" onclick="capturePhoto()"></button>
-    <div class="cam-alpha-wrap">
-      <div class="cam-alpha-lbl">透明度 / 투명도</div>
-      <input type="range" class="cam-alpha" id="cam-alpha" min="10" max="70" value="38"
-             oninput="setCamAlpha(this.value)">
-    </div>
+    <div style="width:84px"></div>
   </div>
 </div>
 
@@ -959,9 +954,6 @@ async function handleUploadClick(catId, mode) {
 
 async function openCameraOverlay(catId, sampleUrl) {
   camCatId = catId;
-  const sOv = document.getElementById('cam-sample-ov');
-  sOv.innerHTML = sampleUrl ? `<img src="${sampleUrl}" alt="guide" style="opacity:.38">` : '';
-  document.getElementById('cam-alpha').value = 38;
   const ov = document.getElementById('cam-overlay');
   ov.style.display = 'block';
 
@@ -1073,15 +1065,14 @@ const DEEPL_API_KEY = '2e3d4519-10dc-4fbc-be60-da1348d590a6';
 
 async function translateKoJa(text) {
   if (!text) return '';
-  // Primary: Google Translate (browser-friendly, no CORS issues)
+  // Primary: MyMemory (free public API, no CORS issues, no key required)
   try {
-    const url = 'https://translate.googleapis.com/translate_a/single?client=gtx&sl=ko&tl=ja&dt=t&q=' + encodeURIComponent(text);
+    const url = 'https://api.mymemory.translated.net/get?q=' + encodeURIComponent(text) + '&langpair=ko|ja&de=myungjin.kim@minishtech.com';
     const r = await fetch(url);
     if (r.ok) {
       const j = await r.json();
-      if (j && j[0]) {
-        const result = j[0].map(p => (p && p[0]) ? p[0] : '').join('');
-        if (result) return result;
+      if (j?.responseStatus === 200 && j?.responseData?.translatedText) {
+        return j.responseData.translatedText;
       }
     }
   } catch(e) {}
