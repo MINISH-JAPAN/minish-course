@@ -18,15 +18,15 @@
   --danger:#c0392b;--muted:#5e7087;--sub:#4a6080;
   --border:#c8d8ea;--text:#1a2535;
 }
-body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
 
 /* Header */
-.header{background:var(--frame);color:#fff;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.3)}
-.logo{font-size:14px;font-weight:700;letter-spacing:1px}
+.header{background:var(--frame);color:#fff;padding:10px 12px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.3);gap:8px}
+.logo{font-size:13px;font-weight:700;letter-spacing:.5px;min-width:0;flex-shrink:1}
 .logo .hl{color:var(--accent)}
 .logo .ses{opacity:.6;font-size:11px;font-weight:400;margin-left:6px}
-.nav-tabs{display:flex;gap:4px}
-.nav-tab{padding:6px 14px;border-radius:6px;border:1px solid rgba(255,255,255,.2);background:transparent;color:rgba(255,255,255,.7);cursor:pointer;font-size:12px;font-family:'Noto Sans JP',sans-serif;transition:all .2s}
+.nav-tabs{display:flex;gap:3px;flex-shrink:0}
+.nav-tab{padding:6px 10px;border-radius:6px;border:1px solid rgba(255,255,255,.2);background:transparent;color:rgba(255,255,255,.7);cursor:pointer;font-size:12px;font-family:'Noto Sans JP',sans-serif;transition:all .2s;white-space:nowrap}
 .nav-tab.active{background:var(--accent);border-color:var(--accent);color:#fff}
 
 /* Main */
@@ -862,6 +862,11 @@ async function openReview(submissionId, name) {
       </div>
     </div>`;
   }
+
+  html += `<div class="eval-action-bar" style="margin-top:14px">
+    <button class="eval-save-btn" onclick="saveAllEvaluations().then(ok=>ok&&toast('✅ 評価保存完了'))">💾 評価保存</button>
+    <button class="show-participant-btn" onclick="openParticipantEvalView()">👁 参加者に見せる</button>
+  </div>`;
 
   rv.innerHTML = html;
   // Init drawing canvases after layout
@@ -1867,7 +1872,8 @@ async function mpSearch() {
         </div>
         <div class="mp-pcell">
           <div class="mp-plbl">提出写真 / 제출사진</div>
-          <div class="mp-frame">${photo?`<img src="${photo}">`:'<span>未提出</span>'}</div>
+          <div class="mp-frame">${photo?`<img src="${photo}">`:'<span>未提出</span>'}${photo&&ev.drawing_data_url?`<img src="${ev.drawing_data_url}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;pointer-events:none">`:''}
+          </div>
         </div>
         ${show3col ? `
         <div class="mp-pcell">
