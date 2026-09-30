@@ -1818,10 +1818,10 @@ async function mpSearch() {
     return ev?.comment_ko && !ev?.comment_ja;
   });
   if (toTranslate.length) {
-    await Promise.all(toTranslate.map(async cat => {
+    for (const cat of toTranslate) {
       const ja = await translateKoJa(mpEvals[cat.id].comment_ko);
       if (ja) mpEvals[cat.id].comment_ja = ja;
-    }));
+    }
   }
 
   // Build HTML
@@ -1862,8 +1862,8 @@ async function mpSearch() {
         ${show3col ? `
         <div class="mp-pcell">
           <div class="mp-plbl">2차사진 / 2枚目</div>
-          <div class="mp-frame" id="mp-frame2-${cat.id}">${hasPhoto2?`<img src="${ev.photo2_data_url}">`:'<span style="font-size:9px;text-align:center">촬영 필요</span>'}</div>
-          <button class="mp-shoot-btn" onclick="mpOpenCamera('${cat.id}')">📷 ${hasPhoto2?'다시 촬영':'2차 촬영'}</button>
+          <div class="mp-frame" id="mp-frame2-${cat.id}">${hasPhoto2?`<img src="${ev.photo2_data_url}">`:'<span style="font-size:9px;text-align:center">撮影が必要</span>'}</div>
+          <button class="mp-shoot-btn" onclick="mpOpenCamera('${cat.id}')">📷 ${hasPhoto2?'再撮影':'2枚目撮影'}</button>
         </div>` : ''}
       </div>
       <div class="mp-eval">
@@ -1942,7 +1942,7 @@ async function mpSavePhoto2(catId, dataUrl) {
   mpEvals[catId].photo2_data_url = dataUrl;
   toast('✅ 2차 사진 저장 완료！');
   const btn = document.querySelector(`button[onclick="mpOpenCamera('${catId}')"]`);
-  if (btn) btn.textContent = '📷 다시 촬영';
+  if (btn) btn.textContent = '📷 再撮影';
 }
 
 // ── INIT ─────────────────────────────────────────────────────
