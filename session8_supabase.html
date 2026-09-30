@@ -160,6 +160,9 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
 @media(orientation:landscape){.cam-guide{top:0;bottom:68px;right:auto;width:auto;background:linear-gradient(to right,rgba(0,0,0,.45),transparent);padding:16px 28px 16px 14px;display:flex;flex-direction:column;justify-content:center;align-items:center;writing-mode:vertical-lr;transform:none;font-size:12px;text-align:center}}
 @media(orientation:landscape){.cam-guide div:last-child{font-size:9px;opacity:.6}}
 .cam-footer{position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,.65);padding:14px 24px 28px;display:flex;align-items:center;justify-content:space-between;z-index:3;gap:12px}
+.cam-zoom-btns{display:flex;gap:6px;align-items:center}
+.cam-zoom-btn{padding:6px 12px;background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.4);color:#fff;border-radius:6px;font-size:13px;font-family:'Noto Sans JP',sans-serif;cursor:pointer;font-weight:600}
+.cam-zoom-btn.active{background:rgba(255,221,0,.35);border-color:#ffdd00;color:#ffdd00}
 .cam-cancel{background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:8px;padding:10px 16px;font-size:13px;font-family:'Noto Sans JP',sans-serif;cursor:pointer}
 .cam-shutter{width:46px;height:46px;border-radius:50%;border:3px solid #fff;background:rgba(255,255,255,.95);cursor:pointer;position:relative;box-shadow:0 0 0 2px rgba(255,255,255,.28);transition:transform .12s;flex-shrink:0}
 .cam-shutter:active{transform:scale(.91)}
@@ -345,13 +348,15 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
     <div class="cam-level-label" id="cam-level-label">0.0°</div>
   </div>
   <div class="cam-guide">
-    <div>グリッドに合わせて撮影 / 그리드에 맞춰 촬영</div>
-    <div style="font-size:10px;opacity:.7">흰 선이 노란색이 되면 수평 맞춤</div>
+    <div>グリッドに合わせ、中央の白線が黄色になるよう撮影してください</div>
   </div>
   <div class="cam-footer">
     <button class="cam-cancel" onclick="closeCameraOverlay()">✕ キャンセル</button>
     <button class="cam-shutter" onclick="capturePhoto()"></button>
-    <div style="width:84px"></div>
+    <div class="cam-zoom-btns">
+      <button class="cam-zoom-btn active" data-zoom="1" onclick="setZoom(1)">1×</button>
+      <button class="cam-zoom-btn" data-zoom="2" onclick="setZoom(2)">2×</button>
+    </div>
   </div>
 </div>
 
@@ -1221,6 +1226,39 @@ async function ssSaveEval() {
 // ── CAMERA OVERLAY ───────────────────────────────────────────
 let camStream = null;
 let camCatId  = null;
+let currentZoom = 1;
+let nativeZoomSupported = false;
+
+async function setZoom(level) {
+  currentZoom = level;
+  document.querySelectorAll('.cam-zoom-btn').forEach(b => {
+    b.classList.toggle('active', parseFloat(b.dataset.zoom) === level);
+  });
+  const vid = document.getElementById('cam-video');
+  if (!vid || !camStream) return;
+  const track = camStream.getVideoTracks()[0];
+  if (track) {
+    const caps = track.getCapabilities ? track.getCapabilities() : {};
+    if (caps && caps.zoom) {
+      nativeZoomSupported = true;
+      const z = Math.min(Math.max(level, caps.zoom.min), caps.zoom.max);
+      try {
+        await track.applyConstraints({ advanced: [{ zoom: z }] });
+        vid.style.transform = '';
+        vid.style.transformOrigin = '';
+        return;
+      } catch(e) { nativeZoomSupported = false; }
+    }
+  }
+  nativeZoomSupported = false;
+  if (level > 1) {
+    vid.style.transform = `scale(${level})`;
+    vid.style.transformOrigin = 'center center';
+  } else {
+    vid.style.transform = '';
+    vid.style.transformOrigin = '';
+  }
+}
 
 // ─ Level indicator ─
 function getScreenTilt(e) {
@@ -1322,7 +1360,7 @@ async function openCameraOverlay(catId, mode) {
     });
     const vid = document.getElementById('cam-video');
     vid.srcObject = camStream;
-    vid.addEventListener('loadedmetadata', () => { vid.play().catch(() => {}); }, { once: true });
+    vid.addEventListener('loadedmetadata', () => { vid.play().catch(() => {}); setZoom(1); }, { once: true });
     vid.play().catch(() => {});
   } catch(e) {
     closeCameraOverlay();
@@ -1341,8 +1379,10 @@ function closeCameraOverlay() {
   } catch(e) {}
   if (camStream) { camStream.getTracks().forEach(t => t.stop()); camStream = null; }
   const v = document.getElementById('cam-video');
-  if (v) v.srcObject = null;
+  if (v) { v.srcObject = null; v.style.transform = ''; v.style.transformOrigin = ''; }
   document.getElementById('cam-overlay').style.display = 'none';
+  currentZoom = 1;
+  nativeZoomSupported = false;
   camCatId = null;
 }
 
@@ -1373,10 +1413,17 @@ async function capturePhoto() {
   const size = Math.min(cw, ch);
   const sx = cx + (cw - size) / 2;
   const sy = cy + (ch - size) / 2;
-  const outSize = Math.min(size, 1600);
+  // For CSS zoom fallback: crop the zoomed-in portion
+  let drawSX = sx, drawSY = sy, drawSize = size;
+  if (!nativeZoomSupported && currentZoom > 1) {
+    drawSize = size / currentZoom;
+    drawSX = sx + (size - drawSize) / 2;
+    drawSY = sy + (size - drawSize) / 2;
+  }
+  const outSize = Math.min(drawSize, 1600);
   const out = document.createElement('canvas');
   out.width = outSize; out.height = outSize;
-  out.getContext('2d').drawImage(video, sx, sy, size, size, 0, 0, outSize, outSize);
+  out.getContext('2d').drawImage(video, drawSX, drawSY, drawSize, drawSize, 0, 0, outSize, outSize);
   const dataUrl = out.toDataURL('image/jpeg', 1.0);
   const cid = camCatId;
   const mode = camMode;
@@ -1985,6 +2032,6 @@ renderParticipant();
   setInterval(removeNetlifyBadge, 500);
   new MutationObserver(removeNetlifyBadge).observe(document.documentElement, { childList: true, subtree: true });
 })();
-</script> 
+</script>
 </body>
 </html>
