@@ -137,8 +137,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
 .cam-sample-ov img{width:100%;height:100%;object-fit:cover}
 .cam-grid{position:absolute;inset:0;z-index:2;pointer-events:none;background-image:linear-gradient(rgba(255,255,255,.22) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.22) 1px,transparent 1px);background-size:33.333% 33.333%}
 .cam-guide{position:absolute;top:0;left:0;right:0;background:linear-gradient(to bottom,rgba(0,0,0,.48),transparent);color:#fff;font-size:13px;text-align:center;padding:14px 16px 40px;line-height:1.7;z-index:2;font-family:'Noto Sans JP',sans-serif}
-@media(orientation:landscape){.cam-guide{top:0;bottom:68px;right:auto;width:auto;background:linear-gradient(to right,rgba(0,0,0,.45),transparent);padding:16px 28px 16px 14px;display:flex;flex-direction:column;justify-content:center;align-items:center;writing-mode:vertical-lr;transform:none;font-size:12px;text-align:center}}
-@media(orientation:landscape){.cam-guide div:last-child{font-size:9px;opacity:.6}}
+@media(orientation:landscape){.cam-guide{top:0;bottom:68px;right:auto;width:auto;background:linear-gradient(to right,rgba(0,0,0,.45),transparent);padding:16px 28px 16px 14px;display:flex;flex-direction:column;justify-content:center;align-items:center;writing-mode:vertical-rl;transform:none;font-size:12px;text-align:center}}
 .cam-footer{position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,.65);padding:14px 24px 28px;display:flex;align-items:center;justify-content:space-between;z-index:2;gap:12px}
 .cam-zoom-btns{display:flex;gap:6px;align-items:center}
 .cam-zoom-btn{padding:6px 12px;background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.4);color:#fff;border-radius:6px;font-size:13px;font-family:'Noto Sans JP',sans-serif;cursor:pointer;font-weight:600}
@@ -753,7 +752,6 @@ async function openReview(submissionId, name) {
         <div class="eval-mark-row">
           <span class="eval-lbl">評価:</span>
           <button class="mark-btn${sym==='○'?' sel-maru':''}" data-cat="${cat.id}" data-mark="○" onclick="setMark('${cat.id}','○')">○</button>
-          <button class="mark-btn${sym==='△'?' sel-sank':''}" data-cat="${cat.id}" data-mark="△" onclick="setMark('${cat.id}','△')">△</button>
           <button class="mark-btn${sym==='×'?' sel-batu':''}" data-cat="${cat.id}" data-mark="×" onclick="setMark('${cat.id}','×')">×</button>
         </div>
         <textarea class="eval-comment" id="ec-${cat.id}" placeholder="コメント（韓国語） / 코멘트 (한국어)" oninput="if(evalState['${cat.id}'])evalState['${cat.id}'].comment_ko=this.value">${ev.comment_ko||''}</textarea>
@@ -1090,7 +1088,18 @@ async function capturePhoto() {
   const outH = Math.round(drawCH * outW / drawCW);
   const out = document.createElement('canvas');
   out.width = outW; out.height = outH;
-  out.getContext('2d').drawImage(video, drawCX, drawCY, drawCW, drawCH, 0, 0, outW, outH);
+  const outCtx = out.getContext('2d');
+  // Auto-flip for specific categories
+  if (camCatId === 'oral_upper_occ') {
+    // 上顎咬合面: horizontal (left-right) flip
+    outCtx.translate(outW, 0);
+    outCtx.scale(-1, 1);
+  } else if (camCatId === 'oral_lower_occ') {
+    // 下顎咬合面: vertical (up-down) flip
+    outCtx.translate(0, outH);
+    outCtx.scale(1, -1);
+  }
+  outCtx.drawImage(video, drawCX, drawCY, drawCW, drawCH, 0, 0, outW, outH);
   const dataUrl = out.toDataURL('image/jpeg', 1.0);
   const cid = camCatId;
   const mode = camMode;
@@ -1332,7 +1341,7 @@ async function mpSearch() {
     const sampleUrl = mpSamples[cat.id] || '';
     const mark = ev.mark || '';
     const markCls = mark==='○'?'maru':mark==='△'?'sank':mark==='×'?'batu':'none';
-    const show3col = mark === '△' || mark === '×' || hasPhoto2;
+    const show3col = mark === '×' || hasPhoto2;
 
     html += `
     <div class="mp-card">
