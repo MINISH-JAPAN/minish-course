@@ -157,8 +157,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
   .cam-crop-frame{top:0;bottom:0;left:50%;transform:translateX(-50%);width:100vh;height:100vh;right:auto}
 }
 .cam-guide{position:absolute;top:0;left:0;right:0;background:linear-gradient(to bottom,rgba(0,0,0,.55),transparent);color:#fff;font-size:13px;text-align:center;padding:14px 16px 40px;line-height:1.7;z-index:3;font-family:'Noto Sans JP',sans-serif}
-@media(orientation:landscape){.cam-guide{top:0;bottom:68px;right:auto;width:auto;background:linear-gradient(to right,rgba(0,0,0,.45),transparent);padding:16px 28px 16px 14px;display:flex;flex-direction:column;justify-content:center;align-items:center;writing-mode:vertical-lr;transform:none;font-size:12px;text-align:center}}
-@media(orientation:landscape){.cam-guide div:last-child{font-size:9px;opacity:.6}}
+@media(orientation:landscape){.cam-guide{top:0;bottom:68px;right:auto;width:auto;background:linear-gradient(to right,rgba(0,0,0,.45),transparent);padding:16px 28px 16px 14px;display:flex;flex-direction:column;justify-content:center;align-items:center;writing-mode:vertical-rl;transform:none;font-size:12px;text-align:center}}
 .cam-footer{position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,.65);padding:14px 24px 28px;display:flex;align-items:center;justify-content:space-between;z-index:3;gap:12px}
 .cam-zoom-btns{display:flex;gap:6px;align-items:center}
 .cam-zoom-btn{padding:6px 12px;background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.4);color:#fff;border-radius:6px;font-size:13px;font-family:'Noto Sans JP',sans-serif;cursor:pointer;font-weight:600}
@@ -389,7 +388,6 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
       <div class="ss-eval-lbl">評価 / 평가</div>
       <div class="ss-mark-row">
         <button class="ss-mark-btn" id="ss-mark-maru" data-mark="○" onclick="ssMark('○')">○</button>
-        <button class="ss-mark-btn" id="ss-mark-sank" data-mark="△" onclick="ssMark('△')">△</button>
         <button class="ss-mark-btn" id="ss-mark-batu" data-mark="×" onclick="ssMark('×')">×</button>
       </div>
       <div class="ss-eval-lbl">コメント (한국어)</div>
@@ -436,8 +434,8 @@ const CATS = [
   {id:'smile_front_half', jp:'スマイル正面（半貌）', kr:'스마일 정면 반모', n:4},
   {id:'smile_left_half',  jp:'スマイル左側（半貌）', kr:'스마일 좌측 반모', n:5},
   {id:'smile_right_half', jp:'スマイル右側（半貌）', kr:'스마일 우측 반모', n:6},
-  {id:'prep_face',        jp:'プレップ後 안모',  kr:'프렙후 안모',  n:7},
-  {id:'opener_face',      jp:'開口器 안모',      kr:'개구기 안모',  n:8},
+  {id:'prep_face',        jp:'プレップ後顔貌',  kr:'프렙후 안모',  n:7},
+  {id:'opener_face',      jp:'開口器顔貌',      kr:'개구기 안모',  n:8},
   {id:'block_shade',      jp:'ブロック シェード', kr:'블럭 쉐이드',  n:9},
   {id:'gum_shade',        jp:'歯肉 シェード',    kr:'잇몸 쉐이드',  n:10},
 ];
@@ -834,12 +832,11 @@ async function openReview(submissionId, name) {
         <div class="eval-mark-row">
           <span class="eval-lbl">評価:</span>
           <button class="mark-btn${sym==='○'?' sel-maru':''}" data-cat="${cat.id}" data-mark="○" onclick="setMark('${cat.id}','○')">○</button>
-          <button class="mark-btn${sym==='△'?' sel-sank':''}" data-cat="${cat.id}" data-mark="△" onclick="setMark('${cat.id}','△')">△</button>
           <button class="mark-btn${sym==='×'?' sel-batu':''}" data-cat="${cat.id}" data-mark="×" onclick="setMark('${cat.id}','×')">×</button>
         </div>
         <textarea class="eval-comment" id="ec-${cat.id}" placeholder="コメント（韓国語） / 코멘트 (한국어)" oninput="if(evalState['${cat.id}'])evalState['${cat.id}'].comment_ko=this.value">${ev.comment_ko||''}</textarea>
       </div>
-      <div class="sp2-bar" id="sp2-bar-${cat.id}" style="display:${(sym==='△'||sym==='×')?'block':'none'}">
+      <div class="sp2-bar" id="sp2-bar-${cat.id}" style="display:${(sym==='×')?'block':'none'}">
         <div class="sp2-grid">
           <div class="sp2-cell">
             <div class="sp2-label">サンプル / 샘플</div>
@@ -1157,7 +1154,7 @@ function ssMark(mark) {
   });
   // Show/hide sp2-bar in review
   const sp2 = document.getElementById(`sp2-bar-${cat.id}`);
-  if (sp2) sp2.style.display = (cur === '△' || cur === '×') ? 'block' : 'none';
+  if (sp2) sp2.style.display = (cur === '×') ? 'block' : 'none';
 }
 
 function ssSyncComment() {
@@ -1528,9 +1525,9 @@ function setMark(catId, mark) {
       btn.classList.add(cur==='○'?'sel-maru':cur==='△'?'sel-sank':'sel-batu');
     }
   });
-  // Show 2nd-photo bar only for △ and ×
+  // Show 2nd-photo bar only for ×
   const sp2 = document.getElementById(`sp2-bar-${catId}`);
-  if (sp2) sp2.style.display = (cur === '△' || cur === '×') ? 'block' : 'none';
+  if (sp2) sp2.style.display = (cur === '×') ? 'block' : 'none';
 }
 
 async function translateComment(catId) {
@@ -1899,7 +1896,7 @@ async function mpSearch() {
     const photo   = mpPhotos[cat.id]  || '';
     const ev      = mpEvals[cat.id]   || {};
     const mark    = ev.mark || '';
-    const needsRetake = mark === '△' || mark === '×';
+    const needsRetake = mark === '×';
     const hasPhoto2   = !!ev.photo2_data_url;
     const show3col    = needsRetake || hasPhoto2;
     const markCls     = mark==='○'?'maru':mark==='△'?'sank':mark==='×'?'batu':'none';
