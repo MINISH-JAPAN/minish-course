@@ -421,7 +421,7 @@ function compress(file) {
         const c = document.createElement('canvas');
         c.width = w; c.height = h;
         c.getContext('2d').drawImage(img, 0, 0, w, h);
-        resolve(c.toDataURL('image/jpeg', 1.0));
+        resolve(c.toDataURL('image/jpeg', 0.72));
       };
       img.onerror = reject;
       img.src = e.target.result;
@@ -484,10 +484,13 @@ function checkPw() {
   }
 }
 
-async function loadSamples() {
+let samplesLoaded = false;
+async function loadSamples(force) {
+  if (samplesLoaded && !force) return;
   const {data} = await supa.from('samples').select('cat_id,data_url').eq('session_id', SESSION_ID);
   samples = {};
   if (data) data.forEach(s => { samples[s.cat_id] = s.data_url; });
+  samplesLoaded = true;
 }
 
 async function saveSample(catId, dataUrl) {
@@ -496,6 +499,7 @@ async function saveSample(catId, dataUrl) {
     session_id: SESSION_ID, cat_id: catId, data_url: dataUrl
   });
   samples[catId] = dataUrl;
+  samplesLoaded = true; // keep cache valid with updated value
 }
 
 async function renderParticipant() {
@@ -812,7 +816,7 @@ async function downloadPDF() {
         currentReviewPhotos[cat.id]  || null,
         currentReviewName);
 
-      const imgData = canvas.toDataURL('image/jpeg', 1.0);
+      const imgData = canvas.toDataURL('image/jpeg', 0.85);
       doc.addImage(imgData, 'JPEG', 0, 0, PW, PH, undefined, 'FAST');
     }
 
@@ -1172,7 +1176,7 @@ async function capturePhoto() {
     outCtx.scale(1, -1);
   }
   outCtx.drawImage(video, drawCX, drawCY, drawCW, drawCH, 0, 0, outW, outH);
-  const dataUrl = out.toDataURL('image/jpeg', 1.0);
+  const dataUrl = out.toDataURL('image/jpeg', 0.72);
   const cid = camCatId;
   const mode = camMode;
   closeCameraOverlay();
