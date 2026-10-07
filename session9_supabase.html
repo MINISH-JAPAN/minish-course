@@ -1236,7 +1236,7 @@ function ssRenderSubItems(critKey) {
   const state = evalState[cat.id]?.[critKey] || {mark:'',items:[]};
   if (state.mark !== '×') { el.classList.remove('show'); el.innerHTML = ''; return; }
   el.innerHTML = crit.ko.map((ko, i) =>
-    `<label class="ss-sub-chk"><input type="checkbox" ${(state.items||[]).includes(i)?'checked':''} onchange="ssCritItem('${critKey}',${i},this.checked)"> ${ko}</label>`
+    `<label class="ss-sub-chk"><input type="checkbox" ${(state.items||[]).includes(i)?'checked':''} onchange="ssCritItem('${critKey}',${i},this.checked)"><span>${crit.ja[i]}<small style="opacity:.7;font-size:9px">（${ko}）</small></span></label>`
   ).join('');
   el.classList.add('show');
 }
