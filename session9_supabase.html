@@ -407,6 +407,7 @@ let mpPhotos = {};
 let mpEvals  = {};
 let mpSamples = {};
 let mpCurrentCatId = null;
+let mpSubsList = [];
 let ssStartX  = 0;
 
 function compress(file) {
@@ -415,13 +416,13 @@ function compress(file) {
     reader.onload = e => {
       const img = new Image();
       img.onload = () => {
-        const MAX = 1600;
+        const MAX = 900;
         let w = img.width, h = img.height;
         if (w > MAX) { h = Math.round(h * MAX / w); w = MAX; }
         const c = document.createElement('canvas');
         c.width = w; c.height = h;
         c.getContext('2d').drawImage(img, 0, 0, w, h);
-        resolve(c.toDataURL('image/jpeg', 0.72));
+        resolve(c.toDataURL('image/jpeg', 0.68));
       };
       img.onerror = reject;
       img.src = e.target.result;
@@ -502,10 +503,26 @@ function checkPw() {
 let samplesLoaded = false;
 async function loadSamples(force) {
   if (samplesLoaded && !force) return;
-  const {data} = await supa.from('samples').select('cat_id,data_url').eq('session_id', SESSION_ID);
-  samples = {};
-  if (data) data.forEach(s => { samples[s.cat_id] = s.data_url; });
-  samplesLoaded = true;
+  try {
+    const {data, error} = await supa.from('samples').select('cat_id,data_url').eq('session_id', SESSION_ID);
+    if (error) throw error;
+    samples = {};
+    if (data) data.forEach(s => { samples[s.cat_id] = s.data_url; });
+    samplesLoaded = true;
+  } catch(e) {
+    console.warn('샘플 로딩 실패 — 3초 후 자동 재시도:', e);
+    setTimeout(async () => {
+      if (samplesLoaded) return;
+      try {
+        const {data, error} = await supa.from('samples').select('cat_id,data_url').eq('session_id', SESSION_ID);
+        if (error) throw error;
+        samples = {};
+        if (data) data.forEach(s => { samples[s.cat_id] = s.data_url; });
+        samplesLoaded = true;
+        if (currentView === 'participant' && !submitted) renderParticipant();
+      } catch(e2) { console.warn('재시도 실패:', e2); }
+    }, 3000);
+  }
 }
 
 async function saveSample(catId, dataUrl) {
@@ -616,14 +633,17 @@ async function doSubmit() {
     });
     if (e1) throw e1;
 
-    // 사진을 Supabase Storage에 업로드하고 URL만 DB에 저장
-    const rows = await Promise.all(Object.entries(myPhotos).map(async ([catId, dataUrl]) => {
+    // 사진을 1장씩 개별 insert (batch insert는 payload 한도 초과 위험)
+    for (const [catId, dataUrl] of Object.entries(myPhotos)) {
       const path = `${SESSION_ID}/${sid}/${catId}.jpg`;
-      const url = await uploadPhoto(path, dataUrl);
-      return { id: `${sid}_${catId}`, submission_id: sid, session_id: SESSION_ID, cat_id: catId, data_url: url };
-    }));
-    const {error: e2} = await supa.from('photos').insert(rows);
-    if (e2) throw e2;
+      let url = dataUrl;
+      try { url = await uploadPhoto(path, dataUrl); } catch(_) {}
+      const {error: e2} = await supa.from('photos').insert({
+        id: `${sid}_${catId}`, submission_id: sid,
+        session_id: SESSION_ID, cat_id: catId, data_url: url
+      });
+      if (e2) console.warn('photo insert warn:', catId, e2.message);
+    }
 
     submitted = true;
     renderSuccess(document.getElementById('participant-view'));
@@ -1187,7 +1207,7 @@ async function capturePhoto() {
     drawCX = cx + (cw - drawCW) / 2;
     drawCY = cy + (ch - drawCH) / 2;
   }
-  const outW = Math.min(drawCW, 1600);
+  const outW = Math.min(drawCW, 900);
   const outH = Math.round(drawCH * outW / drawCW);
   const out = document.createElement('canvas');
   out.width = outW; out.height = outH;
@@ -1203,7 +1223,7 @@ async function capturePhoto() {
     outCtx.scale(1, -1);
   }
   outCtx.drawImage(video, drawCX, drawCY, drawCW, drawCH, 0, 0, outW, outH);
-  const dataUrl = out.toDataURL('image/jpeg', 0.72);
+  const dataUrl = out.toDataURL('image/jpeg', 0.68);
   const cid = camCatId;
   const mode = camMode;
   closeCameraOverlay();
@@ -1443,14 +1463,53 @@ async function mpSearch() {
     if (sd) sd.forEach(s => { mpSamples[s.cat_id] = s.data_url; });
   }
 
-  // Find submission
+  // Find all submissions for this name
   const {data: subs} = await supa.from('submissions').select('*')
-    .eq('session_id', SESSION_ID).eq('participant_name', name).order('created_at', {ascending:false}).limit(1);
-  if (!subs || !subs.length) { res.innerHTML = '<div class="section-box" style="text-align:center;color:var(--muted);padding:24px">提出が見つかりません / 제출 내역 없음</div>'; return; }
+    .eq('session_id', SESSION_ID).ilike('participant_name', name)
+    .order('created_at', {ascending:false}).limit(200);
+  if (!subs || !subs.length) {
+    res.innerHTML = `<div class="section-box" style="text-align:center;color:var(--muted);padding:30px">
+      ❌ "${name}"으로 제출한 내역이 없습니다<br><span style="font-size:11px">提出が見つかりません</span>
+    </div>`;
+    return;
+  }
 
-  mpSub = subs[0];
-  const sub = mpSub;
-  const ts = fmtDate(sub.created_at);
+  mpSubsList = subs;
+  if (subs.length === 1) {
+    await mpLoadDetail(0);
+  } else {
+    mpShowSubsList();
+  }
+}
+
+function mpShowSubsList() {
+  const res = document.getElementById('mp-result');
+  const name = mpSubsList[0]?.participant_name || '';
+  let html = `<div class="section-box" style="margin-bottom:12px">
+    <div style="font-weight:700;font-size:13px;color:var(--primary);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)">
+      👤 <strong>${name}</strong> <span style="font-weight:400;font-size:12px;color:var(--muted)">— ${mpSubsList.length}건의 제출 내역이 있습니다</span>
+    </div>`;
+  mpSubsList.forEach((sub, i) => {
+    const ts = new Date(sub.created_at).toLocaleString('ja-JP',{year:'2-digit',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
+    const pc = sub.photo_count != null ? `${sub.photo_count}장` : '';
+    html += `<div class="sub-item" onclick="mpLoadDetail(${i})" style="display:flex;align-items:center;padding:12px 14px;border:1px solid var(--border);border-radius:8px;margin-bottom:8px;cursor:pointer;background:var(--bg);transition:all .2s">
+      <div style="flex:1">
+        <div style="font-weight:600;font-size:13px;color:var(--text)">${mpSubsList.length - i}번째 제출 &nbsp;<span style="font-weight:400;color:var(--muted);font-size:12px">${ts}</span></div>
+        ${pc ? `<div style="font-size:11px;color:var(--muted);margin-top:2px">${pc} 제출</div>` : ''}
+      </div>
+      <div style="font-size:20px;color:var(--muted)">›</div>
+    </div>`;
+  });
+  html += '</div>';
+  res.innerHTML = html;
+}
+
+async function mpLoadDetail(idx) {
+  const sub = mpSubsList[idx];
+  if (!sub) return;
+  mpSub = sub;
+  const res = document.getElementById('mp-result');
+  res.innerHTML = '<div class="loading">📷 읽어오는 중...</div>';
 
   // Load photos
   const {data: photos} = await supa.from('photos').select('cat_id,data_url').eq('submission_id', sub.id);
@@ -1484,7 +1543,12 @@ async function mpSearch() {
   }
 
   // Build HTML
-  let html = `<div class="section-box mp-result-hdr" style="display:flex;align-items:center;gap:8px;margin-bottom:12px;padding:10px 14px">
+  const ts = fmtDate(sub.created_at);
+  const backBtn = mpSubsList.length > 1
+    ? `<button onclick="mpShowSubsList()" style="background:none;border:1px solid var(--border);border-radius:6px;padding:5px 10px;font-size:11px;cursor:pointer;font-family:'Noto Sans JP',sans-serif;flex-shrink:0">← 목록</button>`
+    : '';
+  let html = `<div class="section-box mp-result-hdr" style="display:flex;align-items:center;gap:8px;margin-bottom:12px;padding:10px 14px;flex-wrap:wrap">
+    ${backBtn}
     <div style="flex:1">👤 <strong>${sub.participant_name}</strong> <span style="font-size:11px;color:var(--muted)">${ts} 提出</span></div>
     <button class="mp-action-btn mp-trans-all-btn" onclick="mpRetranslate()" id="mp-trans-all-btn">🌐 번역</button>
     <button class="mp-action-btn mp-pdf-btn" onclick="mpPrint()">📄 PDF저장</button>
