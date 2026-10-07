@@ -167,6 +167,8 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
 .cam-focus-ring.active{opacity:1;transform:translate(-50%,-50%) scale(1)}
 .cam-focus-ring.locked{border-color:#ffdd00;box-shadow:0 0 0 1px rgba(255,221,0,.4)}
 .cam-cancel{background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:8px;padding:10px 16px;font-size:13px;font-family:'Noto Sans JP',sans-serif;cursor:pointer}
+.cam-file-btn{display:flex;align-items:center;justify-content:center;width:42px;height:42px;border-radius:50%;background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.4);color:#fff;font-size:20px;cursor:pointer;flex-shrink:0;transition:background .15s}
+.cam-file-btn:hover{background:rgba(255,255,255,.35)}
 .cam-shutter{width:46px;height:46px;border-radius:50%;border:3px solid #fff;background:rgba(255,255,255,.95);cursor:pointer;position:relative;box-shadow:0 0 0 2px rgba(255,255,255,.28);transition:transform .12s;flex-shrink:0}
 .cam-shutter:active{transform:scale(.91)}
 .cam-shutter::after{content:'';position:absolute;inset:4px;border-radius:50%;background:var(--accent)}
@@ -357,6 +359,10 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
   <div class="cam-footer">
     <button class="cam-cancel" onclick="closeCameraOverlay()">✕ キャンセル</button>
     <button class="cam-shutter" onclick="capturePhoto()"></button>
+    <label class="cam-file-btn" title="ファイルから選択">
+      📁
+      <input type="file" accept="image/*" style="display:none" onchange="handleCamFileSelect(this)">
+    </label>
     <div class="cam-zoom-btns">
       <button class="cam-zoom-btn active" data-zoom="1" onclick="setZoom(1)">1×</button>
       <button class="cam-zoom-btn" data-zoom="2" onclick="setZoom(2)">2×</button>
@@ -443,10 +449,8 @@ const CATS = [
   {id:'smile_right_half', jp:'スマイル右側（半貌）', kr:'스마일 우측 반모', n:6},
   {id:'prep_face',        jp:'プレップ後顔貌',  kr:'프렙후 안모',  n:7},
   {id:'opener_face',      jp:'開口器顔貌',      kr:'개구기 안모',  n:8},
-  {id:'block_shade',      jp:'ブロック シェード', kr:'블럭 쉐이드',  n:9},
-  {id:'gum_shade',        jp:'歯肉 シェード',    kr:'잇몸 쉐이드',  n:10},
 ];
-const TOTAL = 10;
+const TOTAL = 8;
 
 // ── SUPABASE ────────────────────────────────────────────────
 const {createClient} = supabase;
@@ -1235,6 +1239,7 @@ let camStream = null;
 let camCatId  = null;
 let currentZoom = 1;
 let nativeZoomSupported = false;
+let macroGuardId = null;
 
 // ── TAP-TO-FOCUS ─────────────────────────────────────────────
 let focusRingTimer = null;
@@ -1410,6 +1415,24 @@ async function openCameraOverlay(catId, mode) {
     vid.srcObject = camStream;
     vid.addEventListener('loadedmetadata', () => { vid.play().catch(() => {}); setZoom(1); }, { once: true });
     vid.play().catch(() => {});
+    // ── Macro prevention: enforce zoom≥1 to block ultra-wide/macro lens ──
+    const track = camStream.getVideoTracks()[0];
+    if (track) {
+      const caps = track.getCapabilities ? track.getCapabilities() : {};
+      if (caps.zoom) {
+        try { await track.applyConstraints({ advanced: [{ zoom: Math.max(1, caps.zoom.min || 0) }] }); } catch(_) {}
+      }
+    }
+    // Guard interval: if iOS auto-switches to macro (<1×), correct it
+    macroGuardId = setInterval(async () => {
+      if (!camStream) return;
+      const t = camStream.getVideoTracks()[0];
+      if (!t) return;
+      const settings = t.getSettings ? t.getSettings() : {};
+      if (settings.zoom !== undefined && settings.zoom < 0.99) {
+        try { await t.applyConstraints({ advanced: [{ zoom: 1 }] }); } catch(_) {}
+      }
+    }, 600);
   } catch(e) {
     closeCameraOverlay();
     toast('カメラにアクセスできません。ファイルを選択してください。');
@@ -1419,6 +1442,7 @@ async function openCameraOverlay(catId, mode) {
 
 function closeCameraOverlay() {
   stopLevelIndicator();
+  if (macroGuardId) { clearInterval(macroGuardId); macroGuardId = null; }
   // ── Exit fullscreen if active ──
   try {
     if (document.fullscreenElement || document.webkitFullscreenElement) {
@@ -1490,6 +1514,33 @@ async function capturePhoto() {
     if (nameEl && savedName) nameEl.value = savedName;
     toast('✅ 写真を撮影しました');
   }
+}
+
+async function handleCamFileSelect(input) {
+  if (!input.files || !input.files[0]) return;
+  const file = input.files[0];
+  const cid = camCatId;
+  const mode = camMode;
+  closeCameraOverlay();
+  toast('処理中...');
+  try {
+    const dataUrl = await compress(file);
+    if (mode === 'mypage') {
+      await mpSavePhoto2(cid, dataUrl);
+    } else if (mode === 'second') {
+      secondPhotos[cid] = dataUrl;
+      const frame = document.getElementById(`sp2-frame-${cid}`);
+      if (frame) frame.innerHTML = `<img src="${dataUrl}">`;
+      toast('✅ 2枚目を登録しました');
+    } else {
+      const savedName = document.getElementById('p-name')?.value || '';
+      myPhotos[cid] = dataUrl;
+      await renderParticipant();
+      const nameEl = document.getElementById('p-name');
+      if (nameEl && savedName) nameEl.value = savedName;
+      toast('✅ 写真を登録しました');
+    }
+  } catch(e) { toast('エラーが発生しました'); }
 }
 
 function setCamAlpha(val) {
