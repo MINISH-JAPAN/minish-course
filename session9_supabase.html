@@ -392,54 +392,135 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
         <div id="ss-q-sample" class="ss-quad-ph">未登録</div>
       </div>
       <div class="ss-quad">
-        <div class="ss-quad-lbl">1차 사진</div>
+        <div class="ss-quad-lbl">1次写真<small>（1차사진）</small></div>
         <div id="ss-q-photo1" class="ss-quad-ph">未提出</div>
       </div>
       <div class="ss-quad">
-        <div class="ss-quad-lbl">2차 사진</div>
+        <div class="ss-quad-lbl">2次写真<small>（2차사진）</small></div>
         <div id="ss-q-photo2" class="ss-quad-ph">—</div>
       </div>
       <div class="ss-quad">
-        <div class="ss-quad-lbl">3차 사진</div>
+        <div class="ss-quad-lbl">3次写真<small>（3차사진）</small></div>
         <div id="ss-q-photo3" class="ss-quad-ph">—</div>
       </div>
     </div>
     <div class="ss-eval-panel" id="ss-eval-panel">
-      <div class="ss-eval-lbl">評価 / 평가</div>
-      <div class="ss-crit" id="ss-crit-setup">
+      <!-- ─── 1次 評価 -->
+      <div class="ss-eval-section" id="ss-eval-s1">
+        <div class="ss-eval-lbl ss-eval-lbl-p1">1次写真 評価<small>（1차사진）</small></div>
+      <div class="ss-crit" id="ss-crit-p1-setup">
         <div class="ss-crit-row">
           <span class="ss-crit-label">1. SETUP</span>
-          <button class="ss-crit-btn" id="ss-setup-o" onclick="ssCritMark('setup','○')">○</button>
-          <button class="ss-crit-btn" id="ss-setup-x" onclick="ssCritMark('setup','×')">×</button>
+          <button class="ss-crit-btn" id="ss-p1-setup-o" onclick="ssCritMark('','setup','○')">○</button>
+          <button class="ss-crit-btn" id="ss-p1-setup-x" onclick="ssCritMark('','setup','×')">×</button>
         </div>
-        <div class="ss-sub-items" id="ss-sub-setup"></div>
+        <div class="ss-sub-items" id="ss-sub-p1-setup"></div>
       </div>
-      <div class="ss-crit" id="ss-crit-angle">
+      <div class="ss-crit" id="ss-crit-p1-angle">
         <div class="ss-crit-row">
           <span class="ss-crit-label">2. ANGLE</span>
-          <button class="ss-crit-btn" id="ss-angle-o" onclick="ssCritMark('angle','○')">○</button>
-          <button class="ss-crit-btn" id="ss-angle-x" onclick="ssCritMark('angle','×')">×</button>
+          <button class="ss-crit-btn" id="ss-p1-angle-o" onclick="ssCritMark('','angle','○')">○</button>
+          <button class="ss-crit-btn" id="ss-p1-angle-x" onclick="ssCritMark('','angle','×')">×</button>
         </div>
-        <div class="ss-sub-items" id="ss-sub-angle"></div>
+        <div class="ss-sub-items" id="ss-sub-p1-angle"></div>
       </div>
-      <div class="ss-crit" id="ss-crit-frame">
+      <div class="ss-crit" id="ss-crit-p1-frame">
         <div class="ss-crit-row">
           <span class="ss-crit-label">3. FRAME</span>
-          <button class="ss-crit-btn" id="ss-frame-o" onclick="ssCritMark('frame','○')">○</button>
-          <button class="ss-crit-btn" id="ss-frame-x" onclick="ssCritMark('frame','×')">×</button>
+          <button class="ss-crit-btn" id="ss-p1-frame-o" onclick="ssCritMark('','frame','○')">○</button>
+          <button class="ss-crit-btn" id="ss-p1-frame-x" onclick="ssCritMark('','frame','×')">×</button>
         </div>
-        <div class="ss-sub-items" id="ss-sub-frame"></div>
+        <div class="ss-sub-items" id="ss-sub-p1-frame"></div>
       </div>
-      <div class="ss-crit" id="ss-crit-quality">
+      <div class="ss-crit" id="ss-crit-p1-quality">
         <div class="ss-crit-row">
           <span class="ss-crit-label">4. QUALITY</span>
-          <button class="ss-crit-btn" id="ss-quality-o" onclick="ssCritMark('quality','○')">○</button>
-          <button class="ss-crit-btn" id="ss-quality-x" onclick="ssCritMark('quality','×')">×</button>
+          <button class="ss-crit-btn" id="ss-p1-quality-o" onclick="ssCritMark('','quality','○')">○</button>
+          <button class="ss-crit-btn" id="ss-p1-quality-x" onclick="ssCritMark('','quality','×')">×</button>
         </div>
-        <div class="ss-sub-items" id="ss-sub-quality"></div>
+        <div class="ss-sub-items" id="ss-sub-p1-quality"></div>
       </div>
-      <div class="ss-eval-lbl">コメント (한국어)</div>
-      <textarea class="ss-eval-comment" id="ss-eval-comment" placeholder="코멘트를 입력해주세요" oninput="ssSyncComment()"></textarea>
+        <div class="ss-eval-lbl" style="margin-top:2px">コメント <small>（한국어）</small></div>
+        <textarea class="ss-eval-comment" id="ss-p1-comment" placeholder="코멘트를 입력해주세요" oninput="ssSyncComment('')"></textarea>
+        <button id="ss-trans-btn" class="ss-trans-btn" onclick="ssTranslate()">DeepL翻訳</button>
+        <div id="ss-trans-result" class="ss-trans-result"></div>
+      </div>
+      <!-- ─── 2次 評価 (2次写真がある場合のみ表示) -->
+      <div class="ss-eval-section" id="ss-eval-s2" style="display:none">
+        <div class="ss-eval-lbl ss-eval-lbl-p2">2次写真 評価<small>（2차사진）</small></div>
+      <div class="ss-crit" id="ss-crit-p2-setup">
+        <div class="ss-crit-row">
+          <span class="ss-crit-label">1. SETUP</span>
+          <button class="ss-crit-btn" id="ss-p2-setup-o" onclick="ssCritMark('_p2','setup','○')">○</button>
+          <button class="ss-crit-btn" id="ss-p2-setup-x" onclick="ssCritMark('_p2','setup','×')">×</button>
+        </div>
+        <div class="ss-sub-items" id="ss-sub-p2-setup"></div>
+      </div>
+      <div class="ss-crit" id="ss-crit-p2-angle">
+        <div class="ss-crit-row">
+          <span class="ss-crit-label">2. ANGLE</span>
+          <button class="ss-crit-btn" id="ss-p2-angle-o" onclick="ssCritMark('_p2','angle','○')">○</button>
+          <button class="ss-crit-btn" id="ss-p2-angle-x" onclick="ssCritMark('_p2','angle','×')">×</button>
+        </div>
+        <div class="ss-sub-items" id="ss-sub-p2-angle"></div>
+      </div>
+      <div class="ss-crit" id="ss-crit-p2-frame">
+        <div class="ss-crit-row">
+          <span class="ss-crit-label">3. FRAME</span>
+          <button class="ss-crit-btn" id="ss-p2-frame-o" onclick="ssCritMark('_p2','frame','○')">○</button>
+          <button class="ss-crit-btn" id="ss-p2-frame-x" onclick="ssCritMark('_p2','frame','×')">×</button>
+        </div>
+        <div class="ss-sub-items" id="ss-sub-p2-frame"></div>
+      </div>
+      <div class="ss-crit" id="ss-crit-p2-quality">
+        <div class="ss-crit-row">
+          <span class="ss-crit-label">4. QUALITY</span>
+          <button class="ss-crit-btn" id="ss-p2-quality-o" onclick="ssCritMark('_p2','quality','○')">○</button>
+          <button class="ss-crit-btn" id="ss-p2-quality-x" onclick="ssCritMark('_p2','quality','×')">×</button>
+        </div>
+        <div class="ss-sub-items" id="ss-sub-p2-quality"></div>
+      </div>
+        <div class="ss-eval-lbl" style="margin-top:2px">コメント <small>（한국어）</small></div>
+        <textarea class="ss-eval-comment" id="ss-p2-comment" placeholder="코멘트를 입력해주세요" oninput="ssSyncComment('_p2')"></textarea>
+      </div>
+      <!-- ─── 3次 評価 (3次写真がある場合のみ表示) -->
+      <div class="ss-eval-section" id="ss-eval-s3" style="display:none">
+        <div class="ss-eval-lbl ss-eval-lbl-p3">3次写真 評価<small>（3차사진）</small></div>
+      <div class="ss-crit" id="ss-crit-p3-setup">
+        <div class="ss-crit-row">
+          <span class="ss-crit-label">1. SETUP</span>
+          <button class="ss-crit-btn" id="ss-p3-setup-o" onclick="ssCritMark('_p3','setup','○')">○</button>
+          <button class="ss-crit-btn" id="ss-p3-setup-x" onclick="ssCritMark('_p3','setup','×')">×</button>
+        </div>
+        <div class="ss-sub-items" id="ss-sub-p3-setup"></div>
+      </div>
+      <div class="ss-crit" id="ss-crit-p3-angle">
+        <div class="ss-crit-row">
+          <span class="ss-crit-label">2. ANGLE</span>
+          <button class="ss-crit-btn" id="ss-p3-angle-o" onclick="ssCritMark('_p3','angle','○')">○</button>
+          <button class="ss-crit-btn" id="ss-p3-angle-x" onclick="ssCritMark('_p3','angle','×')">×</button>
+        </div>
+        <div class="ss-sub-items" id="ss-sub-p3-angle"></div>
+      </div>
+      <div class="ss-crit" id="ss-crit-p3-frame">
+        <div class="ss-crit-row">
+          <span class="ss-crit-label">3. FRAME</span>
+          <button class="ss-crit-btn" id="ss-p3-frame-o" onclick="ssCritMark('_p3','frame','○')">○</button>
+          <button class="ss-crit-btn" id="ss-p3-frame-x" onclick="ssCritMark('_p3','frame','×')">×</button>
+        </div>
+        <div class="ss-sub-items" id="ss-sub-p3-frame"></div>
+      </div>
+      <div class="ss-crit" id="ss-crit-p3-quality">
+        <div class="ss-crit-row">
+          <span class="ss-crit-label">4. QUALITY</span>
+          <button class="ss-crit-btn" id="ss-p3-quality-o" onclick="ssCritMark('_p3','quality','○')">○</button>
+          <button class="ss-crit-btn" id="ss-p3-quality-x" onclick="ssCritMark('_p3','quality','×')">×</button>
+        </div>
+        <div class="ss-sub-items" id="ss-sub-p3-quality"></div>
+      </div>
+        <div class="ss-eval-lbl" style="margin-top:2px">コメント <small>（한국어）</small></div>
+        <textarea class="ss-eval-comment" id="ss-p3-comment" placeholder="코멘트를 입력해주세요" oninput="ssSyncComment('_p3')"></textarea>
+      </div>
       <button class="ss-save-btn-inner" onclick="ssSaveEval().then(ok=>ok&&toast('✅ 評価保存完了'))">💾 保存</button>
     </div>
   </div>
@@ -992,7 +1073,7 @@ async function openReview(submissionId, name) {
             <div class="card-sub-items${st.mark==='×'?' show':''}" id="cc-sub-${cat.id}-${c.key}">${subHtml}</div>
           </div>`;
         }).join('')}
-        <textarea class="eval-comment" id="ec-${cat.id}" placeholder="コメント（韓国語） / 코멘트 (한국어)" style="margin-top:5px" oninput="if(evalState['${cat.id}'])evalState['${cat.id}'].comment_ko=this.value">${ev.comment_ko||''}</textarea>
+
       </div>
       <div class="sp2-bar" id="sp2-bar-${cat.id}" style="display:block">
         <div class="sp2-grid">
@@ -1021,24 +1102,13 @@ async function openReview(submissionId, name) {
             </div>
           </div>
         </div>
-        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
-          <button class="sp2-shoot-btn" onclick="openSecondCamera('${cat.id}')">📷 2次写真<small>（2차）</small></button>
-          <button class="sp2-shoot-btn" id="sp3-btn-${cat.id}" onclick="openThirdCamera('${cat.id}')" ${secondPhotos[cat.id]?'':'disabled style="opacity:.4;cursor:not-allowed"'}>📷 3次写真<small>（3차）</small></button>
-          <input type="file" id="fi2-${cat.id}" accept="image/*" style="display:none" onchange="handleSecondPhoto('${cat.id}',this)">
-          <input type="file" id="fi3-${cat.id}" accept="image/*" style="display:none" onchange="handleThirdPhoto('${cat.id}',this)">
-        </div>
+
         <div id="sp2-eval-${cat.id}" style="margin-top:7px;padding:6px 8px;background:#edf2f9;border-radius:6px;border:1px solid #c8d8ec;display:${secondPhotos[cat.id]?'block':'none'}">
           <div style="font-size:10px;font-weight:700;color:var(--primary);margin-bottom:4px">2次写真 評価<small style="font-weight:400;color:var(--muted);font-size:9px">（2차사진）</small></div>
-          <div style="display:flex;gap:4px;margin-bottom:5px">
-            ${['○','△','×'].map(m=>{const cur=evalState[cat.id+'_p2']?.mark||'';const cls=cur===m?(m==='○'?'sel-maru':m==='△'?'sel-sank':'sel-batu'):'';return `<button class="mark-btn ${cls}" data-cat="${cat.id+'_p2'}" data-mark="${m}" onclick="setMark('${cat.id+'_p2'}','${m}')">${m}</button>`;}).join('')}
-          </div>
           ${EVAL_CRITERIA.map(c=>{const st=evalState[cat.id+'_p2']?.[c.key]||{mark:'',items:[]};const subHtml=st.mark==='×'?cardRenderSubItems(cat.id+'_p2',c.key):'';return `<div class="card-crit" id="cc-${cat.id+'_p2'}-${c.key}"><div class="card-crit-row"><span class="card-crit-lbl">${c.label}</span><button class="card-crit-btn${st.mark==='○'?' sel-o':''}" onclick="cardCritMark('${cat.id+'_p2'}','${c.key}','○')">○</button><button class="card-crit-btn${st.mark==='×'?' sel-x':''}" onclick="cardCritMark('${cat.id+'_p2'}','${c.key}','×')">×</button></div><div class="card-sub-items${st.mark==='×'?' show':''}" id="cc-sub-${cat.id+'_p2'}-${c.key}">${subHtml}</div></div>`;}).join('')}
         </div>
         <div id="sp3-eval-${cat.id}" style="margin-top:7px;padding:6px 8px;background:#edf9ed;border-radius:6px;border:1px solid #b8e0b8;display:${thirdPhotos[cat.id]?'block':'none'}">
           <div style="font-size:10px;font-weight:700;color:#1a7a40;margin-bottom:4px">3次写真 評価<small style="font-weight:400;color:var(--muted);font-size:9px">（3차사진）</small></div>
-          <div style="display:flex;gap:4px;margin-bottom:5px">
-            ${['○','△','×'].map(m=>{const cur=evalState[cat.id+'_p3']?.mark||'';const cls=cur===m?(m==='○'?'sel-maru':m==='△'?'sel-sank':'sel-batu'):'';return `<button class="mark-btn ${cls}" data-cat="${cat.id+'_p3'}" data-mark="${m}" onclick="setMark('${cat.id+'_p3'}','${m}')">${m}</button>`;}).join('')}
-          </div>
           ${EVAL_CRITERIA.map(c=>{const st=evalState[cat.id+'_p3']?.[c.key]||{mark:'',items:[]};const subHtml=st.mark==='×'?cardRenderSubItems(cat.id+'_p3',c.key):'';return `<div class="card-crit" id="cc-${cat.id+'_p3'}-${c.key}"><div class="card-crit-row"><span class="card-crit-lbl">${c.label}</span><button class="card-crit-btn${st.mark==='○'?' sel-o':''}" onclick="cardCritMark('${cat.id+'_p3'}','${c.key}','○')">○</button><button class="card-crit-btn${st.mark==='×'?' sel-x':''}" onclick="cardCritMark('${cat.id+'_p3'}','${c.key}','×')">×</button></div><div class="card-sub-items${st.mark==='×'?' show':''}" id="cc-sub-${cat.id+'_p3'}-${c.key}">${subHtml}</div></div>`;}).join('')}
         </div>
       </div>
@@ -1222,14 +1292,40 @@ function renderSlide() {
     `<div class="ss-dot${i===slideIdx?' active':''}" onclick="gotoSlide(${i})"></div>`
   ).join('');
 
-  // Populate eval panel
-  const ev = evalState[cat.id] || {};
-  const commentEl = document.getElementById('ss-eval-comment');
-  if (commentEl) commentEl.value = ev.comment_ko || '';
+  // Populate eval panel — 1次
+  const ev1 = evalState[cat.id] || {};
+  const c1El = document.getElementById('ss-p1-comment');
+  if (c1El) c1El.value = ev1.comment_ko || '';
   EVAL_CRITERIA.forEach(c => {
-    ssUpdateCritUI(cat.id, c.key);
-    ssRenderSubItems(c.key);
+    ssUpdateCritUI(cat.id, 'p1', c.key);
+    ssRenderSubItems('', c.key);
   });
+  // 2次 eval section — show only when 2次 photo exists
+  const s2El = document.getElementById('ss-eval-s2');
+  const hasP2 = !!secondPhotos[cat.id];
+  if (s2El) s2El.style.display = hasP2 ? 'flex' : 'none';
+  if (hasP2) {
+    const ev2 = evalState[cat.id+'_p2'] || {};
+    const c2El = document.getElementById('ss-p2-comment');
+    if (c2El) c2El.value = ev2.comment_ko || '';
+    EVAL_CRITERIA.forEach(c => {
+      ssUpdateCritUI(cat.id+'_p2', 'p2', c.key);
+      ssRenderSubItems('_p2', c.key);
+    });
+  }
+  // 3次 eval section — show only when 3次 photo exists
+  const s3El = document.getElementById('ss-eval-s3');
+  const hasP3 = !!thirdPhotos[cat.id];
+  if (s3El) s3El.style.display = hasP3 ? 'flex' : 'none';
+  if (hasP3) {
+    const ev3 = evalState[cat.id+'_p3'] || {};
+    const c3El = document.getElementById('ss-p3-comment');
+    if (c3El) c3El.value = ev3.comment_ko || '';
+    EVAL_CRITERIA.forEach(c => {
+      ssUpdateCritUI(cat.id+'_p3', 'p3', c.key);
+      ssRenderSubItems('_p3', c.key);
+    });
+  }
 }
 
 function nextSlide() { if (slideIdx < CATS.length - 1) { slideIdx++; renderSlide(); } }
@@ -1242,45 +1338,52 @@ function ssTouchEnd(e) {
   if (Math.abs(dx) > 50) { dx < 0 ? nextSlide() : prevSlide(); }
 }
 
-function ssRenderSubItems(critKey) {
+function ssRenderSubItems(pSuffix, critKey) {
   const cat = CATS[slideIdx];
   const crit = EVAL_CRITERIA.find(c => c.key === critKey);
-  const el = document.getElementById(`ss-sub-${critKey}`);
+  const pKey = pSuffix === '' ? 'p1' : pSuffix.replace('_','');
+  const el = document.getElementById(`ss-sub-${pKey}-${critKey}`);
   if (!el || !cat || !crit) return;
-  const state = evalState[cat.id]?.[critKey] || {mark:'',items:[]};
+  const stateKey = cat.id + pSuffix;
+  const state = evalState[stateKey]?.[critKey] || {mark:'',items:[]};
   if (state.mark !== '×') { el.classList.remove('show'); el.innerHTML = ''; return; }
   el.innerHTML = crit.ko.map((ko, i) =>
-    `<label class="ss-sub-chk"><input type="checkbox" ${(state.items||[]).includes(i)?'checked':''} onchange="ssCritItem('${critKey}',${i},this.checked)"><span>${crit.ja[i]}<small style="opacity:.7;font-size:9px">（${ko}）</small></span></label>`
+    `<label class="ss-sub-chk"><input type="checkbox" ${(state.items||[]).includes(i)?'checked':''} onchange="ssCritItem('${pSuffix}','${critKey}',${i},this.checked)"><span>${crit.ja[i]}<small style="opacity:.7;font-size:9px">（${ko}）</small></span></label>`
   ).join('');
   el.classList.add('show');
 }
 
-function ssUpdateCritUI(catId, critKey) {
-  const state = evalState[catId]?.[critKey] || {mark:'',items:[]};
-  const oBtn = document.getElementById(`ss-${critKey}-o`);
-  const xBtn = document.getElementById(`ss-${critKey}-x`);
+function ssUpdateCritUI(stateKey, pKey, critKey) {
+  const state = evalState[stateKey]?.[critKey] || {mark:'',items:[]};
+  const oBtn = document.getElementById(`ss-${pKey}-${critKey}-o`);
+  const xBtn = document.getElementById(`ss-${pKey}-${critKey}-x`);
   if (oBtn) { oBtn.classList.toggle('sel-o', state.mark === '○'); oBtn.classList.remove('sel-x'); }
   if (xBtn) { xBtn.classList.toggle('sel-x', state.mark === '×'); xBtn.classList.remove('sel-o'); }
 }
 
-function ssCritMark(critKey, mark) {
+function ssCritMark(pSuffix, critKey, mark) {
   const cat = CATS[slideIdx];
-  if (!cat || !evalState[cat.id]) return;
-  const prev = evalState[cat.id][critKey]?.mark || '';
-  evalState[cat.id][critKey] = evalState[cat.id][critKey] || {mark:'',items:[]};
-  evalState[cat.id][critKey].mark = (prev === mark) ? '' : mark;
-  if (evalState[cat.id][critKey].mark !== '×') evalState[cat.id][critKey].items = [];
-  ssUpdateCritUI(cat.id, critKey);
-  ssRenderSubItems(critKey);
+  if (!cat) return;
+  const stateKey = cat.id + pSuffix;
+  if (!evalState[stateKey]) evalState[stateKey] = {};
+  const prev = evalState[stateKey][critKey]?.mark || '';
+  evalState[stateKey][critKey] = evalState[stateKey][critKey] || {mark:'',items:[]};
+  evalState[stateKey][critKey].mark = (prev === mark) ? '' : mark;
+  if (evalState[stateKey][critKey].mark !== '×') evalState[stateKey][critKey].items = [];
+  const pKey = pSuffix === '' ? 'p1' : pSuffix.replace('_','');
+  ssUpdateCritUI(stateKey, pKey, critKey);
+  ssRenderSubItems(pSuffix, critKey);
 }
 
-function ssCritItem(critKey, idx, checked) {
+function ssCritItem(pSuffix, critKey, idx, checked) {
   const cat = CATS[slideIdx];
-  if (!cat || !evalState[cat.id]) return;
-  const arr = evalState[cat.id][critKey].items || [];
+  if (!cat) return;
+  const stateKey = cat.id + pSuffix;
+  if (!evalState[stateKey]?.[critKey]) return;
+  const arr = evalState[stateKey][critKey].items || [];
   if (checked && !arr.includes(idx)) arr.push(idx);
   if (!checked) { const i = arr.indexOf(idx); if (i >= 0) arr.splice(i,1); }
-  evalState[cat.id][critKey].items = arr;
+  evalState[stateKey][critKey].items = arr;
 }
 
 // ── Card-view criteria functions ──────────────────────────────────────────
@@ -1332,13 +1435,16 @@ function cardRenderSubItems(catId, critKey) {
   ).join('');
 }
 
-function ssSyncComment() {
+function ssSyncComment(pSuffix) {
   const cat = CATS[slideIdx];
-  if (!cat || !evalState[cat.id]) return;
-  const val = document.getElementById('ss-eval-comment')?.value || '';
-  evalState[cat.id].comment_ko = val;
-  const ec = document.getElementById(`ec-${cat.id}`);
-  if (ec) ec.value = val;
+  if (!cat) return;
+  const ps = (pSuffix === undefined || pSuffix === null) ? '' : pSuffix;
+  const stateKey = cat.id + ps;
+  if (!evalState[stateKey]) return;
+  const pKey = ps === '' ? 'p1' : ps.replace('_','');
+  const val = document.getElementById(`ss-${pKey}-comment`)?.value || '';
+  evalState[stateKey].comment_ko = val;
+
 }
 
 async function ssSaveEval() {
