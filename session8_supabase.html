@@ -196,7 +196,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
 .ss-mark-btn.sel-maru{border-color:#18945e!important;background:#18945e55;box-shadow:0 0 0 2px #18945e}
 .ss-mark-btn.sel-sank{border-color:#e67e22!important;background:#e67e2255;box-shadow:0 0 0 2px #e67e22}
 .ss-mark-btn.sel-batu{border-color:#c0392b!important;background:#c0392b55;box-shadow:0 0 0 2px #c0392b}
-.ss-eval-lbl{color:rgba(255,255,255,.55);font-size:10px;font-family:'Noto Sans JP',sans-serif}
+.ss-eval-lbl{color:rgba(255,255,255,.92);font-size:10px;font-weight:600;font-family:'Noto Sans JP',sans-serif;letter-spacing:.3px}
 .ss-eval-comment{width:100%;padding:7px 9px;border:1px solid rgba(255,255,255,.2);border-radius:6px;font-size:12px;font-family:'Noto Sans JP',sans-serif;resize:none;height:68px;background:rgba(255,255,255,.1);color:#fff}
 .ss-eval-comment::placeholder{color:rgba(255,255,255,.3)}
 .ss-eval-comment:focus{outline:none;border-color:rgba(255,255,255,.5)}
@@ -215,7 +215,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
 /* 평가 기준 */
 .ss-crit{background:rgba(255,255,255,.06);border-radius:6px;padding:6px 8px;display:flex;flex-direction:column;gap:4px}
 .ss-crit-row{display:flex;align-items:center;gap:4px}
-.ss-crit-label{flex:1;font-size:11px;font-weight:700;color:#fff;letter-spacing:.5px}
+.ss-crit-label{flex:1;font-size:11px;font-weight:700;color:#fff;letter-spacing:.5px;text-shadow:0 1px 3px rgba(0,0,0,.5)}
 .ss-crit-btn{width:28px;height:28px;border-radius:5px;border:1.5px solid rgba(255,255,255,.3);background:rgba(255,255,255,.1);font-size:13px;cursor:pointer;color:#fff;transition:all .12s;display:flex;align-items:center;justify-content:center;padding:0}
 .ss-crit-btn.sel-o{border-color:#18945e!important;background:#18945e88;color:#fff}
 .ss-crit-btn.sel-x{border-color:#c0392b!important;background:#c0392b88;color:#fff}
@@ -223,7 +223,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
 .ss-sub-items.show{display:flex}
 .ss-sub-chk{display:flex;align-items:flex-start;gap:5px;cursor:pointer;padding:2px 0}
 .ss-sub-chk input{margin-top:2px;flex-shrink:0;accent-color:#e74c3c}
-.ss-sub-chk span{font-size:10px;color:rgba(255,255,255,.75);line-height:1.4}
+.ss-sub-chk span{font-size:10px;color:rgba(255,255,255,.93);line-height:1.4}
 /* Photo+draw wrap in slideshow */
 .ss-photo-wrap{flex:1;position:relative;min-height:0;overflow:hidden}
 .ss-photo-wrap .ss-panel-img{position:absolute;inset:0;flex:none;width:100%;height:100%}
@@ -278,6 +278,20 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
   .mp-cmt-ja{color:#333!important;font-style:normal!important}
 }
 
+/* ── Card-level criteria (admin review card) ──────────────── */
+.card-eval-section{padding:8px 10px 12px;border-top:1px dashed var(--border);background:#f0f4fa}
+.card-crit{background:#e8eef5;border-radius:6px;padding:5px 7px;margin-bottom:5px;border:1px solid #d0dcea}
+.card-crit-row{display:flex;align-items:center;gap:4px}
+.card-crit-lbl{flex:1;font-size:11px;font-weight:700;color:var(--primary);letter-spacing:.4px}
+.card-crit-btn{width:26px;height:26px;border-radius:5px;border:1.5px solid var(--border);background:#fff;font-size:12px;cursor:pointer;color:var(--text);transition:all .12s;display:flex;align-items:center;justify-content:center;padding:0}
+.card-crit-btn.sel-o{border-color:#18945e!important;background:#d2f0e4;color:#18945e;font-weight:700}
+.card-crit-btn.sel-x{border-color:#c0392b!important;background:#fde8e8;color:#c0392b;font-weight:700}
+.card-sub-items{display:none;flex-direction:column;gap:2px;padding-top:3px}
+.card-sub-items.show{display:flex}
+.card-sub-chk{display:flex;align-items:flex-start;gap:4px;cursor:pointer;padding:1px 0}
+.card-sub-chk input{margin-top:2px;flex-shrink:0;accent-color:#c0392b}
+.card-sub-chk span{font-size:10px;color:var(--text);line-height:1.4}
+.card-sub-chk span small{color:var(--muted);font-size:9px}
 /* ── Evaluation UI ─────────────────────────────────────────── */
 .eval-section{padding:8px 10px 12px;border-top:1px dashed var(--border);background:#f5f8fc}
 .eval-mark-row{display:flex;gap:8px;align-items:center;margin-bottom:8px}
@@ -1003,13 +1017,22 @@ async function openReview(submissionId, name) {
           </div>
         </div>
       </div>
-      <div class="eval-section">
-        <div class="eval-mark-row">
-          <span class="eval-lbl">評価:</span>
-          <button class="mark-btn${sym==='○'?' sel-maru':''}" data-cat="${cat.id}" data-mark="○" onclick="setMark('${cat.id}','○')">○</button>
-          <button class="mark-btn${sym==='×'?' sel-batu':''}" data-cat="${cat.id}" data-mark="×" onclick="setMark('${cat.id}','×')">×</button>
-        </div>
-        <textarea class="eval-comment" id="ec-${cat.id}" placeholder="コメント（韓国語） / 코멘트 (한국어)" oninput="if(evalState['${cat.id}'])evalState['${cat.id}'].comment_ko=this.value">${ev.comment_ko||''}</textarea>
+      <div class="card-eval-section">
+        ${EVAL_CRITERIA.map((c,ci) => {
+          const st = ev[c.key] || {mark:'',items:[]};
+          const subHtml = st.mark === '×'
+            ? c.ko.map((ko,i) => `<label class="card-sub-chk"><input type="checkbox" ${(st.items||[]).includes(i)?'checked':''} onchange="cardCritItem('${cat.id}','${c.key}',${i},this.checked)"><span>${c.ja[i]}<small>（${ko}）</small></span></label>`).join('')
+            : '';
+          return `<div class="card-crit" id="cc-${cat.id}-${c.key}">
+            <div class="card-crit-row">
+              <span class="card-crit-lbl">${ci+1}. ${c.label}</span>
+              <button class="card-crit-btn${st.mark==='○'?' sel-o':''}" onclick="cardCritMark('${cat.id}','${c.key}','○')">○</button>
+              <button class="card-crit-btn${st.mark==='×'?' sel-x':''}" onclick="cardCritMark('${cat.id}','${c.key}','×')">×</button>
+            </div>
+            <div class="card-sub-items${st.mark==='×'?' show':''}" id="cc-sub-${cat.id}-${c.key}">${subHtml}</div>
+          </div>`;
+        }).join('')}
+        <textarea class="eval-comment" id="ec-${cat.id}" placeholder="コメント（韓国語） / 코멘트 (한국어)" style="margin-top:5px" oninput="if(evalState['${cat.id}'])evalState['${cat.id}'].comment_ko=this.value">${ev.comment_ko||''}</textarea>
       </div>
       <div class="sp2-bar" id="sp2-bar-${cat.id}" style="display:block">
         <div class="sp2-grid">
@@ -1358,6 +1381,55 @@ function ssCritItem(critKey, idx, checked) {
   if (checked && !arr.includes(idx)) arr.push(idx);
   if (!checked) { const i = arr.indexOf(idx); if (i >= 0) arr.splice(i,1); }
   evalState[cat.id][critKey].items = arr;
+}
+
+// ── Card-view criteria functions ──────────────────────────────────────────
+function cardCritMark(catId, critKey, mark) {
+  if (!evalState[catId]) return;
+  if (!evalState[catId][critKey]) evalState[catId][critKey] = {mark:'',items:[]};
+  const prev = evalState[catId][critKey].mark;
+  evalState[catId][critKey].mark = (prev === mark) ? '' : mark;
+  if (evalState[catId][critKey].mark !== '×') evalState[catId][critKey].items = [];
+  cardUpdateCritUI(catId, critKey);
+}
+
+function cardCritItem(catId, critKey, idx, checked) {
+  if (!evalState[catId]?.[critKey]) return;
+  const arr = evalState[catId][critKey].items || [];
+  if (checked && !arr.includes(idx)) arr.push(idx);
+  if (!checked) { const i = arr.indexOf(idx); if (i >= 0) arr.splice(i,1); }
+  evalState[catId][critKey].items = arr;
+}
+
+function cardUpdateCritUI(catId, critKey) {
+  const mark = evalState[catId]?.[critKey]?.mark || '';
+  const row = document.querySelector(`#cc-${catId}-${critKey} .card-crit-row`);
+  if (row) {
+    row.querySelectorAll('.card-crit-btn').forEach(btn => {
+      btn.classList.remove('sel-o','sel-x');
+      if (mark === '○' && btn.textContent === '○') btn.classList.add('sel-o');
+      if (mark === '×' && btn.textContent === '×') btn.classList.add('sel-x');
+    });
+  }
+  const subEl = document.getElementById(`cc-sub-${catId}-${critKey}`);
+  if (subEl) {
+    if (mark === '×') {
+      subEl.innerHTML = cardRenderSubItems(catId, critKey);
+      subEl.classList.add('show');
+    } else {
+      subEl.innerHTML = '';
+      subEl.classList.remove('show');
+    }
+  }
+}
+
+function cardRenderSubItems(catId, critKey) {
+  const crit = EVAL_CRITERIA.find(c => c.key === critKey);
+  if (!crit) return '';
+  const items = evalState[catId]?.[critKey]?.items || [];
+  return crit.ko.map((ko, i) =>
+    `<label class="card-sub-chk"><input type="checkbox" ${items.includes(i)?'checked':''} onchange="cardCritItem('${catId}','${critKey}',${i},this.checked)"><span>${crit.ja[i]}<small>（${ko}）</small></span></label>`
+  ).join('');
 }
 
 function ssSyncComment() {
@@ -1884,9 +1956,9 @@ function setMark(catId, mark) {
       btn.classList.add(cur==='○'?'sel-maru':cur==='△'?'sel-sank':'sel-batu');
     }
   });
-  // Show 2nd-photo bar only for ×
+  // Always show 2nd/3rd-photo bar
   const sp2 = document.getElementById(`sp2-bar-${catId}`);
-  if (sp2) sp2.style.display = (cur === '×') ? 'block' : 'none';
+  if (sp2) sp2.style.display = 'block';
 }
 
 async function translateComment(catId) {
@@ -2272,21 +2344,7 @@ async function mpLoadDetail(idx) {
     if (ev.eval_details) { try { mpEvals[ev.cat_id]._criteria = JSON.parse(ev.eval_details); } catch(e) {} }
   });
 
-  // Auto-translate Korean comments that don't have Japanese yet
-  res.innerHTML = '<div class="loading">🌐 번역 중...</div>';
-  const toTranslate = CATS.filter(cat => {
-    const ev = mpEvals[cat.id];
-    return ev?.comment_ko && !ev?.comment_ja;
-  });
-  if (toTranslate.length) {
-    for (const cat of toTranslate) {
-      const ja = await translateKoJaRetry(mpEvals[cat.id].comment_ko);
-      if (ja) mpEvals[cat.id].comment_ja = ja;
-      await new Promise(r => setTimeout(r, 1000));
-    }
-  }
-
-  // Build HTML
+  // Build HTML (no runtime translation — all text is pre-baked)
   const ts = new Date(sub.created_at).toLocaleString('ja-JP',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
   const backBtn = mpSubsList.length > 1
     ? `<button onclick="mpShowSubsList()" style="background:none;border:1px solid var(--border);border-radius:6px;padding:5px 10px;font-size:11px;cursor:pointer;font-family:'Noto Sans JP',sans-serif;flex-shrink:0">← 목록</button>`
@@ -2314,7 +2372,7 @@ async function mpLoadDetail(idx) {
       EVAL_CRITERIA.forEach(c => {
         const st = ev._criteria[c.key] || {mark:'',items:[]};
         if (!st.mark) return;
-        const itemsHtml = (st.items||[]).map(i => `<li>${c.ja[i]||c.ko[i]}</li>`).join('');
+        const itemsHtml = (st.items||[]).map(i => `<li>${c.ja[i]}（${c.ko[i]}）</li>`).join('');
         critHtml += `<div style="font-size:11px;margin-top:3px"><strong>${c.label}:</strong> ${st.mark}${itemsHtml?`<ul style="margin-left:14px">${itemsHtml}</ul>`:''}</div>`;
       });
     }
@@ -2332,17 +2390,17 @@ async function mpLoadDetail(idx) {
           <div class="mp-frame">${sample?`<img src="${sample}">`:'<span>未登録</span>'}</div>
         </div>
         <div class="mp-pcell">
-          <div class="mp-plbl">1차사진</div>
+          <div class="mp-plbl">1次写真（1차사진）</div>
           <div class="mp-frame">${photo?`<img src="${photo}">`:'<span>未提出</span>'}${photo&&ev.drawing_data_url?`<img src="${ev.drawing_data_url}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;pointer-events:none">`:''}
           </div>
         </div>
         <div class="mp-pcell">
-          <div class="mp-plbl">2차사진</div>
+          <div class="mp-plbl">2次写真（2차사진）</div>
           <div class="mp-frame" id="mp-frame2-${cat.id}">${photo2?`<img src="${photo2}">`:'<span style="font-size:9px;text-align:center">—</span>'}</div>
-          <button class="mp-shoot-btn" onclick="mpOpenCamera('${cat.id}')">📷 촬영</button>
+          <button class="mp-shoot-btn" onclick="mpOpenCamera('${cat.id}')">📷 撮影（촬영）</button>
         </div>
         <div class="mp-pcell">
-          <div class="mp-plbl">3차사진</div>
+          <div class="mp-plbl">3次写真（3차사진）</div>
           <div class="mp-frame">${photo3?`<img src="${photo3}">`:'<span style="font-size:9px;text-align:center">—</span>'}</div>
         </div>
       </div>
@@ -2350,7 +2408,7 @@ async function mpLoadDetail(idx) {
         <div class="mp-mark-badge ${markCls}">${markLabel}</div>
         <div class="mp-comments">
           ${critHtml}
-          ${ev.comment_ko ? `<div class="mp-cmt-ko">${ev.comment_ko}</div>` : (!mark ? `<div style="font-size:11px;color:#bbb">평가 전</div>` : '')}
+          ${ev.comment_ko ? `<div class="mp-cmt-ko">${ev.comment_ko}</div>` : (!mark ? `<div style="font-size:11px;color:#bbb">未評価</div>` : '')}
           ${ev.comment_ja
             ? `<div class="mp-cmt-ja" id="mp-ja-${cat.id}">🇯🇵 ${ev.comment_ja}</div>`
             : ev.comment_ko
