@@ -577,10 +577,16 @@ function checkPw() {
 let samplesLoaded = false;
 async function loadSamples(force) {
   if (samplesLoaded && !force) return;
-  const {data} = await supa.from('samples').select('cat_id,data_url').eq('session_id', SESSION_ID);
-  samples = {};
-  if (data) data.forEach(s => { samples[s.cat_id] = s.data_url; });
-  samplesLoaded = true;
+  try {
+    const {data, error} = await supa.from('samples').select('cat_id,data_url').eq('session_id', SESSION_ID);
+    if (error) throw error;
+    samples = {};
+    if (data) data.forEach(s => { samples[s.cat_id] = s.data_url; });
+    samplesLoaded = true; // 성공했을 때만 캐시 확정
+  } catch(e) {
+    console.warn('샘플 로딩 실패 — 다음 렌더링에서 재시도:', e);
+    // samplesLoaded는 false 유지 → 다음 렌더링 시 자동 재시도
+  }
 }
 
 async function saveSample(catId, dataUrl) {
@@ -694,10 +700,11 @@ async function doSubmit() {
     });
     if (e1) throw e1;
 
-    // 사진을 Supabase Storage에 업로드하고 URL만 DB에 저장
+    // 사진을 Supabase Storage에 업로드하고 URL만 DB에 저장 (실패 시 base64 폴백)
     const rows = await Promise.all(Object.entries(myPhotos).map(async ([catId, dataUrl]) => {
       const path = `${SESSION_ID}/${sid}/${catId}.jpg`;
-      const url = await uploadPhoto(path, dataUrl);
+      let url = dataUrl; // Storage 실패 시 base64 그대로 저장
+      try { url = await uploadPhoto(path, dataUrl); } catch(_) {}
       return { id: `${sid}_${catId}`, submission_id: sid, session_id: SESSION_ID, cat_id: catId, data_url: url };
     }));
     const {error: e2} = await supa.from('photos').insert(rows);
@@ -1944,6 +1951,7 @@ let mpSubmissionId = '';
 let mpPhotos = {};
 let mpEvals = {};
 let mpSamples = {};
+let mpSubsList = [];
 
 function renderMyPage() {
   const v = document.getElementById('mypage-view');
@@ -2004,7 +2012,7 @@ async function mpSearch() {
   const {data: subs, error: e1} = await supa.from('submissions')
     .select('*').eq('session_id', SESSION_ID)
     .ilike('participant_name', name)
-    .order('created_at', {ascending:false}).limit(1);
+    .order('created_at', {ascending:false});
 
   if (e1 || !subs?.length) {
     res.innerHTML = `<div class="section-box" style="text-align:center;color:var(--muted);padding:30px">
@@ -2013,8 +2021,42 @@ async function mpSearch() {
     return;
   }
 
-  const sub = subs[0];
+  mpSubsList = subs;
+  if (subs.length === 1) {
+    await mpLoadDetail(0);
+  } else {
+    mpShowSubsList();
+  }
+}
+
+function mpShowSubsList() {
+  const res = document.getElementById('mp-result');
+  const name = mpSubsList[0]?.participant_name || '';
+  let html = `<div class="section-box" style="margin-bottom:12px">
+    <div style="font-weight:700;font-size:13px;color:var(--primary);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)">
+      👤 <strong>${name}</strong> <span style="font-weight:400;font-size:12px;color:var(--muted)">— ${mpSubsList.length}건의 제출 내역이 있습니다</span>
+    </div>`;
+  mpSubsList.forEach((sub, i) => {
+    const ts = new Date(sub.created_at).toLocaleString('ja-JP',{year:'2-digit',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
+    const pc = sub.photo_count != null ? `${sub.photo_count}장` : '';
+    html += `<div class="sub-item" onclick="mpLoadDetail(${i})" style="display:flex;align-items:center;padding:12px 14px;border:1px solid var(--border);border-radius:8px;margin-bottom:8px;cursor:pointer;background:var(--bg);transition:all .2s">
+      <div style="flex:1">
+        <div style="font-weight:600;font-size:13px;color:var(--text)">${mpSubsList.length - i}번째 제출 &nbsp;<span style="font-weight:400;color:var(--muted);font-size:12px">${ts}</span></div>
+        ${pc ? `<div style="font-size:11px;color:var(--muted);margin-top:2px">${pc} 제출</div>` : ''}
+      </div>
+      <div style="font-size:20px;color:var(--muted)">›</div>
+    </div>`;
+  });
+  html += '</div>';
+  res.innerHTML = html;
+}
+
+async function mpLoadDetail(idx) {
+  const sub = mpSubsList[idx];
+  if (!sub) return;
+  const res = document.getElementById('mp-result');
   mpSubmissionId = sub.id;
+  res.innerHTML = '<div class="loading">📷 読み込み中...</div>';
 
   // Load samples, photos, evals in parallel
   const [samplesRes, photosRes, evalsRes] = await Promise.all([
@@ -2043,7 +2085,11 @@ async function mpSearch() {
 
   // Build HTML
   const ts = new Date(sub.created_at).toLocaleString('ja-JP',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
-  let html = `<div class="section-box mp-result-hdr" style="padding:10px 14px;margin-bottom:12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+  const backBtn = mpSubsList.length > 1
+    ? `<button onclick="mpShowSubsList()" style="background:none;border:1px solid var(--border);border-radius:6px;padding:5px 10px;font-size:11px;cursor:pointer;font-family:'Noto Sans JP',sans-serif;flex-shrink:0">← 목록</button>`
+    : '';
+  let html = `<div class="section-box mp-result-hdr" style="padding:10px 14px;margin-bottom:12px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+    ${backBtn}
     <div style="flex:1">👤 <strong>${sub.participant_name}</strong> <span style="font-size:11px;color:var(--muted);margin-left:6px">${ts} 提出</span></div>
     <button class="mp-action-btn mp-trans-all-btn" onclick="mpRetranslate()" id="mp-trans-all-btn">🌐 번역</button>
     <button class="mp-action-btn mp-pdf-btn" onclick="mpPrint()">📄 PDF저장</button>
