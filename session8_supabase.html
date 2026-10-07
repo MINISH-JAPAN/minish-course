@@ -167,8 +167,6 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
 .cam-focus-ring.active{opacity:1;transform:translate(-50%,-50%) scale(1)}
 .cam-focus-ring.locked{border-color:#ffdd00;box-shadow:0 0 0 1px rgba(255,221,0,.4)}
 .cam-cancel{background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:8px;padding:10px 16px;font-size:13px;font-family:'Noto Sans JP',sans-serif;cursor:pointer}
-.cam-file-btn{display:flex;align-items:center;justify-content:center;width:42px;height:42px;border-radius:50%;background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.4);color:#fff;font-size:20px;cursor:pointer;flex-shrink:0;transition:background .15s}
-.cam-file-btn:hover{background:rgba(255,255,255,.35)}
 .cam-shutter{width:46px;height:46px;border-radius:50%;border:3px solid #fff;background:rgba(255,255,255,.95);cursor:pointer;position:relative;box-shadow:0 0 0 2px rgba(255,255,255,.28);transition:transform .12s;flex-shrink:0}
 .cam-shutter:active{transform:scale(.91)}
 .cam-shutter::after{content:'';position:absolute;inset:4px;border-radius:50%;background:var(--accent)}
@@ -177,7 +175,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
 .cam-alpha{-webkit-appearance:none;width:84px;height:4px;background:rgba(255,255,255,.3);border-radius:2px;outline:none;cursor:pointer}
 .cam-alpha::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:#fff;cursor:pointer}
 /* Level indicator — iOS style: fixed center, rotates to show tilt */
-.cam-level-line{position:absolute;left:33.333%;right:33.333%;height:2px;top:50%;transform:translateY(-50%) rotate(0deg);transform-origin:center center;z-index:4;pointer-events:none;transition:background .15s,box-shadow .15s,transform .06s linear;background:#fff;box-shadow:0 0 6px rgba(255,255,255,.6),0 0 2px #fff}
+.cam-level-line{position:absolute;left:33.333%;right:33.333%;height:2px;top:50%;transform:translateY(-50%) rotate(0deg);transform-origin:center center;z-index:4;pointer-events:none;transition:background .2s,box-shadow .2s;background:#fff;box-shadow:0 0 6px rgba(255,255,255,.6),0 0 2px #fff}
 .cam-level-label{display:none}
 
 /* ── Second photo bar ──────────────────────────────────────── */
@@ -359,16 +357,23 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
   <div class="cam-footer">
     <button class="cam-cancel" onclick="closeCameraOverlay()">✕ キャンセル</button>
     <button class="cam-shutter" onclick="capturePhoto()"></button>
-    <label class="cam-file-btn" title="ファイルから選択">
-      📁
-      <input type="file" accept="image/*" style="display:none" onchange="handleCamFileSelect(this)">
-    </label>
     <div class="cam-zoom-btns">
       <button class="cam-zoom-btn active" data-zoom="1" onclick="setZoom(1)">1×</button>
       <button class="cam-zoom-btn" data-zoom="2" onclick="setZoom(2)">2×</button>
       <button class="cam-zoom-btn" data-zoom="3" onclick="setZoom(3)">3×</button>
       <button class="cam-zoom-btn" data-zoom="4" onclick="setZoom(4)">4×</button>
     </div>
+  </div>
+</div>
+
+<!-- Upload choice sheet -->
+<div id="upload-choice-sheet" onclick="closeChoiceSheet()" style="display:none;position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.5)">
+  <div onclick="event.stopPropagation()" style="position:absolute;bottom:0;left:0;right:0;background:#fff;border-radius:16px 16px 0 0;padding:18px 16px 44px">
+    <div style="text-align:center;font-size:13px;font-weight:600;color:#333;margin-bottom:16px">写真を追加</div>
+    <button onclick="choiceSheetCamera()" style="width:100%;padding:14px;background:var(--accent);color:#fff;border:none;border-radius:10px;font-size:14px;font-family:'Noto Sans JP',sans-serif;cursor:pointer;margin-bottom:10px;display:flex;align-items:center;justify-content:center;gap:8px">📷 カメラで撮影</button>
+    <button onclick="choiceSheetFile()" style="width:100%;padding:14px;background:#f1f5f9;color:#333;border:1px solid #dde4ed;border-radius:10px;font-size:14px;font-family:'Noto Sans JP',sans-serif;cursor:pointer;margin-bottom:10px;display:flex;align-items:center;justify-content:center;gap:8px">📁 ファイルから選択</button>
+    <input type="file" id="choice-file-input" accept="image/*" style="display:none" onchange="choiceSheetFileSelected(this)">
+    <button onclick="closeChoiceSheet()" style="width:100%;padding:11px;background:transparent;color:#999;border:none;font-size:13px;font-family:'Noto Sans JP',sans-serif;cursor:pointer">キャンセル</button>
   </div>
 </div>
 
@@ -1333,19 +1338,25 @@ function startLevelIndicator() {
   const line  = document.getElementById('cam-level-line');
   const label = document.getElementById('cam-level-label');
   if (!line) return;
-  function onOrientation(e) {
-    const tilt = getScreenTilt(e);       // screen-relative tilt, 0 = level
-    const lv   = Math.abs(tilt) < 2;    // level threshold ±2°
-    const col  = lv ? '#ffdd00' : '#ffffff';  // iOS: yellow=level, white=tilted
-    line.style.transform = `translateY(-50%) rotate(${-tilt}deg)`;
+  let smoothed = 0;
+  let rafId = null;
+  let pendingTilt = 0;
+  function applyTilt() {
+    rafId = null;
+    const lv  = Math.abs(smoothed) < 2;
+    const col = lv ? '#ffdd00' : '#ffffff';
+    line.style.transform = `translateY(-50%) rotate(${-smoothed}deg)`;
     line.style.background = col;
     line.style.boxShadow  = lv
       ? `0 0 10px #ffdd0099,0 0 3px #ffdd00`
       : `0 0 6px rgba(255,255,255,.5),0 0 2px #fff`;
-    if (label) {
-      label.style.color = col;
-      label.textContent = Math.abs(tilt).toFixed(1) + '°';
-    }
+    if (label) { label.style.color = col; label.textContent = Math.abs(smoothed).toFixed(1) + '°'; }
+  }
+  function onOrientation(e) {
+    const raw = getScreenTilt(e);
+    // EMA low-pass filter: α=0.12 → heavy smoothing, no jitter
+    smoothed = 0.12 * raw + 0.88 * smoothed;
+    if (!rafId) rafId = requestAnimationFrame(applyTilt);
   }
   levelHandler = onOrientation;
   window.addEventListener('deviceorientation', levelHandler);
@@ -1355,21 +1366,12 @@ function stopLevelIndicator() {
   if (levelHandler) { window.removeEventListener('deviceorientation', levelHandler); levelHandler = null; }
 }
 
-async function handleUploadClick(catId) {
-  if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-    openCameraOverlay(catId, 'main');
-  } else {
-    document.getElementById(`fi-${catId}`).click();
-  }
+function handleUploadClick(catId) {
+  showUploadChoice(catId, 'main');
 }
 
 function openSecondCamera(catId) {
-  if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-    openCameraOverlay(catId, 'second');
-  } else {
-    const fi = document.getElementById(`fi2-${catId}`);
-    if (fi) fi.click();
-  }
+  showUploadChoice(catId, 'second');
 }
 
 async function handleSecondPhoto(catId, input) {
@@ -1516,12 +1518,32 @@ async function capturePhoto() {
   }
 }
 
-async function handleCamFileSelect(input) {
+// ── UPLOAD CHOICE SHEET ──────────────────────────────────────
+let choiceCatId = null;
+let choiceMode  = 'main';
+
+function showUploadChoice(catId, mode) {
+  choiceCatId = catId;
+  choiceMode  = mode || 'main';
+  document.getElementById('upload-choice-sheet').style.display = 'block';
+}
+function closeChoiceSheet() {
+  document.getElementById('upload-choice-sheet').style.display = 'none';
+}
+function choiceSheetCamera() {
+  closeChoiceSheet();
+  openCameraOverlay(choiceCatId, choiceMode);
+}
+function choiceSheetFile() {
+  document.getElementById('choice-file-input').click();
+}
+async function choiceSheetFileSelected(input) {
   if (!input.files || !input.files[0]) return;
   const file = input.files[0];
-  const cid = camCatId;
-  const mode = camMode;
-  closeCameraOverlay();
+  const cid  = choiceCatId;
+  const mode = choiceMode;
+  closeChoiceSheet();
+  input.value = '';
   toast('処理中...');
   try {
     const dataUrl = await compress(file);
@@ -2080,8 +2102,8 @@ async function mpTransCard(catId, btn) {
   }
 }
 
-async function mpOpenCamera(catId) {
-  await openCameraOverlay(catId, 'mypage');
+function mpOpenCamera(catId) {
+  showUploadChoice(catId, 'mypage');
 }
 
 async function mpSavePhoto2(catId, dataUrl) {
