@@ -155,6 +155,21 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
 .cam-alpha{-webkit-appearance:none;width:84px;height:4px;background:rgba(255,255,255,.3);border-radius:2px;outline:none;cursor:pointer}
 .cam-alpha::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:#fff;cursor:pointer}
 
+/* ── Card Evaluation UI (non-fullscreen) ─────────────────────── */
+.card-eval-section{padding:8px 10px 12px;border-top:1px dashed var(--border);background:#f0f7f5}
+.card-crit{background:#e8f4f0;border-radius:6px;padding:5px 7px;margin-bottom:5px;border:1px solid #c8e0d8}
+.card-crit-row{display:flex;align-items:center;gap:4px}
+.card-crit-lbl{flex:1;font-size:11px;font-weight:700;color:var(--primary);letter-spacing:.4px}
+.card-crit-btn{width:26px;height:26px;border-radius:5px;border:1.5px solid var(--border);background:#fff;font-size:12px;cursor:pointer;color:var(--text);transition:all .12s;display:flex;align-items:center;justify-content:center;padding:0}
+.card-crit-btn.sel-o{border-color:#18945e!important;background:#d2f0e4;color:#18945e;font-weight:700}
+.card-crit-btn.sel-x{border-color:#c0392b!important;background:#fde8e8;color:#c0392b;font-weight:700}
+.card-sub-items{display:none;flex-direction:column;gap:2px;padding-top:3px}
+.card-sub-items.show{display:flex}
+.card-sub-chk{display:flex;align-items:flex-start;gap:4px;cursor:pointer;padding:1px 0}
+.card-sub-chk input{margin-top:2px;flex-shrink:0;accent-color:#c0392b}
+.card-sub-chk span{font-size:10px;color:var(--text);line-height:1.4}
+.card-sub-chk span small{color:var(--muted);font-size:9px}
+
 /* ── Evaluation UI ─────────────────────────────────────────── */
 .eval-section{padding:8px 10px 12px;border-top:1px dashed var(--border);background:#f0f7f5}
 .eval-mark-row{display:flex;gap:8px;align-items:center;margin-bottom:8px}
@@ -962,14 +977,22 @@ async function openReview(submissionId, name) {
           </div>
         </div>
       </div>
-      <div class="eval-section">
-        <div class="eval-mark-row">
-          <span class="eval-lbl">評価:</span>
-          <button class="mark-btn${sym==='○'?' sel-maru':''}" data-cat="${cat.id}" data-mark="○" onclick="setMark('${cat.id}','○')">○</button>
-          <button class="mark-btn${sym==='×'?' sel-batu':''}" data-cat="${cat.id}" data-mark="×" onclick="setMark('${cat.id}','×')">×</button>
-        </div>
-        <textarea class="eval-comment" id="ec-${cat.id}" placeholder="コメント（韓国語） / 코멘트 (한국어)" oninput="if(evalState['${cat.id}'])evalState['${cat.id}'].comment_ko=this.value">${ev.comment_ko||''}</textarea>
-        ${ev.comment_ja ? `<div class="eval-translated show" id="etx-${cat.id}">🇯🇵 ${ev.comment_ja}</div>` : `<div class="eval-translated" id="etx-${cat.id}"></div>`}
+      <div class="card-eval-section">
+        ${EVAL_CRITERIA.map((c,ci) => {
+          const st = ev[c.key] || {mark:'',items:[]};
+          const subHtml = st.mark === '×'
+            ? c.ko.map((ko,i) => `<label class="card-sub-chk"><input type="checkbox" ${(st.items||[]).includes(i)?'checked':''} onchange="cardCritItem('${cat.id}','${c.key}',${i},this.checked)"><span>${c.ja[i]}<small>（${ko}）</small></span></label>`).join('')
+            : '';
+          return `<div class="card-crit" id="cc-${cat.id}-${c.key}">
+            <div class="card-crit-row">
+              <span class="card-crit-lbl">${ci+1}. ${c.label}</span>
+              <button class="card-crit-btn${st.mark==='○'?' sel-o':''}" onclick="cardCritMark('${cat.id}','${c.key}','○')">○</button>
+              <button class="card-crit-btn${st.mark==='×'?' sel-x':''}" onclick="cardCritMark('${cat.id}','${c.key}','×')">×</button>
+            </div>
+            <div class="card-sub-items${st.mark==='×'?' show':''}" id="cc-sub-${cat.id}-${c.key}">${subHtml}</div>
+          </div>`;
+        }).join('')}
+        <textarea class="eval-comment" id="ec-${cat.id}" placeholder="コメント（韓国語） / 코멘트 (한국어)" style="margin-top:5px" oninput="if(evalState['${cat.id}'])evalState['${cat.id}'].comment_ko=this.value">${ev.comment_ko||''}</textarea>
       </div>
       <div class="sp2-bar" id="sp2-bar-${cat.id}" style="display:block">
         <div class="sp2-grid">
@@ -1244,6 +1267,55 @@ function ssCritItem(critKey, idx, checked) {
   if (checked && !arr.includes(idx)) arr.push(idx);
   if (!checked) { const i = arr.indexOf(idx); if (i >= 0) arr.splice(i,1); }
   evalState[cat.id][critKey].items = arr;
+}
+
+// ── Card-view criteria functions ──────────────────────────────────────────
+function cardCritMark(catId, critKey, mark) {
+  if (!evalState[catId]) return;
+  if (!evalState[catId][critKey]) evalState[catId][critKey] = {mark:'',items:[]};
+  const prev = evalState[catId][critKey].mark;
+  evalState[catId][critKey].mark = (prev === mark) ? '' : mark;
+  if (evalState[catId][critKey].mark !== '×') evalState[catId][critKey].items = [];
+  cardUpdateCritUI(catId, critKey);
+}
+
+function cardCritItem(catId, critKey, idx, checked) {
+  if (!evalState[catId]?.[critKey]) return;
+  const arr = evalState[catId][critKey].items || [];
+  if (checked && !arr.includes(idx)) arr.push(idx);
+  if (!checked) { const i = arr.indexOf(idx); if (i >= 0) arr.splice(i,1); }
+  evalState[catId][critKey].items = arr;
+}
+
+function cardUpdateCritUI(catId, critKey) {
+  const mark = evalState[catId]?.[critKey]?.mark || '';
+  const row = document.querySelector(`#cc-${catId}-${critKey} .card-crit-row`);
+  if (row) {
+    row.querySelectorAll('.card-crit-btn').forEach(btn => {
+      btn.classList.remove('sel-o','sel-x');
+      if (mark === '○' && btn.textContent === '○') btn.classList.add('sel-o');
+      if (mark === '×' && btn.textContent === '×') btn.classList.add('sel-x');
+    });
+  }
+  const subEl = document.getElementById(`cc-sub-${catId}-${critKey}`);
+  if (subEl) {
+    if (mark === '×') {
+      subEl.innerHTML = cardRenderSubItems(catId, critKey);
+      subEl.classList.add('show');
+    } else {
+      subEl.innerHTML = '';
+      subEl.classList.remove('show');
+    }
+  }
+}
+
+function cardRenderSubItems(catId, critKey) {
+  const crit = EVAL_CRITERIA.find(c => c.key === critKey);
+  if (!crit) return '';
+  const items = evalState[catId]?.[critKey]?.items || [];
+  return crit.ko.map((ko, i) =>
+    `<label class="card-sub-chk"><input type="checkbox" ${items.includes(i)?'checked':''} onchange="cardCritItem('${catId}','${critKey}',${i},this.checked)"><span>${crit.ja[i]}<small>（${ko}）</small></span></label>`
+  ).join('');
 }
 
 function ssSyncComment() {
@@ -1860,20 +1932,7 @@ async function mpLoadDetail(idx) {
     if (ev.eval_details) { try { mpEvals[ev.cat_id]._criteria = JSON.parse(ev.eval_details); } catch(e) {} }
   });
 
-  // Auto-translate missing
-  const toTranslate = CATS.filter(cat => {
-    const ev = mpEvals[cat.id];
-    return ev?.comment_ko && !ev?.comment_ja;
-  });
-  if (toTranslate.length) {
-    for (const cat of toTranslate) {
-      const ja = await translateKoJaRetry(mpEvals[cat.id].comment_ko);
-      if (ja) mpEvals[cat.id].comment_ja = ja;
-      await new Promise(r => setTimeout(r, 1000));
-    }
-  }
-
-  // Build HTML
+  // Build HTML (no runtime translation — all text is pre-baked)
   const ts = fmtDate(sub.created_at);
   const backBtn = mpSubsList.length > 1
     ? `<button onclick="mpShowSubsList()" style="background:none;border:1px solid var(--border);border-radius:6px;padding:5px 10px;font-size:11px;cursor:pointer;font-family:'Noto Sans JP',sans-serif;flex-shrink:0">← 목록</button>`
@@ -1900,7 +1959,7 @@ async function mpLoadDetail(idx) {
       EVAL_CRITERIA.forEach(c => {
         const st = ev._criteria[c.key] || {mark:'',items:[]};
         if (!st.mark) return;
-        const itemsHtml = (st.items||[]).map(i => `<li>${c.ja[i]||c.ko[i]}</li>`).join('');
+        const itemsHtml = (st.items||[]).map(i => `<li>${c.ja[i]}（${c.ko[i]}）</li>`).join('');
         critHtml += `<div style="font-size:11px;margin-top:3px"><strong>${c.label}:</strong> ${st.mark}${itemsHtml?`<ul style="margin-left:14px">${itemsHtml}</ul>`:''}</div>`;
       });
     }
@@ -1918,17 +1977,17 @@ async function mpLoadDetail(idx) {
           <div class="mp-frame">${sampleUrl?`<img src="${sampleUrl}">`:'<span style="font-size:9px">準備中</span>'}</div>
         </div>
         <div class="mp-pcell">
-          <div class="mp-plbl">1차사진</div>
+          <div class="mp-plbl">1次写真（1차사진）</div>
           <div class="mp-frame">${hasPhoto?`<img src="${mpPhotos[cat.id]}">`:'<span style="font-size:9px">未提出</span>'}${hasPhoto&&ev.drawing_data_url?`<img src="${ev.drawing_data_url}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;pointer-events:none">`:''}
           </div>
         </div>
         <div class="mp-pcell">
-          <div class="mp-plbl">2차사진</div>
+          <div class="mp-plbl">2次写真（2차사진）</div>
           <div class="mp-frame" id="mp-frame2-${cat.id}">${photo2?`<img src="${photo2}">`:'<span style="font-size:9px;text-align:center">—</span>'}</div>
-          <button class="mp-shoot-btn" onclick="mpOpenCamera('${cat.id}')">📷 촬영</button>
+          <button class="mp-shoot-btn" onclick="mpOpenCamera('${cat.id}')">📷 撮影（촬영）</button>
         </div>
         <div class="mp-pcell">
-          <div class="mp-plbl">3차사진</div>
+          <div class="mp-plbl">3次写真（3차사진）</div>
           <div class="mp-frame">${photo3?`<img src="${photo3}">`:'<span style="font-size:9px;text-align:center">—</span>'}</div>
         </div>
       </div>
