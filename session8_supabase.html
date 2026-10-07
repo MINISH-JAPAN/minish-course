@@ -1069,16 +1069,10 @@ async function openReview(submissionId, name) {
         </div>
         <div id="sp2-eval-${cat.id}" style="margin-top:7px;padding:6px 8px;background:#edf2f9;border-radius:6px;border:1px solid #c8d8ec;display:${secondPhotos[cat.id]?'block':'none'}">
           <div style="font-size:10px;font-weight:700;color:var(--primary);margin-bottom:4px">2次写真 評価<small style="font-weight:400;color:var(--muted);font-size:9px">（2차사진）</small></div>
-          <div style="display:flex;gap:4px;margin-bottom:5px">
-            ${['○','△','×'].map(m=>{const cur=evalState[cat.id+'_p2']?.mark||'';const cls=cur===m?(m==='○'?'sel-maru':m==='△'?'sel-sank':'sel-batu'):'';return `<button class="mark-btn ${cls}" data-cat="${cat.id+'_p2'}" data-mark="${m}" onclick="setMark('${cat.id+'_p2'}','${m}')">${m}</button>`;}).join('')}
-          </div>
           ${EVAL_CRITERIA.map(c=>{const st=evalState[cat.id+'_p2']?.[c.key]||{mark:'',items:[]};const subHtml=st.mark==='×'?cardRenderSubItems(cat.id+'_p2',c.key):'';return `<div class="card-crit" id="cc-${cat.id+'_p2'}-${c.key}"><div class="card-crit-row"><span class="card-crit-lbl">${c.label}</span><button class="card-crit-btn${st.mark==='○'?' sel-o':''}" onclick="cardCritMark('${cat.id+'_p2'}','${c.key}','○')">○</button><button class="card-crit-btn${st.mark==='×'?' sel-x':''}" onclick="cardCritMark('${cat.id+'_p2'}','${c.key}','×')">×</button></div><div class="card-sub-items${st.mark==='×'?' show':''}" id="cc-sub-${cat.id+'_p2'}-${c.key}">${subHtml}</div></div>`;}).join('')}
         </div>
         <div id="sp3-eval-${cat.id}" style="margin-top:7px;padding:6px 8px;background:#edf9ed;border-radius:6px;border:1px solid #b8e0b8;display:${thirdPhotos[cat.id]?'block':'none'}">
           <div style="font-size:10px;font-weight:700;color:#1a7a40;margin-bottom:4px">3次写真 評価<small style="font-weight:400;color:var(--muted);font-size:9px">（3차사진）</small></div>
-          <div style="display:flex;gap:4px;margin-bottom:5px">
-            ${['○','△','×'].map(m=>{const cur=evalState[cat.id+'_p3']?.mark||'';const cls=cur===m?(m==='○'?'sel-maru':m==='△'?'sel-sank':'sel-batu'):'';return `<button class="mark-btn ${cls}" data-cat="${cat.id+'_p3'}" data-mark="${m}" onclick="setMark('${cat.id+'_p3'}','${m}')">${m}</button>`;}).join('')}
-          </div>
           ${EVAL_CRITERIA.map(c=>{const st=evalState[cat.id+'_p3']?.[c.key]||{mark:'',items:[]};const subHtml=st.mark==='×'?cardRenderSubItems(cat.id+'_p3',c.key):'';return `<div class="card-crit" id="cc-${cat.id+'_p3'}-${c.key}"><div class="card-crit-row"><span class="card-crit-lbl">${c.label}</span><button class="card-crit-btn${st.mark==='○'?' sel-o':''}" onclick="cardCritMark('${cat.id+'_p3'}','${c.key}','○')">○</button><button class="card-crit-btn${st.mark==='×'?' sel-x':''}" onclick="cardCritMark('${cat.id+'_p3'}','${c.key}','×')">×</button></div><div class="card-sub-items${st.mark==='×'?' show':''}" id="cc-sub-${cat.id+'_p3'}-${c.key}">${subHtml}</div></div>`;}).join('')}
         </div>
       </div>
