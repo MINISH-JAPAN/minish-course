@@ -1367,11 +1367,15 @@ function stopLevelIndicator() {
 }
 
 function handleUploadClick(catId) {
-  showUploadChoice(catId, 'main');
+  choiceCatId = catId;
+  choiceMode  = 'main';
+  document.getElementById('choice-file-input').click();
 }
 
 function openSecondCamera(catId) {
-  showUploadChoice(catId, 'second');
+  choiceCatId = catId;
+  choiceMode  = 'second';
+  document.getElementById('choice-file-input').click();
 }
 
 async function handleSecondPhoto(catId, input) {
@@ -2103,7 +2107,9 @@ async function mpTransCard(catId, btn) {
 }
 
 function mpOpenCamera(catId) {
-  showUploadChoice(catId, 'mypage');
+  choiceCatId = catId;
+  choiceMode  = 'mypage';
+  document.getElementById('choice-file-input').click();
 }
 
 async function mpSavePhoto2(catId, dataUrl) {
