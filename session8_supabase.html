@@ -481,10 +481,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
         </div>
         <div class="ss-sub-items" id="ss-sub-p1-quality"></div>
       </div>
-        <div class="ss-eval-lbl" style="margin-top:2px">コメント <small>（한국어）</small></div>
-        <textarea class="ss-eval-comment" id="ss-p1-comment" placeholder="코멘트를 입력해주세요" oninput="ssSyncComment('')"></textarea>
-        <button id="ss-trans-btn" class="ss-trans-btn" onclick="ssTranslate()">DeepL翻訳</button>
-        <div id="ss-trans-result" class="ss-trans-result"></div>
+
       </div>
       <!-- ─── 2次 評価 (2次写真がある場合のみ表示) -->
       <div class="ss-eval-section" id="ss-eval-s2" style="display:none">
@@ -521,8 +518,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
         </div>
         <div class="ss-sub-items" id="ss-sub-p2-quality"></div>
       </div>
-        <div class="ss-eval-lbl" style="margin-top:2px">コメント <small>（한국어）</small></div>
-        <textarea class="ss-eval-comment" id="ss-p2-comment" placeholder="코멘트를 입력해주세요" oninput="ssSyncComment('_p2')"></textarea>
+
       </div>
       <!-- ─── 3次 評価 (3次写真がある場合のみ表示) -->
       <div class="ss-eval-section" id="ss-eval-s3" style="display:none">
@@ -559,8 +555,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
         </div>
         <div class="ss-sub-items" id="ss-sub-p3-quality"></div>
       </div>
-        <div class="ss-eval-lbl" style="margin-top:2px">コメント <small>（한국어）</small></div>
-        <textarea class="ss-eval-comment" id="ss-p3-comment" placeholder="코멘트를 입력해주세요" oninput="ssSyncComment('_p3')"></textarea>
+
       </div>
       <button class="ss-save-btn-inner" onclick="ssSaveEval().then(ok=>ok&&toast('✅ 評価保存完了'))">💾 保存</button>
     </div>
