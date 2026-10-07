@@ -489,12 +489,12 @@ function compress(file) {
         let sx, sy, sw, sh;
         if (iw / ih > cropAR) { sh = ih; sw = Math.round(ih * cropAR); sx = Math.round((iw - sw) / 2); sy = 0; }
         else                  { sw = iw; sh = Math.round(iw / cropAR); sx = 0; sy = Math.round((ih - sh) / 2); }
-        const outW = Math.min(sw, 1600);
+        const outW = Math.min(sw, 900);
         const outH = Math.round(sh * outW / sw);
         const c = document.createElement('canvas');
         c.width = outW; c.height = outH;
         c.getContext('2d').drawImage(img, sx, sy, sw, sh, 0, 0, outW, outH);
-        resolve(c.toDataURL('image/jpeg', 0.72));
+        resolve(c.toDataURL('image/jpeg', 0.68));
       };
       img.onerror = reject;
       img.src = e.target.result;
@@ -582,10 +582,21 @@ async function loadSamples(force) {
     if (error) throw error;
     samples = {};
     if (data) data.forEach(s => { samples[s.cat_id] = s.data_url; });
-    samplesLoaded = true; // 성공했을 때만 캐시 확정
+    samplesLoaded = true;
   } catch(e) {
-    console.warn('샘플 로딩 실패 — 다음 렌더링에서 재시도:', e);
-    // samplesLoaded는 false 유지 → 다음 렌더링 시 자동 재시도
+    console.warn('샘플 로딩 실패 — 3초 후 자동 재시도:', e);
+    // 3초 후 자동 재시도 → 성공 시 화면 자동 갱신
+    setTimeout(async () => {
+      if (samplesLoaded) return;
+      try {
+        const {data, error} = await supa.from('samples').select('cat_id,data_url').eq('session_id', SESSION_ID);
+        if (error) throw error;
+        samples = {};
+        if (data) data.forEach(s => { samples[s.cat_id] = s.data_url; });
+        samplesLoaded = true;
+        if (currentView === 'participant' && !submitted) renderParticipant();
+      } catch(e2) { console.warn('재시도 실패:', e2); }
+    }, 3000);
   }
 }
 
@@ -700,15 +711,17 @@ async function doSubmit() {
     });
     if (e1) throw e1;
 
-    // 사진을 Supabase Storage에 업로드하고 URL만 DB에 저장 (실패 시 base64 폴백)
-    const rows = await Promise.all(Object.entries(myPhotos).map(async ([catId, dataUrl]) => {
+    // 사진을 1장씩 개별 insert (batch insert는 payload 한도 초과 위험)
+    for (const [catId, dataUrl] of Object.entries(myPhotos)) {
       const path = `${SESSION_ID}/${sid}/${catId}.jpg`;
       let url = dataUrl; // Storage 실패 시 base64 그대로 저장
       try { url = await uploadPhoto(path, dataUrl); } catch(_) {}
-      return { id: `${sid}_${catId}`, submission_id: sid, session_id: SESSION_ID, cat_id: catId, data_url: url };
-    }));
-    const {error: e2} = await supa.from('photos').insert(rows);
-    if (e2) throw e2;
+      const {error: e2} = await supa.from('photos').insert({
+        id: `${sid}_${catId}`, submission_id: sid,
+        session_id: SESSION_ID, cat_id: catId, data_url: url
+      });
+      if (e2) console.warn('photo insert warn:', catId, e2.message);
+    }
 
     submitted = true;
     renderSuccess(document.getElementById('participant-view'));
@@ -1534,12 +1547,12 @@ async function capturePhoto() {
     drawCX = cx + (cw - drawCW) / 2;
     drawCY = cy + (ch - drawCH) / 2;
   }
-  const outW = Math.min(drawCW, 1600);
+  const outW = Math.min(drawCW, 900);
   const outH = Math.round(drawCH * outW / drawCW);
   const out = document.createElement('canvas');
   out.width = outW; out.height = outH;
   out.getContext('2d').drawImage(video, drawCX, drawCY, drawCW, drawCH, 0, 0, outW, outH);
-  const dataUrl = out.toDataURL('image/jpeg', 0.72);
+  const dataUrl = out.toDataURL('image/jpeg', 0.68);
   const cid = camCatId;
   const mode = camMode;
   closeCameraOverlay();
@@ -2012,7 +2025,8 @@ async function mpSearch() {
   const {data: subs, error: e1} = await supa.from('submissions')
     .select('*').eq('session_id', SESSION_ID)
     .ilike('participant_name', name)
-    .order('created_at', {ascending:false});
+    .order('created_at', {ascending:false})
+    .limit(200);
 
   if (e1 || !subs?.length) {
     res.innerHTML = `<div class="section-box" style="text-align:center;color:var(--muted);padding:30px">
