@@ -504,6 +504,21 @@ function compress(file) {
   });
 }
 
+// ── STORAGE HELPERS ──────────────────────────────────────────
+function dataUrlToBlob(dataUrl) {
+  const arr = dataUrl.split(','), mime = arr[0].match(/:(.*?);/)[1];
+  const bstr = atob(arr[1]); let n = bstr.length;
+  const u8 = new Uint8Array(n);
+  while (n--) u8[n] = bstr.charCodeAt(n);
+  return new Blob([u8], { type: mime });
+}
+async function uploadPhoto(storagePath, dataUrl) {
+  const blob = dataUrlToBlob(dataUrl);
+  const { error } = await supa.storage.from('photos').upload(storagePath, blob, { contentType: 'image/jpeg', upsert: true });
+  if (error) throw error;
+  return supa.storage.from('photos').getPublicUrl(storagePath).data.publicUrl;
+}
+
 function toast(msg) {
   const el = document.createElement('div');
   el.className = 'toast';
@@ -569,14 +584,20 @@ async function loadSamples(force) {
 }
 
 async function saveSample(catId, dataUrl) {
+  // 로컬 미리보기는 즉시 업데이트
+  samples[catId] = dataUrl;
+  // Storage에 업로드 후 URL을 DB에 저장
+  const path = `samples/${SESSION_ID}/${catId}.jpg`;
+  let storeVal = dataUrl;
+  try { storeVal = await uploadPhoto(path, dataUrl); } catch(_) {}
   await supa.from('samples').upsert({
     id: `${SESSION_ID}_${catId}`,
     session_id: SESSION_ID,
     cat_id: catId,
-    data_url: dataUrl
+    data_url: storeVal
   });
-  samples[catId] = dataUrl;
-  samplesLoaded = true; // keep cache valid with updated value
+  samples[catId] = storeVal;
+  samplesLoaded = true;
 }
 
 // ── PARTICIPANT VIEW ─────────────────────────────────────────
@@ -651,14 +672,17 @@ async function handleMyPhoto(catId, input) {
   } catch(e) { toast('画像の読み込みに失敗しました'); }
 }
 
+let isSubmitting = false;
 async function doSubmit() {
+  if (isSubmitting) return; // 중복 제출 방지
   const name = document.getElementById('p-name')?.value?.trim();
   if (!name) { toast('お名前を入力してください'); return; }
   const photoCount = Object.keys(myPhotos).length;
   if (photoCount === 0) { toast('写真を1枚以上選択してください'); return; }
 
+  isSubmitting = true;
   const btn = document.getElementById('submit-btn');
-  if (btn) { btn.disabled = true; btn.textContent = '提出中... ⏳'; }
+  if (btn) { btn.disabled = true; btn.textContent = 'アップロード中... ⏳'; }
 
   try {
     const sid = `${SESSION_ID}_${Date.now()}_${Math.random().toString(36).slice(2,5)}`;
@@ -670,9 +694,11 @@ async function doSubmit() {
     });
     if (e1) throw e1;
 
-    const rows = Object.entries(myPhotos).map(([catId, dataUrl]) => ({
-      id: `${sid}_${catId}`, submission_id: sid,
-      session_id: SESSION_ID, cat_id: catId, data_url: dataUrl
+    // 사진을 Supabase Storage에 업로드하고 URL만 DB에 저장
+    const rows = await Promise.all(Object.entries(myPhotos).map(async ([catId, dataUrl]) => {
+      const path = `${SESSION_ID}/${sid}/${catId}.jpg`;
+      const url = await uploadPhoto(path, dataUrl);
+      return { id: `${sid}_${catId}`, submission_id: sid, session_id: SESSION_ID, cat_id: catId, data_url: url };
     }));
     const {error: e2} = await supa.from('photos').insert(rows);
     if (e2) throw e2;
@@ -681,6 +707,7 @@ async function doSubmit() {
     renderSuccess(document.getElementById('participant-view'));
   } catch(e) {
     console.error(e);
+    isSubmitting = false;
     toast('エラーが発生しました。もう一度お試しください。');
     if (btn) { btn.disabled = false; btn.textContent = `提出する（${Object.keys(myPhotos).length}/${TOTAL}枚）`; }
   }
@@ -2142,7 +2169,7 @@ async function mpSavePhoto2(catId, dataUrl) {
 // ── INIT ─────────────────────────────────────────────────────
 renderParticipant();
 </script>
-<script> 
+<script>
 // Remove Netlify badge (iframe + any element)
 (function() {
   function removeNetlifyBadge() {
