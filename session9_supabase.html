@@ -256,6 +256,44 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
   .mp-frame{border:1px solid #ddd}
   .mp-cmt-ja{color:#333!important;font-style:normal!important}
 }
+
+/* ── Slideshow eval panel ─────────────────────────────── */
+.ss-eval-panel{width:220px;flex-shrink:0;background:rgba(10,28,26,.97);border-left:1px solid rgba(255,255,255,.1);display:flex;flex-direction:column;padding:10px 8px;overflow-y:auto;gap:6px}
+.ss-eval-lbl{color:rgba(255,255,255,.5);font-size:10px;text-transform:uppercase;letter-spacing:.5px;font-family:'Noto Sans JP',sans-serif}
+.ss-eval-comment{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:#fff;border-radius:6px;padding:6px;font-size:12px;font-family:'Noto Sans JP',sans-serif;resize:none;height:60px;width:100%}
+.ss-eval-comment:focus{outline:none;border-color:var(--accent)}
+.ss-save-btn-inner{padding:7px;background:var(--accent);color:#fff;border:none;border-radius:6px;font-size:12px;font-family:'Noto Sans JP',sans-serif;cursor:pointer;width:100%;transition:background .2s}
+.ss-save-btn-inner:hover{background:var(--accent)}
+
+/* ── 4-quadrant slideshow grid ────────────────────────── */
+.ss-quad-grid{flex:1;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:2px;min-height:0;background:#111}
+.ss-quad{display:flex;flex-direction:column;min-height:0;background:#000;overflow:hidden}
+.ss-quad-lbl{background:rgba(255,255,255,.07);color:rgba(255,255,255,.6);font-size:10px;text-align:center;padding:4px;text-transform:uppercase;letter-spacing:.4px;flex-shrink:0;font-family:'Noto Sans JP',sans-serif}
+.ss-quad-img{flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden;min-height:0}
+.ss-quad-img img{max-width:100%;max-height:100%;object-fit:contain;display:block}
+.ss-quad-ph{flex:1;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.25);font-size:12px}
+
+/* ── Criteria eval UI in slideshow ───────────────────── */
+.ss-crit{display:flex;flex-direction:column;gap:3px}
+.ss-crit-row{display:flex;align-items:center;gap:4px}
+.ss-crit-label{color:rgba(255,255,255,.8);font-size:11px;flex:1;font-family:'Noto Sans JP',sans-serif}
+.ss-crit-btn{padding:2px 8px;border-radius:4px;border:1px solid rgba(255,255,255,.3);background:transparent;color:rgba(255,255,255,.7);font-size:14px;cursor:pointer;font-family:'Noto Sans JP',sans-serif;transition:all .15s}
+.ss-crit-btn.sel-o{background:#18945e;border-color:#18945e;color:#fff}
+.ss-crit-btn.sel-x{background:#c0392b;border-color:#c0392b;color:#fff}
+.ss-sub-items{display:none;flex-direction:column;gap:2px;padding-left:4px}
+.ss-sub-items.show{display:flex}
+.ss-sub-chk{color:rgba(255,255,255,.75);font-size:10px;display:flex;align-items:flex-start;gap:4px;cursor:pointer;line-height:1.3;font-family:'Noto Sans JP',sans-serif}
+.ss-sub-chk input{margin-top:1px;flex-shrink:0}
+
+/* ── Second / third photo bar ─────────────────────────── */
+.sp2-bar{padding:8px 10px 10px;border-top:1px dashed var(--border);background:#edf2f8}
+.sp2-grid{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px;margin-bottom:8px}
+.sp2-cell{display:flex;flex-direction:column}
+.sp2-label{font-size:9px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px;text-align:center}
+.sp2-frame{width:100%;aspect-ratio:4/3;background:var(--bg);border-radius:5px;overflow:hidden;border:1px dashed var(--border);display:flex;align-items:center;justify-content:center}
+.sp2-frame img{width:100%;height:100%;object-fit:cover}
+.sp2-shoot-btn{padding:5px 10px;background:var(--accent);color:#fff;border:none;border-radius:5px;font-size:11px;font-family:'Noto Sans JP',sans-serif;cursor:pointer}
+.sp2-shoot-btn:hover{background:#177a6b}
 </style>
 </head>
 <body>
@@ -333,13 +371,61 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
     </div>
   </div>
   <div class="ss-body">
-    <div class="ss-panel">
-      <div class="ss-panel-label">サンプル / 샘플</div>
-      <div class="ss-panel-img" id="ss-sample-img"></div>
+    <div class="ss-quad-grid">
+      <div class="ss-quad">
+        <div class="ss-quad-lbl">サンプル / 샘플</div>
+        <div id="ss-q-sample" class="ss-quad-ph">未登録</div>
+      </div>
+      <div class="ss-quad">
+        <div class="ss-quad-lbl">1차 사진</div>
+        <div id="ss-q-photo1" class="ss-quad-ph">未提出</div>
+      </div>
+      <div class="ss-quad">
+        <div class="ss-quad-lbl">2차 사진</div>
+        <div id="ss-q-photo2" class="ss-quad-ph">—</div>
+      </div>
+      <div class="ss-quad">
+        <div class="ss-quad-lbl">3차 사진</div>
+        <div id="ss-q-photo3" class="ss-quad-ph">—</div>
+      </div>
     </div>
-    <div class="ss-panel">
-      <div class="ss-panel-label">提出写真 / 제출 사진</div>
-      <div class="ss-panel-img" id="ss-photo-img"></div>
+    <div class="ss-eval-panel" id="ss-eval-panel">
+      <div class="ss-eval-lbl">評価 / 평가</div>
+      <div class="ss-crit" id="ss-crit-setup">
+        <div class="ss-crit-row">
+          <span class="ss-crit-label">1. SETUP</span>
+          <button class="ss-crit-btn" id="ss-setup-o" onclick="ssCritMark('setup','○')">○</button>
+          <button class="ss-crit-btn" id="ss-setup-x" onclick="ssCritMark('setup','×')">×</button>
+        </div>
+        <div class="ss-sub-items" id="ss-sub-setup"></div>
+      </div>
+      <div class="ss-crit" id="ss-crit-angle">
+        <div class="ss-crit-row">
+          <span class="ss-crit-label">2. ANGLE</span>
+          <button class="ss-crit-btn" id="ss-angle-o" onclick="ssCritMark('angle','○')">○</button>
+          <button class="ss-crit-btn" id="ss-angle-x" onclick="ssCritMark('angle','×')">×</button>
+        </div>
+        <div class="ss-sub-items" id="ss-sub-angle"></div>
+      </div>
+      <div class="ss-crit" id="ss-crit-frame">
+        <div class="ss-crit-row">
+          <span class="ss-crit-label">3. FRAME</span>
+          <button class="ss-crit-btn" id="ss-frame-o" onclick="ssCritMark('frame','○')">○</button>
+          <button class="ss-crit-btn" id="ss-frame-x" onclick="ssCritMark('frame','×')">×</button>
+        </div>
+        <div class="ss-sub-items" id="ss-sub-frame"></div>
+      </div>
+      <div class="ss-crit" id="ss-crit-quality">
+        <div class="ss-crit-row">
+          <span class="ss-crit-label">4. QUALITY</span>
+          <button class="ss-crit-btn" id="ss-quality-o" onclick="ssCritMark('quality','○')">○</button>
+          <button class="ss-crit-btn" id="ss-quality-x" onclick="ssCritMark('quality','×')">×</button>
+        </div>
+        <div class="ss-sub-items" id="ss-sub-quality"></div>
+      </div>
+      <div class="ss-eval-lbl">コメント (한국어)</div>
+      <textarea class="ss-eval-comment" id="ss-eval-comment" placeholder="코멘트를 입력해주세요" oninput="ssSyncComment()"></textarea>
+      <button class="ss-save-btn-inner" onclick="ssSaveEval().then(ok=>ok&&toast('✅ 評価保存完了'))">💾 保存</button>
     </div>
   </div>
   <div class="ss-nav">
@@ -383,6 +469,29 @@ const CATS = [
 ];
 const TOTAL = 9;
 
+const EVAL_CRITERIA = [
+  {
+    key:'setup', label:'SETUP',
+    ko:['촬영자가 환자 정면에 위치하지 않음','환자의 몸이 정면에 위치하지 않음','환자의 고개가 정면에 위치하지 않음','환자의 시선이 카메라 정면을 향하지 않음','평소 교합대로 물지 않음'],
+    ja:['撮影者が患者の正面に位置していない','患者の体が正面を向いていない','患者の頭が正面を向いていない','患者の視線がカメラ正面を向いていない','普段の咬合で噛んでいない']
+  },
+  {
+    key:'angle', label:'ANGLE',
+    ko:['환자가 좌측으로 치우침','환자가 우측으로 치우침','카메라가 위로 기울어짐','카메라가 아래로 기울어짐'],
+    ja:['患者が左側に偏っている','患者が右側に偏っている','カメラが上に傾いている','カメラが下に傾いている']
+  },
+  {
+    key:'frame', label:'FRAME',
+    ko:['머리가 잘림','겨드랑이선이 잘림','겨드랑이선 아래까지 너무 넓게 촬영됨','정면・측면 촬영 거리가 다름'],
+    ja:['頭が切れている','脇のラインが切れている','脇のライン以下まで広く撮影されている','正面・側面の撮影距離が異なる']
+  },
+  {
+    key:'quality', label:'QUALITY',
+    ko:['초점이 맞지 않음'],
+    ja:['ピントが合っていない']
+  }
+];
+
 const {createClient} = supabase;
 const supa = createClient(SUPABASE_URL, SUPABASE_KEY);
 
@@ -398,8 +507,10 @@ let currentReviewSamples = {};
 let currentReviewName    = '';
 // Slideshow state
 let slideIdx  = 0;
-// Camera mode: 'main' | 'second' | 'mypage'
+// Camera mode: 'main' | 'second' | 'third' | 'mypage'
 let camMode = 'main';
+let secondPhotos = {};  // { catId: dataUrl }
+let thirdPhotos  = {};  // { catId: dataUrl }
 let levelHandler = null;
 // My Page state
 let mpSub   = null;
@@ -644,6 +755,28 @@ async function doSubmit() {
       });
       if (e2) console.warn('photo insert warn:', catId, e2.message);
     }
+    // 2차 사진 insert
+    for (const [catId, dataUrl] of Object.entries(secondPhotos)) {
+      const path = `${SESSION_ID}/${sid}/${catId}_p2.jpg`;
+      let url = dataUrl;
+      try { url = await uploadPhoto(path, dataUrl); } catch(_) {}
+      const {error: e3} = await supa.from('photos').insert({
+        id: `${sid}_${catId}_p2`, submission_id: sid,
+        session_id: SESSION_ID, cat_id: `${catId}_p2`, data_url: url
+      });
+      if (e3) console.warn('photo2 insert warn:', catId, e3.message);
+    }
+    // 3차 사진 insert
+    for (const [catId, dataUrl] of Object.entries(thirdPhotos)) {
+      const path = `${SESSION_ID}/${sid}/${catId}_p3.jpg`;
+      let url = dataUrl;
+      try { url = await uploadPhoto(path, dataUrl); } catch(_) {}
+      const {error: e4} = await supa.from('photos').insert({
+        id: `${sid}_${catId}_p3`, submission_id: sid,
+        session_id: SESSION_ID, cat_id: `${catId}_p3`, data_url: url
+      });
+      if (e4) console.warn('photo3 insert warn:', catId, e4.message);
+    }
 
     submitted = true;
     renderSuccess(document.getElementById('participant-view'));
@@ -757,7 +890,17 @@ async function openReview(submissionId, name) {
   await loadSamples();
   const {data: photos} = await supa.from('photos').select('cat_id,data_url').eq('submission_id', submissionId);
   const pm = {};
-  if (photos) photos.forEach(p => { pm[p.cat_id] = p.data_url; });
+  if (photos) photos.forEach(p => {
+    if (p.cat_id.endsWith('_p2')) {
+      const base = p.cat_id.slice(0, -3);
+      secondPhotos[base] = p.data_url;
+    } else if (p.cat_id.endsWith('_p3')) {
+      const base = p.cat_id.slice(0, -3);
+      thirdPhotos[base] = p.data_url;
+    } else {
+      pm[p.cat_id] = p.data_url;
+    }
+  });
   currentReviewName    = name;
   currentReviewSamples = {...samples};
   currentReviewPhotos  = pm;
@@ -827,6 +970,40 @@ async function openReview(submissionId, name) {
         </div>
         <textarea class="eval-comment" id="ec-${cat.id}" placeholder="コメント（韓国語） / 코멘트 (한국어)" oninput="if(evalState['${cat.id}'])evalState['${cat.id}'].comment_ko=this.value">${ev.comment_ko||''}</textarea>
         ${ev.comment_ja ? `<div class="eval-translated show" id="etx-${cat.id}">🇯🇵 ${ev.comment_ja}</div>` : `<div class="eval-translated" id="etx-${cat.id}"></div>`}
+      </div>
+      <div class="sp2-bar" id="sp2-bar-${cat.id}" style="display:block">
+        <div class="sp2-grid">
+          <div class="sp2-cell">
+            <div class="sp2-label">サンプル / 샘플</div>
+            <div class="sp2-frame">
+              ${s ? `<img src="${s}">` : '<span style="font-size:9px">未登録</span>'}
+            </div>
+          </div>
+          <div class="sp2-cell">
+            <div class="sp2-label">1차사진</div>
+            <div class="sp2-frame">
+              ${p ? `<img src="${p}">` : '<span style="font-size:9px">未提出</span>'}
+            </div>
+          </div>
+          <div class="sp2-cell">
+            <div class="sp2-label">2차사진</div>
+            <div class="sp2-frame" id="sp2-frame-${cat.id}">
+              ${secondPhotos[cat.id] ? `<img src="${secondPhotos[cat.id]}">` : '<span style="font-size:9px">—</span>'}
+            </div>
+          </div>
+          <div class="sp2-cell">
+            <div class="sp2-label">3차사진</div>
+            <div class="sp2-frame" id="sp3-frame-${cat.id}">
+              ${thirdPhotos[cat.id] ? `<img src="${thirdPhotos[cat.id]}">` : '<span style="font-size:9px">—</span>'}
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+          <button class="sp2-shoot-btn" onclick="openSecondCamera('${cat.id}')">📷 2차사진</button>
+          <button class="sp2-shoot-btn" onclick="openThirdCamera('${cat.id}')">📷 3차사진</button>
+          <input type="file" id="fi2-${cat.id}" accept="image/*" style="display:none" onchange="handleSecondPhoto('${cat.id}',this)">
+          <input type="file" id="fi3-${cat.id}" accept="image/*" style="display:none" onchange="handleThirdPhoto('${cat.id}',this)">
+        </div>
       </div>
     </div>`;
   }
@@ -990,12 +1167,15 @@ function renderSlide() {
   document.getElementById('ss-cat').textContent  = `${cat.n}.  ${cat.jp}  /  ${cat.kr}`;
   document.getElementById('ss-counter').textContent = `${slideIdx + 1} / ${CATS.length}`;
 
-  document.getElementById('ss-sample-img').innerHTML = s
-    ? `<img src="${s}" alt="sample">`
-    : `<span class="ss-panel-ph">未登録</span>`;
-  document.getElementById('ss-photo-img').innerHTML = p
-    ? `<img src="${p}" alt="submitted">`
-    : `<span class="ss-panel-ph">未提出</span>`;
+  function qSet(id, src, ph) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.innerHTML = src ? `<img src="${src}" style="width:100%;height:100%;object-fit:contain">` : ph;
+  }
+  qSet('ss-q-sample', s, '未登録');
+  qSet('ss-q-photo1', p, '未提出');
+  qSet('ss-q-photo2', secondPhotos[cat.id] || null, '—');
+  qSet('ss-q-photo3', thirdPhotos[cat.id]  || null, '—');
 
   document.getElementById('ss-prev').disabled = slideIdx === 0;
   document.getElementById('ss-next').disabled = slideIdx === CATS.length - 1;
@@ -1004,6 +1184,15 @@ function renderSlide() {
   dotsEl.innerHTML = CATS.map((c, i) =>
     `<div class="ss-dot${i===slideIdx?' active':''}" onclick="gotoSlide(${i})"></div>`
   ).join('');
+
+  // Populate eval panel
+  const ev = evalState[cat.id] || {};
+  const commentEl = document.getElementById('ss-eval-comment');
+  if (commentEl) commentEl.value = ev.comment_ko || '';
+  EVAL_CRITERIA.forEach(c => {
+    ssUpdateCritUI(cat.id, c.key);
+    ssRenderSubItems(c.key);
+  });
 }
 
 function nextSlide() { if (slideIdx < CATS.length - 1) { slideIdx++; renderSlide(); } }
@@ -1014,6 +1203,60 @@ function ssTouchStart(e) { ssStartX = e.touches[0].clientX; }
 function ssTouchEnd(e) {
   const dx = e.changedTouches[0].clientX - ssStartX;
   if (Math.abs(dx) > 50) { dx < 0 ? nextSlide() : prevSlide(); }
+}
+
+function ssRenderSubItems(critKey) {
+  const cat = CATS[slideIdx];
+  const crit = EVAL_CRITERIA.find(c => c.key === critKey);
+  const el = document.getElementById(`ss-sub-${critKey}`);
+  if (!el || !cat || !crit) return;
+  const state = evalState[cat.id]?.[critKey] || {mark:'',items:[]};
+  if (state.mark !== '×') { el.classList.remove('show'); el.innerHTML = ''; return; }
+  el.innerHTML = crit.ko.map((ko, i) =>
+    `<label class="ss-sub-chk"><input type="checkbox" ${(state.items||[]).includes(i)?'checked':''} onchange="ssCritItem('${critKey}',${i},this.checked)"> ${ko}</label>`
+  ).join('');
+  el.classList.add('show');
+}
+
+function ssUpdateCritUI(catId, critKey) {
+  const state = evalState[catId]?.[critKey] || {mark:'',items:[]};
+  const oBtn = document.getElementById(`ss-${critKey}-o`);
+  const xBtn = document.getElementById(`ss-${critKey}-x`);
+  if (oBtn) { oBtn.classList.toggle('sel-o', state.mark === '○'); oBtn.classList.remove('sel-x'); }
+  if (xBtn) { xBtn.classList.toggle('sel-x', state.mark === '×'); xBtn.classList.remove('sel-o'); }
+}
+
+function ssCritMark(critKey, mark) {
+  const cat = CATS[slideIdx];
+  if (!cat || !evalState[cat.id]) return;
+  const prev = evalState[cat.id][critKey]?.mark || '';
+  evalState[cat.id][critKey] = evalState[cat.id][critKey] || {mark:'',items:[]};
+  evalState[cat.id][critKey].mark = (prev === mark) ? '' : mark;
+  if (evalState[cat.id][critKey].mark !== '×') evalState[cat.id][critKey].items = [];
+  ssUpdateCritUI(cat.id, critKey);
+  ssRenderSubItems(critKey);
+}
+
+function ssCritItem(critKey, idx, checked) {
+  const cat = CATS[slideIdx];
+  if (!cat || !evalState[cat.id]) return;
+  const arr = evalState[cat.id][critKey].items || [];
+  if (checked && !arr.includes(idx)) arr.push(idx);
+  if (!checked) { const i = arr.indexOf(idx); if (i >= 0) arr.splice(i,1); }
+  evalState[cat.id][critKey].items = arr;
+}
+
+function ssSyncComment() {
+  const cat = CATS[slideIdx];
+  if (!cat || !evalState[cat.id]) return;
+  const val = document.getElementById('ss-eval-comment')?.value || '';
+  evalState[cat.id].comment_ko = val;
+  const ec = document.getElementById(`ec-${cat.id}`);
+  if (ec) ec.value = val;
+}
+
+async function ssSaveEval() {
+  return await saveAllEvaluations();
 }
 
 // ── CAMERA OVERLAY ───────────────────────────────────────────
@@ -1096,6 +1339,39 @@ function handleUploadClick(catId, mode) {
   document.getElementById('choice-file-input').click();
 }
 
+function openSecondCamera(catId) {
+  choiceCatId = catId;
+  choiceMode  = 'second';
+  document.getElementById('choice-file-input').click();
+}
+
+async function handleSecondPhoto(catId, input) {
+  if (!input.files[0]) return;
+  try {
+    const dataUrl = await compress(input.files[0]);
+    secondPhotos[catId] = dataUrl;
+    const frame = document.getElementById(`sp2-frame-${catId}`);
+    if (frame) frame.innerHTML = `<img src="${dataUrl}">`;
+    toast('✅ 2枚目を追加しました');
+  } catch(e) { toast('画像の読み込みに失敗しました'); }
+}
+
+function openThirdCamera(catId) {
+  choiceCatId = catId;
+  choiceMode  = 'third';
+  document.getElementById('choice-file-input').click();
+}
+
+async function handleThirdPhoto(catId, input) {
+  if (!input.files[0]) return;
+  try {
+    const dataUrl = await compress(input.files[0]);
+    thirdPhotos[catId] = dataUrl;
+    const frame = document.getElementById(`sp3-frame-${catId}`);
+    if (frame) frame.innerHTML = `<img src="${dataUrl}">`;
+    toast('✅ 3枚目を追加しました');
+  } catch(e) { toast('画像の読み込みに失敗しました'); }
+}
 
 async function openCameraOverlay(catId, sampleUrl) {
   camCatId = catId;
@@ -1233,6 +1509,22 @@ async function capturePhoto() {
     return;
   }
 
+  if (mode === 'second') {
+    secondPhotos[cid] = dataUrl;
+    const frame = document.getElementById(`sp2-frame-${cid}`);
+    if (frame) frame.innerHTML = `<img src="${dataUrl}">`;
+    toast('✅ 2枚目を撮影しました');
+    return;
+  }
+
+  if (mode === 'third') {
+    thirdPhotos[cid] = dataUrl;
+    const frame = document.getElementById(`sp3-frame-${cid}`);
+    if (frame) frame.innerHTML = `<img src="${dataUrl}">`;
+    toast('✅ 3枚目を撮影しました');
+    return;
+  }
+
   const savedName = document.getElementById('p-name')?.value || '';
   myPhotos[cid] = dataUrl;
   await renderParticipant();
@@ -1274,6 +1566,16 @@ async function choiceSheetFileSelected(input) {
     const dataUrl = await compress(file);
     if (mode === 'mypage') {
       await mpSavePhoto2(cid, dataUrl);
+    } else if (mode === 'second') {
+      secondPhotos[cid] = dataUrl;
+      const frame = document.getElementById(`sp2-frame-${cid}`);
+      if (frame) frame.innerHTML = `<img src="${dataUrl}">`;
+      toast('✅ 2枚目を登録しました');
+    } else if (mode === 'third') {
+      thirdPhotos[cid] = dataUrl;
+      const frame = document.getElementById(`sp3-frame-${cid}`);
+      if (frame) frame.innerHTML = `<img src="${dataUrl}">`;
+      toast('✅ 3枚目を登録しました');
     } else {
       const savedName = document.getElementById('p-name')?.value || '';
       myPhotos[cid] = dataUrl;
@@ -1338,8 +1640,12 @@ let drawColor = '#ff0000';
 let drawLineWidth = 3;
 
 function initEvalState() {
-  evalState = {}; drawState = {}; activeDrawCanvases = {};
-  for (const cat of CATS) evalState[cat.id] = {mark:'', comment_ko:'', comment_ja:''};
+  evalState = {}; drawState = {}; activeDrawCanvases = {}; secondPhotos = {}; thirdPhotos = {};
+  for (const cat of CATS) evalState[cat.id] = {
+    mark:'', comment_ko:'', comment_ja:'',
+    setup:{mark:'',items:[]}, angle:{mark:'',items:[]},
+    frame:{mark:'',items:[]}, quality:{mark:'',items:[]}
+  };
 }
 
 async function loadEvaluations(submissionId) {
@@ -1351,6 +1657,16 @@ async function loadEvaluations(submissionId) {
       evalState[ev.cat_id].comment_ko = ev.comment_ko || '';
       evalState[ev.cat_id].comment_ja = ev.comment_ja || '';
       if (ev.drawing_data_url) drawState[ev.cat_id] = ev.drawing_data_url;
+      if (ev.photo2_data_url)  secondPhotos[ev.cat_id] = ev.photo2_data_url;
+      if (ev.photo3_data_url)  thirdPhotos[ev.cat_id]  = ev.photo3_data_url;
+      if (ev.eval_details) {
+        try {
+          const d = JSON.parse(ev.eval_details);
+          ['setup','angle','frame','quality'].forEach(k => {
+            if (d[k]) evalState[ev.cat_id][k] = d[k];
+          });
+        } catch(e2) {}
+      }
     });
   } catch(e) { console.warn('eval load:', e); }
 }
@@ -1368,7 +1684,15 @@ async function saveAllEvaluations() {
     mark: evalState[cat.id]?.mark || null,
     comment_ko: evalState[cat.id]?.comment_ko || null,
     comment_ja: evalState[cat.id]?.comment_ja || null,
-    drawing_data_url: drawState[cat.id] || null
+    drawing_data_url: drawState[cat.id] || null,
+    photo2_data_url: secondPhotos[cat.id] || null,
+    photo3_data_url: thirdPhotos[cat.id]  || null,
+    eval_details: JSON.stringify({
+      setup:   evalState[cat.id]?.setup   || {mark:'',items:[]},
+      angle:   evalState[cat.id]?.angle   || {mark:'',items:[]},
+      frame:   evalState[cat.id]?.frame   || {mark:'',items:[]},
+      quality: evalState[cat.id]?.quality || {mark:'',items:[]}
+    })
   }));
   const {error} = await supa.from('evaluations').upsert(rows);
   if (error) {
@@ -1514,19 +1838,26 @@ async function mpLoadDetail(idx) {
   // Load photos
   const {data: photos} = await supa.from('photos').select('cat_id,data_url').eq('submission_id', sub.id);
   mpPhotos = {};
-  if (photos) photos.forEach(p => { mpPhotos[p.cat_id] = p.data_url; });
+  const mpPhotos2 = {}; const mpPhotos3 = {};
+  if (photos) photos.forEach(p => {
+    if (p.cat_id.endsWith('_p2')) mpPhotos2[p.cat_id.slice(0,-3)] = p.data_url;
+    else if (p.cat_id.endsWith('_p3')) mpPhotos3[p.cat_id.slice(0,-3)] = p.data_url;
+    else mpPhotos[p.cat_id] = p.data_url;
+  });
 
   // Load evals
   const {data: evs} = await supa.from('evaluations').select('*').eq('submission_id', sub.id);
   mpEvals = {};
-  CATS.forEach(cat => { mpEvals[cat.id] = {mark:'', comment_ko:'', comment_ja:'', photo2_data_url:'', drawing_data_url:''}; });
+  CATS.forEach(cat => { mpEvals[cat.id] = {mark:'', comment_ko:'', comment_ja:'', photo2_data_url:'', photo3_data_url:'', drawing_data_url:''}; });
   if (evs) evs.forEach(ev => {
     if (!mpEvals[ev.cat_id]) return;
     mpEvals[ev.cat_id].mark = ev.mark || '';
     mpEvals[ev.cat_id].comment_ko = ev.comment_ko || '';
     mpEvals[ev.cat_id].comment_ja = ev.comment_ja || '';
     mpEvals[ev.cat_id].photo2_data_url = ev.photo2_data_url || '';
+    mpEvals[ev.cat_id].photo3_data_url = ev.photo3_data_url || '';
     mpEvals[ev.cat_id].drawing_data_url = ev.drawing_data_url || '';
+    if (ev.eval_details) { try { mpEvals[ev.cat_id]._criteria = JSON.parse(ev.eval_details); } catch(e) {} }
   });
 
   // Auto-translate missing
@@ -1557,11 +1888,22 @@ async function mpLoadDetail(idx) {
   for (const cat of CATS) {
     const ev = mpEvals[cat.id] || {};
     const hasPhoto = !!mpPhotos[cat.id];
-    const hasPhoto2 = !!ev.photo2_data_url;
+    const photo2 = mpPhotos2[cat.id] || ev.photo2_data_url || '';
+    const photo3 = mpPhotos3[cat.id] || ev.photo3_data_url || '';
     const sampleUrl = mpSamples[cat.id] || '';
     const mark = ev.mark || '';
     const markCls = mark==='○'?'maru':mark==='△'?'sank':mark==='×'?'batu':'none';
-    const show3col = mark === '×' || hasPhoto2;
+
+    // Build criteria HTML
+    let critHtml = '';
+    if (ev._criteria) {
+      EVAL_CRITERIA.forEach(c => {
+        const st = ev._criteria[c.key] || {mark:'',items:[]};
+        if (!st.mark) return;
+        const itemsHtml = (st.items||[]).map(i => `<li>${c.ja[i]||c.ko[i]}</li>`).join('');
+        critHtml += `<div style="font-size:11px;margin-top:3px"><strong>${c.label}:</strong> ${st.mark}${itemsHtml?`<ul style="margin-left:14px">${itemsHtml}</ul>`:''}</div>`;
+      });
+    }
 
     html += `
     <div class="mp-card">
@@ -1570,26 +1912,30 @@ async function mpLoadDetail(idx) {
         <div class="cat-name">${cat.jp}</div>
         <div class="cat-sub" style="margin-left:auto;font-size:10px;opacity:.7">${cat.kr}</div>
       </div>
-      <div class="mp-photos ${show3col?'cols3':'cols2'}">
+      <div class="mp-photos" style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px">
         <div class="mp-pcell">
           <div class="mp-plbl">サンプル</div>
           <div class="mp-frame">${sampleUrl?`<img src="${sampleUrl}">`:'<span style="font-size:9px">準備中</span>'}</div>
         </div>
         <div class="mp-pcell">
-          <div class="mp-plbl">提出写真</div>
+          <div class="mp-plbl">1차사진</div>
           <div class="mp-frame">${hasPhoto?`<img src="${mpPhotos[cat.id]}">`:'<span style="font-size:9px">未提出</span>'}${hasPhoto&&ev.drawing_data_url?`<img src="${ev.drawing_data_url}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;pointer-events:none">`:''}
           </div>
         </div>
-        ${show3col ? `
         <div class="mp-pcell">
-          <div class="mp-plbl">2枚目</div>
-          <div class="mp-frame" id="mp-frame2-${cat.id}">${hasPhoto2?`<img src="${ev.photo2_data_url}">`:'<span style="font-size:9px;text-align:center">撮影が必要</span>'}</div>
-          <button class="mp-shoot-btn" onclick="mpOpenCamera('${cat.id}')">📷 ${hasPhoto2?'再撮影':'2枚目撮影'}</button>
-        </div>` : ''}
+          <div class="mp-plbl">2차사진</div>
+          <div class="mp-frame" id="mp-frame2-${cat.id}">${photo2?`<img src="${photo2}">`:'<span style="font-size:9px;text-align:center">—</span>'}</div>
+          <button class="mp-shoot-btn" onclick="mpOpenCamera('${cat.id}')">📷 촬영</button>
+        </div>
+        <div class="mp-pcell">
+          <div class="mp-plbl">3차사진</div>
+          <div class="mp-frame">${photo3?`<img src="${photo3}">`:'<span style="font-size:9px;text-align:center">—</span>'}</div>
+        </div>
       </div>
       <div class="mp-eval">
         <div class="mp-mark-badge ${markCls}">${mark||'—'}</div>
         <div class="mp-comments">
+          ${critHtml}
           ${ev.comment_ko ? `<div class="mp-cmt-ko">${ev.comment_ko}</div>` : ''}
           ${ev.comment_ja
             ? `<div class="mp-cmt-ja" id="mp-ja-${cat.id}">🇯🇵 ${ev.comment_ja}</div>`
