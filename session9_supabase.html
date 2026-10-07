@@ -1003,29 +1003,43 @@ async function openReview(submissionId, name) {
             </div>
           </div>
           <div class="sp2-cell">
-            <div class="sp2-label">1차사진</div>
+            <div class="sp2-label">1次写真<small style="font-size:9px">（1차사진）</small></div>
             <div class="sp2-frame">
               ${p ? `<img src="${p}">` : '<span style="font-size:9px">未提出</span>'}
             </div>
           </div>
           <div class="sp2-cell">
-            <div class="sp2-label">2차사진</div>
+            <div class="sp2-label">2次写真<small style="font-size:9px">（2차사진）</small></div>
             <div class="sp2-frame" id="sp2-frame-${cat.id}">
               ${secondPhotos[cat.id] ? `<img src="${secondPhotos[cat.id]}">` : '<span style="font-size:9px">—</span>'}
             </div>
           </div>
           <div class="sp2-cell">
-            <div class="sp2-label">3차사진</div>
+            <div class="sp2-label">3次写真<small style="font-size:9px">（3차사진）</small></div>
             <div class="sp2-frame" id="sp3-frame-${cat.id}">
               ${thirdPhotos[cat.id] ? `<img src="${thirdPhotos[cat.id]}">` : '<span style="font-size:9px">—</span>'}
             </div>
           </div>
         </div>
         <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
-          <button class="sp2-shoot-btn" onclick="openSecondCamera('${cat.id}')">📷 2차사진</button>
-          <button class="sp2-shoot-btn" onclick="openThirdCamera('${cat.id}')">📷 3차사진</button>
+          <button class="sp2-shoot-btn" onclick="openSecondCamera('${cat.id}')">📷 2次写真<small>（2차）</small></button>
+          <button class="sp2-shoot-btn" id="sp3-btn-${cat.id}" onclick="openThirdCamera('${cat.id}')" ${secondPhotos[cat.id]?'':'disabled style="opacity:.4;cursor:not-allowed"'}>📷 3次写真<small>（3차）</small></button>
           <input type="file" id="fi2-${cat.id}" accept="image/*" style="display:none" onchange="handleSecondPhoto('${cat.id}',this)">
           <input type="file" id="fi3-${cat.id}" accept="image/*" style="display:none" onchange="handleThirdPhoto('${cat.id}',this)">
+        </div>
+        <div id="sp2-eval-${cat.id}" style="margin-top:7px;padding:6px 8px;background:#edf2f9;border-radius:6px;border:1px solid #c8d8ec;display:${secondPhotos[cat.id]?'block':'none'}">
+          <div style="font-size:10px;font-weight:700;color:var(--primary);margin-bottom:4px">2次写真 評価<small style="font-weight:400;color:var(--muted);font-size:9px">（2차사진）</small></div>
+          <div style="display:flex;gap:4px;margin-bottom:5px">
+            ${['○','△','×'].map(m=>{const cur=evalState[cat.id+'_p2']?.mark||'';const cls=cur===m?(m==='○'?'sel-maru':m==='△'?'sel-sank':'sel-batu'):'';return `<button class="mark-btn ${cls}" data-cat="${cat.id+'_p2'}" data-mark="${m}" onclick="setMark('${cat.id+'_p2'}','${m}')">${m}</button>`;}).join('')}
+          </div>
+          ${EVAL_CRITERIA.map(c=>{const st=evalState[cat.id+'_p2']?.[c.key]||{mark:'',items:[]};const subHtml=st.mark==='×'?cardRenderSubItems(cat.id+'_p2',c.key):'';return `<div class="card-crit" id="cc-${cat.id+'_p2'}-${c.key}"><div class="card-crit-row"><span class="card-crit-lbl">${c.label}</span><button class="card-crit-btn${st.mark==='○'?' sel-o':''}" onclick="cardCritMark('${cat.id+'_p2'}','${c.key}','○')">○</button><button class="card-crit-btn${st.mark==='×'?' sel-x':''}" onclick="cardCritMark('${cat.id+'_p2'}','${c.key}','×')">×</button></div><div class="card-sub-items${st.mark==='×'?' show':''}" id="cc-sub-${cat.id+'_p2'}-${c.key}">${subHtml}</div></div>`;}).join('')}
+        </div>
+        <div id="sp3-eval-${cat.id}" style="margin-top:7px;padding:6px 8px;background:#edf9ed;border-radius:6px;border:1px solid #b8e0b8;display:${thirdPhotos[cat.id]?'block':'none'}">
+          <div style="font-size:10px;font-weight:700;color:#1a7a40;margin-bottom:4px">3次写真 評価<small style="font-weight:400;color:var(--muted);font-size:9px">（3차사진）</small></div>
+          <div style="display:flex;gap:4px;margin-bottom:5px">
+            ${['○','△','×'].map(m=>{const cur=evalState[cat.id+'_p3']?.mark||'';const cls=cur===m?(m==='○'?'sel-maru':m==='△'?'sel-sank':'sel-batu'):'';return `<button class="mark-btn ${cls}" data-cat="${cat.id+'_p3'}" data-mark="${m}" onclick="setMark('${cat.id+'_p3'}','${m}')">${m}</button>`;}).join('')}
+          </div>
+          ${EVAL_CRITERIA.map(c=>{const st=evalState[cat.id+'_p3']?.[c.key]||{mark:'',items:[]};const subHtml=st.mark==='×'?cardRenderSubItems(cat.id+'_p3',c.key):'';return `<div class="card-crit" id="cc-${cat.id+'_p3'}-${c.key}"><div class="card-crit-row"><span class="card-crit-lbl">${c.label}</span><button class="card-crit-btn${st.mark==='○'?' sel-o':''}" onclick="cardCritMark('${cat.id+'_p3'}','${c.key}','○')">○</button><button class="card-crit-btn${st.mark==='×'?' sel-x':''}" onclick="cardCritMark('${cat.id+'_p3'}','${c.key}','×')">×</button></div><div class="card-sub-items${st.mark==='×'?' show':''}" id="cc-sub-${cat.id+'_p3'}-${c.key}">${subHtml}</div></div>`;}).join('')}
         </div>
       </div>
     </div>`;
@@ -1424,6 +1438,10 @@ async function handleSecondPhoto(catId, input) {
     secondPhotos[catId] = dataUrl;
     const frame = document.getElementById(`sp2-frame-${catId}`);
     if (frame) frame.innerHTML = `<img src="${dataUrl}">`;
+    const ev2 = document.getElementById(`sp2-eval-${catId}`);
+    if (ev2) ev2.style.display = 'block';
+    const sp3btn = document.getElementById(`sp3-btn-${catId}`);
+    if (sp3btn) { sp3btn.disabled = false; sp3btn.style.opacity = ''; sp3btn.style.cursor = ''; }
     toast('✅ 2枚目を追加しました');
   } catch(e) { toast('画像の読み込みに失敗しました'); }
 }
@@ -1441,6 +1459,8 @@ async function handleThirdPhoto(catId, input) {
     thirdPhotos[catId] = dataUrl;
     const frame = document.getElementById(`sp3-frame-${catId}`);
     if (frame) frame.innerHTML = `<img src="${dataUrl}">`;
+    const ev3 = document.getElementById(`sp3-eval-${catId}`);
+    if (ev3) ev3.style.display = 'block';
     toast('✅ 3枚目を追加しました');
   } catch(e) { toast('画像の読み込みに失敗しました'); }
 }
@@ -1585,7 +1605,16 @@ async function capturePhoto() {
     secondPhotos[cid] = dataUrl;
     const frame = document.getElementById(`sp2-frame-${cid}`);
     if (frame) frame.innerHTML = `<img src="${dataUrl}">`;
+    const ev2 = document.getElementById(`sp2-eval-${cid}`);
+    if (ev2) ev2.style.display = 'block';
+    const sp3btn = document.getElementById(`sp3-btn-${cid}`);
+    if (sp3btn) { sp3btn.disabled = false; sp3btn.style.opacity = ''; sp3btn.style.cursor = ''; }
     toast('✅ 2枚目を撮影しました');
+    return;
+  }
+
+  if (mode === 'mypage3') {
+    await mpSavePhoto3(cid, dataUrl);
     return;
   }
 
@@ -1593,6 +1622,8 @@ async function capturePhoto() {
     thirdPhotos[cid] = dataUrl;
     const frame = document.getElementById(`sp3-frame-${cid}`);
     if (frame) frame.innerHTML = `<img src="${dataUrl}">`;
+    const ev3 = document.getElementById(`sp3-eval-${cid}`);
+    if (ev3) ev3.style.display = 'block';
     toast('✅ 3枚目を撮影しました');
     return;
   }
@@ -1638,15 +1669,23 @@ async function choiceSheetFileSelected(input) {
     const dataUrl = await compress(file);
     if (mode === 'mypage') {
       await mpSavePhoto2(cid, dataUrl);
+    } else if (mode === 'mypage3') {
+      await mpSavePhoto3(cid, dataUrl);
     } else if (mode === 'second') {
       secondPhotos[cid] = dataUrl;
       const frame = document.getElementById(`sp2-frame-${cid}`);
       if (frame) frame.innerHTML = `<img src="${dataUrl}">`;
+      const ev2 = document.getElementById(`sp2-eval-${cid}`);
+      if (ev2) ev2.style.display = 'block';
+      const sp3btn = document.getElementById(`sp3-btn-${cid}`);
+      if (sp3btn) { sp3btn.disabled = false; sp3btn.style.opacity = ''; sp3btn.style.cursor = ''; }
       toast('✅ 2枚目を登録しました');
     } else if (mode === 'third') {
       thirdPhotos[cid] = dataUrl;
       const frame = document.getElementById(`sp3-frame-${cid}`);
       if (frame) frame.innerHTML = `<img src="${dataUrl}">`;
+      const ev3 = document.getElementById(`sp3-eval-${cid}`);
+      if (ev3) ev3.style.display = 'block';
       toast('✅ 3枚目を登録しました');
     } else {
       const savedName = document.getElementById('p-name')?.value || '';
@@ -1713,11 +1752,12 @@ let drawLineWidth = 3;
 
 function initEvalState() {
   evalState = {}; drawState = {}; activeDrawCanvases = {}; secondPhotos = {}; thirdPhotos = {};
-  for (const cat of CATS) evalState[cat.id] = {
-    mark:'', comment_ko:'', comment_ja:'',
-    setup:{mark:'',items:[]}, angle:{mark:'',items:[]},
-    frame:{mark:'',items:[]}, quality:{mark:'',items:[]}
-  };
+  const blankCrit = () => ({mark:'',comment_ko:'',comment_ja:'',setup:{mark:'',items:[]},angle:{mark:'',items:[]},frame:{mark:'',items:[]},quality:{mark:'',items:[]}});
+  for (const cat of CATS) {
+    evalState[cat.id]       = blankCrit();
+    evalState[cat.id+'_p2'] = blankCrit();
+    evalState[cat.id+'_p3'] = blankCrit();
+  }
 }
 
 async function loadEvaluations(submissionId) {
@@ -1748,24 +1788,31 @@ async function saveAllEvaluations() {
     const dc = activeDrawCanvases[cat.id];
     if (dc) drawState[cat.id] = dc.canvas.toDataURL('image/png');
   }
-  const rows = CATS.map(cat => ({
-    id: `${currentSubmissionId}_${cat.id}`,
+  const mkRow = (catId, opts={}) => ({
+    id: `${currentSubmissionId}_${catId}`,
     submission_id: currentSubmissionId,
     session_id: SESSION_ID,
-    cat_id: cat.id,
-    mark: evalState[cat.id]?.mark || null,
-    comment_ko: evalState[cat.id]?.comment_ko || null,
-    comment_ja: evalState[cat.id]?.comment_ja || null,
-    drawing_data_url: drawState[cat.id] || null,
-    photo2_data_url: secondPhotos[cat.id] || null,
-    photo3_data_url: thirdPhotos[cat.id]  || null,
+    cat_id: catId,
+    mark: evalState[catId]?.mark || null,
+    comment_ko: evalState[catId]?.comment_ko || null,
+    comment_ja: evalState[catId]?.comment_ja || null,
     eval_details: JSON.stringify({
-      setup:   evalState[cat.id]?.setup   || {mark:'',items:[]},
-      angle:   evalState[cat.id]?.angle   || {mark:'',items:[]},
-      frame:   evalState[cat.id]?.frame   || {mark:'',items:[]},
-      quality: evalState[cat.id]?.quality || {mark:'',items:[]}
-    })
-  }));
+      setup:   evalState[catId]?.setup   || {mark:'',items:[]},
+      angle:   evalState[catId]?.angle   || {mark:'',items:[]},
+      frame:   evalState[catId]?.frame   || {mark:'',items:[]},
+      quality: evalState[catId]?.quality || {mark:'',items:[]}
+    }),
+    ...opts
+  });
+  const rows = [
+    ...CATS.map(cat => mkRow(cat.id, {
+      drawing_data_url: drawState[cat.id] || null,
+      photo2_data_url: secondPhotos[cat.id] || null,
+      photo3_data_url: thirdPhotos[cat.id]  || null,
+    })),
+    ...CATS.filter(cat => secondPhotos[cat.id]).map(cat => mkRow(cat.id+'_p2')),
+    ...CATS.filter(cat => thirdPhotos[cat.id]).map(cat  => mkRow(cat.id+'_p3')),
+  ];
   const {error} = await supa.from('evaluations').upsert(rows);
   if (error) {
     if (error.code === '42P01') toast('⚠️ evaluationsテーブルが必要です（Supabaseで作成）');
@@ -1848,7 +1895,7 @@ function renderMyPage() {
 
 async function mpSearch() {
   const name = document.getElementById('mp-name')?.value?.trim();
-  if (!name) { toast('이름을 입력해 주세요'); return; }
+  if (!name) { toast('お名前を入力してください'); return; }
   const res = document.getElementById('mp-result');
   res.innerHTML = '<div class="loading">🔍 검색 중...</div>';
 
@@ -1883,15 +1930,15 @@ function mpShowSubsList() {
   const name = mpSubsList[0]?.participant_name || '';
   let html = `<div class="section-box" style="margin-bottom:12px">
     <div style="font-weight:700;font-size:13px;color:var(--primary);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)">
-      👤 <strong>${name}</strong> <span style="font-weight:400;font-size:12px;color:var(--muted)">— ${mpSubsList.length}건의 제출 내역이 있습니다</span>
+      👤 <strong>${name}</strong> <span style="font-weight:400;font-size:12px;color:var(--muted)">— ${mpSubsList.length}件の提出履歴<small style="font-size:10px">（${mpSubsList.length}건의 제출 내역）</small></span>
     </div>`;
   mpSubsList.forEach((sub, i) => {
     const ts = new Date(sub.created_at).toLocaleString('ja-JP',{year:'2-digit',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
-    const pc = sub.photo_count != null ? `${sub.photo_count}장` : '';
+    const pc = sub.photo_count != null ? `${sub.photo_count}枚提出<small style="font-size:9px">（${sub.photo_count}장）</small>` : '';
     html += `<div class="sub-item" onclick="mpLoadDetail(${i})" style="display:flex;align-items:center;padding:12px 14px;border:1px solid var(--border);border-radius:8px;margin-bottom:8px;cursor:pointer;background:var(--bg);transition:all .2s">
       <div style="flex:1">
-        <div style="font-weight:600;font-size:13px;color:var(--text)">${mpSubsList.length - i}번째 제출 &nbsp;<span style="font-weight:400;color:var(--muted);font-size:12px">${ts}</span></div>
-        ${pc ? `<div style="font-size:11px;color:var(--muted);margin-top:2px">${pc} 제출</div>` : ''}
+        <div style="font-weight:600;font-size:13px;color:var(--text)">${mpSubsList.length - i}番目の提出<small style="font-size:10px">（${mpSubsList.length - i}번째）</small> &nbsp;<span style="font-weight:400;color:var(--muted);font-size:12px">${ts}</span></div>
+        ${pc ? `<div style="font-size:11px;color:var(--muted);margin-top:2px">${pc}</div>` : ''}
       </div>
       <div style="font-size:20px;color:var(--muted)">›</div>
     </div>`;
@@ -1905,7 +1952,7 @@ async function mpLoadDetail(idx) {
   if (!sub) return;
   mpSub = sub;
   const res = document.getElementById('mp-result');
-  res.innerHTML = '<div class="loading">📷 읽어오는 중...</div>';
+  res.innerHTML = '<div class="loading">📷 読み込み中...</div>';
 
   // Load photos
   const {data: photos} = await supa.from('photos').select('cat_id,data_url').eq('submission_id', sub.id);
@@ -1920,7 +1967,11 @@ async function mpLoadDetail(idx) {
   // Load evals
   const {data: evs} = await supa.from('evaluations').select('*').eq('submission_id', sub.id);
   mpEvals = {};
-  CATS.forEach(cat => { mpEvals[cat.id] = {mark:'', comment_ko:'', comment_ja:'', photo2_data_url:'', photo3_data_url:'', drawing_data_url:''}; });
+  CATS.forEach(cat => {
+    mpEvals[cat.id]        = {mark:'', comment_ko:'', comment_ja:'', photo2_data_url:'', photo3_data_url:'', drawing_data_url:''};
+    mpEvals[cat.id+'_p2']  = {mark:'', comment_ko:'', comment_ja:''};
+    mpEvals[cat.id+'_p3']  = {mark:'', comment_ko:'', comment_ja:''};
+  });
   if (evs) evs.forEach(ev => {
     if (!mpEvals[ev.cat_id]) return;
     mpEvals[ev.cat_id].mark = ev.mark || '';
@@ -1935,13 +1986,13 @@ async function mpLoadDetail(idx) {
   // Build HTML (no runtime translation — all text is pre-baked)
   const ts = fmtDate(sub.created_at);
   const backBtn = mpSubsList.length > 1
-    ? `<button onclick="mpShowSubsList()" style="background:none;border:1px solid var(--border);border-radius:6px;padding:5px 10px;font-size:11px;cursor:pointer;font-family:'Noto Sans JP',sans-serif;flex-shrink:0">← 목록</button>`
+    ? `<button onclick="mpShowSubsList()" style="background:none;border:1px solid var(--border);border-radius:6px;padding:5px 10px;font-size:11px;cursor:pointer;font-family:'Noto Sans JP',sans-serif;flex-shrink:0">← 一覧<small>（목록）</small></button>`
     : '';
   let html = `<div class="section-box mp-result-hdr" style="display:flex;align-items:center;gap:8px;margin-bottom:12px;padding:10px 14px;flex-wrap:wrap">
     ${backBtn}
     <div style="flex:1">👤 <strong>${sub.participant_name}</strong> <span style="font-size:11px;color:var(--muted)">${ts} 提出</span></div>
-    <button class="mp-action-btn mp-trans-all-btn" onclick="mpRetranslate()" id="mp-trans-all-btn">🌐 번역</button>
-    <button class="mp-action-btn mp-pdf-btn" onclick="mpPrint()">📄 PDF저장</button>
+    <button class="mp-action-btn mp-trans-all-btn" onclick="mpRetranslate()" id="mp-trans-all-btn">🌐 翻訳<small>（번역）</small></button>
+    <button class="mp-action-btn mp-pdf-btn" onclick="mpPrint()">📄 PDF保存<small>（저장）</small></button>
   </div>`;
 
   for (const cat of CATS) {
@@ -1984,11 +2035,12 @@ async function mpLoadDetail(idx) {
         <div class="mp-pcell">
           <div class="mp-plbl">2次写真（2차사진）</div>
           <div class="mp-frame" id="mp-frame2-${cat.id}">${photo2?`<img src="${photo2}">`:'<span style="font-size:9px;text-align:center">—</span>'}</div>
-          <button class="mp-shoot-btn" onclick="mpOpenCamera('${cat.id}')">📷 撮影（촬영）</button>
+          <button class="mp-shoot-btn" onclick="mpOpenCamera('${cat.id}')" id="mp-shoot2-${cat.id}">📷 撮影</button>
         </div>
         <div class="mp-pcell">
           <div class="mp-plbl">3次写真（3차사진）</div>
-          <div class="mp-frame">${photo3?`<img src="${photo3}">`:'<span style="font-size:9px;text-align:center">—</span>'}</div>
+          <div class="mp-frame" id="mp-frame3-${cat.id}">${photo3?`<img src="${photo3}">`:'<span style="font-size:9px;text-align:center">—</span>'}</div>
+          <button class="mp-shoot-btn" onclick="mpOpenCamera3('${cat.id}')" ${photo2?'':'disabled style="opacity:.4"'} id="mp-shoot3-${cat.id}">📷 撮影</button>
         </div>
       </div>
       <div class="mp-eval">
@@ -2003,6 +2055,37 @@ async function mpLoadDetail(idx) {
               : ''}
         </div>
       </div>
+      ${(() => {
+        const ev2 = mpEvals[cat.id+'_p2'] || {};
+        const m2 = ev2.mark || '';
+        const crit2Html = ev2._criteria ? EVAL_CRITERIA.map(c => {
+          const st = ev2._criteria[c.key]||{mark:'',items:[]};
+          if (!st.mark) return '';
+          const itemsHtml = (st.items||[]).map(i=>`<li>${c.ja[i]}（${c.ko[i]}）</li>`).join('');
+          return `<div style="font-size:10px;margin-top:2px"><strong>${c.label}:</strong> ${st.mark}${itemsHtml?`<ul style="margin-left:12px">${itemsHtml}</ul>`:''}</div>`;
+        }).join('') : '';
+        const ev3 = mpEvals[cat.id+'_p3'] || {};
+        const m3 = ev3.mark || '';
+        const crit3Html = ev3._criteria ? EVAL_CRITERIA.map(c => {
+          const st = ev3._criteria[c.key]||{mark:'',items:[]};
+          if (!st.mark) return '';
+          const itemsHtml = (st.items||[]).map(i=>`<li>${c.ja[i]}（${c.ko[i]}）</li>`).join('');
+          return `<div style="font-size:10px;margin-top:2px"><strong>${c.label}:</strong> ${st.mark}${itemsHtml?`<ul style="margin-left:12px">${itemsHtml}</ul>`:''}</div>`;
+        }).join('') : '';
+        const show2 = photo2 && (m2||crit2Html);
+        const show3 = photo3 && (m3||crit3Html);
+        if (!show2 && !show3) return '';
+        return `<div style="display:grid;grid-template-columns:${show2&&show3?'1fr 1fr':'1fr'};gap:6px;margin-top:6px">
+          ${show2?`<div style="padding:6px 8px;background:#edf2f9;border-radius:6px;border:1px solid #c8d8ec;font-size:11px">
+            <div style="font-weight:700;color:var(--primary);margin-bottom:3px">2次写真 評価</div>
+            <div style="font-size:13px;font-weight:700">${m2||'—'}</div>${crit2Html}
+          </div>`:''}
+          ${show3?`<div style="padding:6px 8px;background:#edf9ed;border-radius:6px;border:1px solid #b8e0b8;font-size:11px">
+            <div style="font-weight:700;color:#1a7a40;margin-bottom:3px">3次写真 評価</div>
+            <div style="font-size:13px;font-weight:700">${m3||'—'}</div>${crit3Html}
+          </div>`:''}
+        </div>`;
+      })()}
     </div>`;
   }
 
@@ -2013,7 +2096,7 @@ function mpPrint() { window.print(); }
 
 async function mpRetranslate() {
   const btn = document.getElementById('mp-trans-all-btn');
-  if (btn) { btn.disabled = true; btn.textContent = '⏳ 번역 중...'; }
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ 翻訳中...'; }
   const tasks = CATS.filter(cat => mpEvals[cat.id]?.comment_ko);
   for (const cat of tasks) {
     const ja = await translateKoJaRetry(mpEvals[cat.id].comment_ko);
@@ -2024,12 +2107,12 @@ async function mpRetranslate() {
     }
     await new Promise(r => setTimeout(r, 1000));
   }
-  if (btn) { btn.disabled = false; btn.textContent = '🌐 번역'; }
-  toast('✅ 번역 완료');
+  if (btn) { btn.disabled = false; btn.textContent = '🌐 翻訳（번역）'; }
+  toast('✅ 翻訳完了');
 }
 
 async function mpTransCard(catId, btn) {
-  if (btn) { btn.disabled = true; btn.textContent = '번역 중...'; }
+  if (btn) { btn.disabled = true; btn.textContent = '翻訳中...'; }
   const ko = mpEvals[catId]?.comment_ko;
   if (!ko) return;
   const ja = await translateKoJa(ko);
@@ -2038,8 +2121,8 @@ async function mpTransCard(catId, btn) {
     const el = document.getElementById(`mp-ja-${catId}`);
     if (el) el.outerHTML = `<div class="mp-cmt-ja" id="mp-ja-${catId}">🇯🇵 ${ja}</div>`;
   } else {
-    if (btn) { btn.disabled = false; btn.textContent = '🌐 번역하기'; }
-    toast('번역 실패 — 다시 시도해 주세요');
+    if (btn) { btn.disabled = false; btn.textContent = '🌐 翻訳'; }
+    toast('翻訳失敗 — もう一度お試しください');
   }
 }
 
@@ -2054,6 +2137,7 @@ async function mpOpenCamera(catId) {
 async function mpSavePhoto2(catId, dataUrl) {
   if (!mpSub) return;
   const evId = `${mpSub.id}_${catId}`;
+  toast('📤 保存中...');
   const {error} = await supa.from('evaluations').upsert({
     id: evId,
     submission_id: mpSub.id,
@@ -2064,11 +2148,45 @@ async function mpSavePhoto2(catId, dataUrl) {
   if (error) { toast('保存エラー: ' + error.message); return; }
   if (!mpEvals[catId]) mpEvals[catId] = {};
   mpEvals[catId].photo2_data_url = dataUrl;
-  toast('✅ 2枚目写真を保存しました');
-  // Update frame
+  toast('✅ 2次写真保存完了！');
   const frame = document.getElementById(`mp-frame2-${catId}`);
   if (frame) frame.innerHTML = `<img src="${dataUrl}">`;
-  const btn = document.querySelector(`button[onclick="mpOpenCamera('${catId}')"]`);
+  const btn = document.getElementById(`mp-shoot2-${catId}`);
+  if (btn) btn.textContent = '📷 再撮影';
+  const btn3 = document.getElementById(`mp-shoot3-${catId}`);
+  if (btn3) { btn3.disabled = false; btn3.style.opacity = ''; }
+}
+
+async function mpOpenCamera3(catId) {
+  mpCurrentCatId = catId;
+  await loadSamples();
+  choiceCatId = catId;
+  choiceMode  = 'mypage3';
+  document.getElementById('choice-file-input').click();
+}
+
+async function mpSavePhoto3(catId, dataUrl) {
+  if (!mpSub) return;
+  const evId = `${mpSub.id}_${catId}`;
+  toast('📤 保存中...');
+  const {error} = await supa.from('evaluations').upsert({
+    id: evId,
+    submission_id: mpSub.id,
+    session_id: SESSION_ID,
+    cat_id: catId,
+    mark: mpEvals[catId]?.mark || null,
+    comment_ko: mpEvals[catId]?.comment_ko || null,
+    comment_ja: mpEvals[catId]?.comment_ja || null,
+    photo2_data_url: mpEvals[catId]?.photo2_data_url || null,
+    photo3_data_url: dataUrl
+  });
+  if (error) { toast('保存エラー: ' + error.message); return; }
+  if (!mpEvals[catId]) mpEvals[catId] = {};
+  mpEvals[catId].photo3_data_url = dataUrl;
+  toast('✅ 3次写真保存完了！');
+  const frame = document.getElementById(`mp-frame3-${catId}`);
+  if (frame) frame.innerHTML = `<img src="${dataUrl}">`;
+  const btn = document.getElementById(`mp-shoot3-${catId}`);
   if (btn) btn.textContent = '📷 再撮影';
 }
 
