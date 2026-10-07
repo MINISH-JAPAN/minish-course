@@ -261,6 +261,19 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
 .mp-mark-badge.batu{background:#fdeded;border-color:#c0392b;color:#c0392b}
 .mp-mark-badge.none{background:#f0f0f0;border-color:#ccc;color:#aaa;font-size:13px}
 .mp-comments{flex:1;display:flex;flex-direction:column;gap:4px}
+/* eval trio grid — PC 3-col, mobile stacked */
+.mp-eval-trio{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;padding:8px 10px 10px;border-top:1px dashed var(--border)}
+@media(max-width:620px){.mp-eval-trio{grid-template-columns:1fr}}
+.mp-eval-col{padding:6px 8px;border-radius:8px;font-size:11px;border:1px solid}
+.mp-eval-col.p1{background:#f0f4fa;border-color:#d0dcea}
+.mp-eval-col.p2{background:#edf2f9;border-color:#c8d8ec}
+.mp-eval-col.p3{background:#edf9ed;border-color:#b8e0b8}
+.mp-eval-col.no-photo{opacity:.4;pointer-events:none}
+.mp-eval-col-hdr{font-size:10px;font-weight:700;margin-bottom:4px;padding-bottom:3px;border-bottom:1px solid rgba(0,0,0,.08)}
+.mp-eval-col-hdr.hdr-p1{color:var(--primary)}
+.mp-eval-col-hdr.hdr-p2{color:#1a6b9e}
+.mp-eval-col-hdr.hdr-p3{color:#1a7a40}
+.mp-eval-col-mark{font-size:15px;font-weight:700;margin-bottom:2px}
 .mp-cmt-ko{font-size:12px;color:var(--text);line-height:1.6}
 .mp-cmt-ja{font-size:11px;color:var(--muted);line-height:1.5;font-style:italic}
 .mp-translating{font-size:10px;color:var(--accent);font-style:italic}
@@ -2517,7 +2530,7 @@ async function mpLoadDetail(idx) {
         const st = ev._criteria[c.key] || {mark:'',items:[]};
         if (!st.mark) return;
         const itemsHtml = (st.items||[]).map(i => `<li>${c.ja[i]}（${c.ko[i]}）</li>`).join('');
-        critHtml += `<div style="font-size:11px;margin-top:3px"><strong>${c.label}:</strong> ${st.mark}${itemsHtml?`<ul style="margin-left:14px">${itemsHtml}</ul>`:''}</div>`;
+        critHtml += `<div style="font-size:10px;margin-top:2px"><strong>${c.label}:</strong> ${st.mark}${itemsHtml?`<ul style="margin-left:12px">${itemsHtml}</ul>`:''}</div>`;
       });
     }
 
@@ -2549,52 +2562,44 @@ async function mpLoadDetail(idx) {
           <button class="mp-shoot-btn" onclick="mpOpenCamera3('${cat.id}')" ${photo2?'':'disabled style="opacity:.4"'} id="mp-shoot3-${cat.id}">📷 撮影</button>
         </div>
       </div>
-      <div class="mp-eval">
-        <div class="mp-mark-badge ${markCls}">${markLabel}</div>
-        <div class="mp-comments">
-          ${critHtml}
-          ${ev.comment_ko ? `<div class="mp-cmt-ko">${ev.comment_ko}</div>` : (!mark ? `<div style="font-size:11px;color:#bbb">未評価</div>` : '')}
-          ${ev.comment_ja
-            ? `<div class="mp-cmt-ja" id="mp-ja-${cat.id}">🇯🇵 ${ev.comment_ja}</div>`
-            : ev.comment_ko
-              ? `<div id="mp-ja-${cat.id}"></div>`
-              : ''}
+      <div class="mp-eval-trio">
+        <!-- 1次 評価 -->
+        <div class="mp-eval-col p1">
+          <div class="mp-eval-col-hdr hdr-p1">1次写真 評価<small style="font-weight:400;color:var(--muted);font-size:9px">（1차사진）</small></div>
+          ${mark?`<div class="mp-eval-col-mark">${markLabel}</div>`:''}
+          ${critHtml||(!mark?'<div style="font-size:10px;color:#bbb">未評価</div>':'')}
+          ${ev.comment_ko?`<div class="mp-cmt-ko" style="margin-top:4px">${ev.comment_ko}</div>`:''}
+          ${ev.comment_ja?`<div class="mp-cmt-ja" id="mp-ja-${cat.id}" style="margin-top:2px">🇯🇵 ${ev.comment_ja}</div>`:ev.comment_ko?`<div id="mp-ja-${cat.id}"></div>`:''}
         </div>
+        <!-- 2次 評価 -->
+        ${(() => {
+          const ev2 = mpEvals[cat.id+'_p2'] || {};
+          const m2 = ev2.mark || '';
+          const crit2Html = ev2._criteria ? EVAL_CRITERIA.map(c => {
+            const st = ev2._criteria[c.key]||{mark:'',items:[]};
+            if (!st.mark) return '';
+            const itemsHtml = (st.items||[]).map(i=>`<li>${c.ja[i]}（${c.ko[i]}）</li>`).join('');
+            return `<div style="font-size:10px;margin-top:2px"><strong>${c.label}:</strong> ${st.mark}${itemsHtml?`<ul style="margin-left:12px">${itemsHtml}</ul>`:''}</div>`;
+          }).join('') : '';
+          const hdr2 = '<div class="mp-eval-col-hdr hdr-p2">2次写真 評価<small style="font-weight:400;color:var(--muted);font-size:9px">（2차사진）</small></div>';
+          if (!photo2) return `<div class="mp-eval-col p2 no-photo">${hdr2}<div style="font-size:10px;color:#bbb">写真未提出</div></div>`;
+          return `<div class="mp-eval-col p2">${hdr2}${m2?`<div class="mp-eval-col-mark">${m2}</div>`:''}${crit2Html||'<div style="font-size:10px;color:#bbb">未評価</div>'}</div>`;
+        })()}
+        <!-- 3次 評価 -->
+        ${(() => {
+          const ev3 = mpEvals[cat.id+'_p3'] || {};
+          const m3 = ev3.mark || '';
+          const crit3Html = ev3._criteria ? EVAL_CRITERIA.map(c => {
+            const st = ev3._criteria[c.key]||{mark:'',items:[]};
+            if (!st.mark) return '';
+            const itemsHtml = (st.items||[]).map(i=>`<li>${c.ja[i]}（${c.ko[i]}）</li>`).join('');
+            return `<div style="font-size:10px;margin-top:2px"><strong>${c.label}:</strong> ${st.mark}${itemsHtml?`<ul style="margin-left:12px">${itemsHtml}</ul>`:''}</div>`;
+          }).join('') : '';
+          const hdr3 = '<div class="mp-eval-col-hdr hdr-p3">3次写真 評価<small style="font-weight:400;color:var(--muted);font-size:9px">（3차사진）</small></div>';
+          if (!photo3) return `<div class="mp-eval-col p3 no-photo">${hdr3}<div style="font-size:10px;color:#bbb">写真未提出</div></div>`;
+          return `<div class="mp-eval-col p3">${hdr3}${m3?`<div class="mp-eval-col-mark">${m3}</div>`:''}${crit3Html||'<div style="font-size:10px;color:#bbb">未評価</div>'}</div>`;
+        })()}
       </div>
-      ${(() => {
-        // 2次写真 evaluation display
-        const ev2 = mpEvals[cat.id+'_p2'] || {};
-        const m2 = ev2.mark || '';
-        const crit2Html = ev2._criteria ? EVAL_CRITERIA.map(c => {
-          const st = ev2._criteria[c.key]||{mark:'',items:[]};
-          if (!st.mark) return '';
-          const itemsHtml = (st.items||[]).map(i=>`<li>${c.ja[i]}（${c.ko[i]}）</li>`).join('');
-          return `<div style="font-size:10px;margin-top:2px"><strong>${c.label}:</strong> ${st.mark}${itemsHtml?`<ul style="margin-left:12px">${itemsHtml}</ul>`:''}</div>`;
-        }).join('') : '';
-        const ev3 = mpEvals[cat.id+'_p3'] || {};
-        const m3 = ev3.mark || '';
-        const crit3Html = ev3._criteria ? EVAL_CRITERIA.map(c => {
-          const st = ev3._criteria[c.key]||{mark:'',items:[]};
-          if (!st.mark) return '';
-          const itemsHtml = (st.items||[]).map(i=>`<li>${c.ja[i]}（${c.ko[i]}）</li>`).join('');
-          return `<div style="font-size:10px;margin-top:2px"><strong>${c.label}:</strong> ${st.mark}${itemsHtml?`<ul style="margin-left:12px">${itemsHtml}</ul>`:''}</div>`;
-        }).join('') : '';
-        const show2 = photo2 && (m2||crit2Html);
-        const show3 = photo3 && (m3||crit3Html);
-        if (!show2 && !show3) return '';
-        return `<div style="display:grid;grid-template-columns:${show2&&show3?'1fr 1fr':'1fr'};gap:6px;margin-top:6px">
-          ${show2?`<div style="padding:6px 8px;background:#edf2f9;border-radius:6px;border:1px solid #c8d8ec;font-size:11px">
-            <div style="font-weight:700;color:var(--primary);margin-bottom:3px">2次写真 評価</div>
-            <div style="font-size:13px;font-weight:700">${m2||'—'}</div>
-            ${crit2Html}
-          </div>`:''}
-          ${show3?`<div style="padding:6px 8px;background:#edf9ed;border-radius:6px;border:1px solid #b8e0b8;font-size:11px">
-            <div style="font-weight:700;color:#1a7a40;margin-bottom:3px">3次写真 評価</div>
-            <div style="font-size:13px;font-weight:700">${m3||'—'}</div>
-            ${crit3Html}
-          </div>`:''}
-        </div>`;
-      })()}
     </div>`;
   }
 
