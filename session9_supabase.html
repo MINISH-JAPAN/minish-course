@@ -1040,7 +1040,9 @@ async function setZoom(level) {
 }
 
 function handleUploadClick(catId, mode) {
-  showUploadChoice(catId, mode || 'main');
+  choiceCatId = catId;
+  choiceMode  = mode || 'main';
+  document.getElementById('choice-file-input').click();
 }
 
 
@@ -1544,7 +1546,9 @@ async function mpTransCard(catId, btn) {
 async function mpOpenCamera(catId) {
   mpCurrentCatId = catId;
   await loadSamples();
-  showUploadChoice(catId, 'mypage');
+  choiceCatId = catId;
+  choiceMode  = 'mypage';
+  document.getElementById('choice-file-input').click();
 }
 
 async function mpSavePhoto2(catId, dataUrl) {
