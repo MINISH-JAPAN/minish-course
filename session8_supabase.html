@@ -18,7 +18,7 @@
   --danger:#c0392b;--muted:#5e7087;--sub:#4a6080;
   --border:#c8d8ea;--text:#1a2535;
 }
-body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;overscroll-behavior-y:contain}
+body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
 
 /* Header */
 .header{background:var(--frame);color:#fff;padding:10px 12px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.3);gap:8px}
@@ -143,9 +143,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
 .ss-dot{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.25);transition:background .2s;cursor:pointer}
 .ss-dot.active{background:var(--accent)}
 
-/* ── Camera Overlay ─────────────────────────────────────── */
-.cam-overlay{position:fixed;inset:0;background:#000;z-index:450}
-.cam-video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0}
+
 /* Sample overlay: inside crop frame */
 .cam-sample-ov{position:absolute;inset:0;pointer-events:none;z-index:1;overflow:hidden}
 .cam-sample-ov img{width:100%;height:100%;object-fit:cover}
@@ -378,7 +376,6 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
 <div id="mypage-view" class="main" style="display:none"></div>
 <div id="admin-view" class="main" style="display:none"></div>
 <div id="review-view" class="main" style="display:none"></div>
-<input type="file" id="choice-camera-input" accept="image/*" capture="environment" style="display:none" onchange="choiceSheetFileSelected(this)">
 
 <!-- Password modal -->
 <div id="pw-modal" class="modal-ov" style="display:none">
@@ -392,17 +389,8 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
   </div>
 </div>
 
-
-<!-- Upload choice sheet -->
-<div id="upload-choice-sheet" onclick="closeChoiceSheet()" style="display:none;position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.5)">
-  <div onclick="event.stopPropagation()" style="position:absolute;bottom:0;left:0;right:0;background:#fff;border-radius:16px 16px 0 0;padding:18px 16px 44px">
-    <div style="text-align:center;font-size:13px;font-weight:600;color:#333;margin-bottom:16px">写真を追加</div>
-    <button onclick="choiceSheetCamera()" style="width:100%;padding:14px;background:var(--accent);color:#fff;border:none;border-radius:10px;font-size:14px;font-family:'Noto Sans JP',sans-serif;cursor:pointer;margin-bottom:10px;display:flex;align-items:center;justify-content:center;gap:8px">📷 カメラで撮影</button>
-    <button onclick="choiceSheetFile()" style="width:100%;padding:14px;background:#f1f5f9;color:#333;border:1px solid #dde4ed;border-radius:10px;font-size:14px;font-family:'Noto Sans JP',sans-serif;cursor:pointer;margin-bottom:10px;display:flex;align-items:center;justify-content:center;gap:8px">📁 ファイルから選択</button>
-    <input type="file" id="choice-file-input" accept="image/*" style="display:none" onchange="choiceSheetFileSelected(this)">
-    <button onclick="closeChoiceSheet()" style="width:100%;padding:11px;background:transparent;color:#999;border:none;font-size:13px;font-family:'Noto Sans JP',sans-serif;cursor:pointer">キャンセル</button>
-  </div>
-</div>
+<!-- Native file input -->
+<input type="file" id="native-file-input" accept="image/*" style="display:none" onchange="nativeFileSelected(this)">
 
 <!-- Slideshow overlay -->
 <div id="ss-overlay" class="ss-overlay" style="display:none"
@@ -846,7 +834,7 @@ async function renderParticipant() {
           <button class="upload-btn${m?' done':''}" onclick="handleUploadClick('${cat.id}')">
             ${m ? '✓ 変更する' : '📷 写真を選択'}
           </button>
-          <input type="file" id="fi-${cat.id}" accept="image/*" capture="environment" style="display:none" onchange="handleMyPhoto('${cat.id}',this)">
+          <input type="file" id="fi-${cat.id}" accept="image/*" style="display:none" onchange="handleMyPhoto('${cat.id}',this)">
         </div>
       </div>
     </div>`;
@@ -1657,31 +1645,105 @@ async function ssSaveEval() {
   return await saveAllEvaluations();
 }
 
-// ── UPLOAD CHOICE SHEET ──────────────────────────────────────
+// ── CAMERA OVERLAY ───────────────────────────────────────────
+let camStream = null;
+let camCatId  = null;
+let currentZoom = 1;
+let nativeZoomSupported = false;
+let macroGuardId = null;
+
+// ── TAP-TO-FOCUS ─────────────────────────────────────────────
+let focusRingTimer = null;
+
+
+// ─ Level indicator ─
+function getScreenTilt(e) {
+  // Returns the left-right tilt angle relative to current screen orientation
+  const gamma = e.gamma || 0;
+  const beta  = e.beta  || 0;
+  const angle = (() => {
+    if (screen.orientation && screen.orientation.angle != null) return screen.orientation.angle;
+    return (typeof window.orientation !== 'undefined' ? window.orientation : 0);
+  })();
+  const a = ((Math.round(angle) % 360) + 360) % 360;
+  if (a === 90)  return -beta;   // landscape right (rotated CW 90°)
+  if (a === 270) return  beta;   // landscape left  (rotated CCW 90°)
+  if (a === 180) return -gamma;  // portrait upside-down
+  return gamma;                  // portrait normal
+}
+
+
+
+function handleUploadClick(catId) {
+  choiceCatId = catId;
+  choiceMode  = 'main';
+  document.getElementById('native-file-input').click();
+}
+
+
+async function handleSecondPhoto(catId, input) {
+  if (!input.files[0]) return;
+  try {
+    const dataUrl = await compress(input.files[0]);
+    secondPhotos[catId] = dataUrl;
+    const frame = document.getElementById(`sp2-frame-${catId}`);
+    if (frame) frame.innerHTML = `<img src="${dataUrl}">`;
+    // Show 2次 eval & enable 3次 button
+    const ev2 = document.getElementById(`sp2-eval-${catId}`);
+    if (ev2) ev2.style.display = 'block';
+    const sp3btn = document.getElementById(`sp3-btn-${catId}`);
+    if (sp3btn) { sp3btn.disabled = false; sp3btn.style.opacity = ''; sp3btn.style.cursor = ''; }
+    toast('✅ 2枚目を追加しました');
+  } catch(e) { toast('画像の読み込みに失敗しました'); }
+}
+
+
+async function handleThirdPhoto(catId, input) {
+  if (!input.files[0]) return;
+  try {
+    const dataUrl = await compress(input.files[0]);
+    thirdPhotos[catId] = dataUrl;
+    const frame = document.getElementById(`sp3-frame-${catId}`);
+    if (frame) frame.innerHTML = `<img src="${dataUrl}">`;
+    const ev3 = document.getElementById(`sp3-eval-${catId}`);
+    if (ev3) ev3.style.display = 'block';
+    toast('✅ 3枚目を追加しました');
+  } catch(e) { toast('画像の読み込みに失敗しました'); }
+}
+
+
+
+
+
+// ── NATIVE FILE INPUT ─────────────────────────────────────
 let choiceCatId = null;
 let choiceMode  = 'main';
 
-function showUploadChoice(catId, mode) {
-  choiceCatId = catId;
-  choiceMode  = mode || 'main';
-  document.getElementById('upload-choice-sheet').style.display = 'block';
+function handleUploadClick(catId) {
+  choiceCatId = catId; choiceMode = 'main';
+  document.getElementById('native-file-input').click();
 }
-function closeChoiceSheet() {
-  document.getElementById('upload-choice-sheet').style.display = 'none';
+function openSecondCameraFn(catId) {
+  choiceCatId = catId; choiceMode = 'second';
+  document.getElementById('native-file-input').click();
 }
-function choiceSheetCamera() {
-  document.getElementById('choice-camera-input').click();
-  closeChoiceSheet();
+function openThirdCameraFn(catId) {
+  choiceCatId = catId; choiceMode = 'third';
+  document.getElementById('native-file-input').click();
 }
-function choiceSheetFile() {
-  document.getElementById('choice-file-input').click();
+function mpOpenCamera(catId) {
+  choiceCatId = catId; choiceMode = 'mypage';
+  document.getElementById('native-file-input').click();
 }
-async function choiceSheetFileSelected(input) {
+function mpOpenCamera3(catId) {
+  choiceCatId = catId; choiceMode = 'mypage3';
+  document.getElementById('native-file-input').click();
+}
+async function nativeFileSelected(input) {
   if (!input.files || !input.files[0]) return;
   const file = input.files[0];
   const cid  = choiceCatId;
   const mode = choiceMode;
-  closeChoiceSheet();
   input.value = '';
   toast('処理中...');
   try {
@@ -1694,7 +1756,6 @@ async function choiceSheetFileSelected(input) {
       secondPhotos[cid] = dataUrl;
       const frame = document.getElementById(`sp2-frame-${cid}`);
       if (frame) frame.innerHTML = `<img src="${dataUrl}">`;
-      // Show 2次 eval section & enable 3次 button
       const ev2 = document.getElementById(`sp2-eval-${cid}`);
       if (ev2) ev2.style.display = 'block';
       const sp3btn = document.getElementById(`sp3-btn-${cid}`);
@@ -1704,7 +1765,6 @@ async function choiceSheetFileSelected(input) {
       thirdPhotos[cid] = dataUrl;
       const frame = document.getElementById(`sp3-frame-${cid}`);
       if (frame) frame.innerHTML = `<img src="${dataUrl}">`;
-      // Show 3次 eval section
       const ev3 = document.getElementById(`sp3-eval-${cid}`);
       if (ev3) ev3.style.display = 'block';
       toast('✅ 3枚目を登録しました');
@@ -1717,11 +1777,6 @@ async function choiceSheetFileSelected(input) {
       toast('✅ 写真を登録しました');
     }
   } catch(e) { toast('エラーが発生しました'); }
-}
-
-function setCamAlpha(val) {
-  const img = document.getElementById('cam-sample-ov')?.querySelector('img');
-  if (img) img.style.opacity = val / 100;
 }
 
 // ── EVALUATION STATE ─────────────────────────────────────────
@@ -2432,13 +2487,13 @@ async function mpTransCard(catId, btn) {
 function mpOpenCamera(catId) {
   choiceCatId = catId;
   choiceMode  = 'mypage';
-  document.getElementById('choice-file-input').click();
+  document.getElementById('native-file-input').click();
 }
 
 function mpOpenCamera3(catId) {
   choiceCatId = catId;
   choiceMode  = 'mypage3';
-  document.getElementById('choice-file-input').click();
+  document.getElementById('native-file-input').click();
 }
 
 async function mpSavePhoto2(catId, dataUrl) {
