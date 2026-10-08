@@ -122,6 +122,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
 .ss-panel-img{flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden;padding:6px;min-height:0}
 .ss-panel-img img{max-width:100%;max-height:100%;object-fit:contain;display:block}
 .ss-panel-ph{color:rgba(255,255,255,.25);font-size:13px;text-align:center}
+.ss-draw-canvas-ov{position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor:crosshair;z-index:5;display:none}
 .ss-nav{background:rgba(10,28,26,.95);display:flex;align-items:center;justify-content:center;gap:20px;padding:10px 16px;flex-shrink:0}
 .ss-nav-btn{background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:8px;width:46px;height:46px;font-size:24px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .2s;font-family:sans-serif;line-height:1}
 .ss-nav-btn:hover:not(:disabled){background:rgba(255,255,255,.3)}
@@ -404,9 +405,10 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
         <div class="ss-quad-lbl">サンプル / 샘플</div>
         <div id="ss-q-sample" class="ss-quad-ph">未登録</div>
       </div>
-      <div class="ss-quad">
+      <div class="ss-quad" style="position:relative">
         <div class="ss-quad-lbl">1次写真<small>（1차사진）</small></div>
         <div id="ss-q-photo1" class="ss-quad-ph">未提出</div>
+        <canvas id="ss-draw-canvas" class="ss-draw-canvas-ov"></canvas>
       </div>
       <div class="ss-quad">
         <div class="ss-quad-lbl">2次写真<small>（2차사진）</small></div>
@@ -1305,15 +1307,19 @@ async function renderPageCanvas(cat, sUrl, pUrl, name) {
 // ── SLIDESHOW ─────────────────────────────────────────────────
 function openSlideshow() {
   slideIdx = 0;
+  ssCanvasHandlersAttached = false; // 재열기 시 핸들러 재부착
   const ov = document.getElementById('ss-overlay');
   ov.style.display = 'flex';
+  setupSsDrawCanvas();
   renderSlide();
   document.addEventListener('keydown', ssKeydown);
 }
 
 function closeSlideshow() {
+  saveCurrentSsDrawing();
   document.getElementById('ss-overlay').style.display = 'none';
   document.removeEventListener('keydown', ssKeydown);
+  ssDrawCatId = null;
 }
 
 function ssKeydown(e) {
@@ -1323,6 +1329,7 @@ function ssKeydown(e) {
 }
 
 function renderSlide() {
+  saveCurrentSsDrawing(); // 이전 슬라이드 드로잉 저장
   const cat = CATS[slideIdx];
   const s = currentReviewSamples[cat.id] || null;
   const p = currentReviewPhotos[cat.id] || null;
@@ -1383,6 +1390,8 @@ function renderSlide() {
       ssRenderSubItems('_p3', c.key);
     });
   }
+  // 드로잉 캔버스 초기화 (슬라이드 전환 후)
+  requestAnimationFrame(() => initSsDrawCanvas(cat.id));
 }
 
 function nextSlide() { if (slideIdx < CATS.length - 1) { slideIdx++; renderSlide(); } }
@@ -1504,7 +1513,87 @@ function ssSyncComment(pSuffix) {
 
 }
 
+// ── SLIDESHOW DRAW CANVAS ────────────────────────────────────
+function setupSsDrawCanvas() {
+  if (ssCanvasHandlersAttached) return;
+  const canvas = document.getElementById('ss-draw-canvas');
+  if (!canvas) return;
+  ssDrawCanvas = canvas;
+  function getPos(e) {
+    const r = canvas.getBoundingClientRect();
+    const src = e.touches ? e.touches[0] : e;
+    return { x: (src.clientX - r.left) * (canvas.width / r.width),
+             y: (src.clientY - r.top)  * (canvas.height / r.height) };
+  }
+  function onStart(e) { e.preventDefault(); const p = getPos(e); ssDrawing=true; ssDrawLX=p.x; ssDrawLY=p.y; }
+  function onMove(e) {
+    e.preventDefault();
+    if (!ssDrawing) return;
+    const p = getPos(e);
+    const ctx = ssDrawCanvas.getContext('2d');
+    ctx.globalCompositeOperation = drawTool==='eraser' ? 'destination-out' : 'source-over';
+    ctx.strokeStyle = drawColor;
+    ctx.lineWidth   = drawTool==='eraser' ? drawLineWidth*4 : drawLineWidth;
+    ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    ctx.beginPath(); ctx.moveTo(ssDrawLX, ssDrawLY); ctx.lineTo(p.x, p.y); ctx.stroke();
+    ssDrawLX=p.x; ssDrawLY=p.y;
+  }
+  function onEnd(e) {
+    e.preventDefault(); ssDrawing=false;
+    if (ssDrawCatId) drawState[ssDrawCatId] = ssDrawCanvas.toDataURL('image/png');
+  }
+  canvas.addEventListener('pointerdown',  onStart);
+  canvas.addEventListener('pointermove',  onMove);
+  canvas.addEventListener('pointerup',    onEnd);
+  canvas.addEventListener('pointerleave', onEnd);
+  canvas.addEventListener('touchstart',   onStart, {passive:false});
+  canvas.addEventListener('touchmove',    onMove,  {passive:false});
+  canvas.addEventListener('touchend',     onEnd,   {passive:false});
+  ssCanvasHandlersAttached = true;
+}
+
+function initSsDrawCanvas(catId) {
+  ssDrawCatId = catId;
+  const canvas = document.getElementById('ss-draw-canvas');
+  if (!canvas) return;
+  ssDrawCanvas = canvas;
+  const wrap = canvas.parentElement;
+  const r = wrap.getBoundingClientRect();
+  if (r.width === 0) return; // 아직 보이지 않음
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width  = Math.round(r.width  * dpr);
+  canvas.height = Math.round(r.height * dpr);
+  canvas.style.display = 'block';
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  if (drawState[catId]) {
+    const img = new Image();
+    img.onload = () => ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    img.src = drawState[catId];
+  }
+}
+
+function saveCurrentSsDrawing() {
+  if (!ssDrawCatId || !ssDrawCanvas || ssDrawCanvas.width === 0) return;
+  drawState[ssDrawCatId] = ssDrawCanvas.toDataURL('image/png');
+}
+
+function ssClearDraw() {
+  if (!ssDrawCanvas) return;
+  const ctx = ssDrawCanvas.getContext('2d');
+  ctx.clearRect(0, 0, ssDrawCanvas.width, ssDrawCanvas.height);
+  if (ssDrawCatId) {
+    drawState[ssDrawCatId] = null;
+    const dc = activeDrawCanvases[ssDrawCatId];
+    if (dc) {
+      const r = dc.canvas.getBoundingClientRect();
+      dc.ctx.clearRect(0, 0, r.width, r.height);
+    }
+  }
+}
+
 async function ssSaveEval() {
+  saveCurrentSsDrawing();
   return await saveAllEvaluations();
 }
 
@@ -1910,6 +1999,12 @@ let drawState = {};   // { catId: transparentPNG_dataURL }
 let activeDrawCanvases = {}; // { catId: {canvas,ctx,drawing,lx,ly} }
 let currentSubmissionId = '';
 let drawTool = 'pen';
+// ── 슬라이드쇼 드로잉 캔버스 상태 ──
+let ssDrawCatId = null;
+let ssDrawCanvas = null;
+let ssDrawing = false;
+let ssDrawLX = 0, ssDrawLY = 0;
+let ssCanvasHandlersAttached = false;
 let drawColor = '#ff0000';
 let drawLineWidth = 3;
 
@@ -2066,49 +2161,55 @@ async function migrateBase64ToStorage() {
   let done = 0, fail = 0, skip = 0;
   log.innerHTML = '🔄 마이그레이션 시작...';
 
-  async function migrateUrl(table, id, col, oldUrl) {
+  async function migrateAndUpdate(table, rowId, col, oldUrl, storagePath) {
     if (!oldUrl || !oldUrl.startsWith('data:')) { skip++; return null; }
-    const ext = oldUrl.includes('data:image/png') ? 'png' : 'jpg';
-    const path = `migrate/${table}/${id}/${col}.${ext}`;
     let newUrl;
-    try { newUrl = await uploadPhoto(path, oldUrl); }
-    catch(e) { fail++; log.innerHTML += `<br>❌ ${table}/${id}: ${e.message}`; return null; }
-    const upd = { id };
+    try { newUrl = await uploadPhoto(storagePath, oldUrl); }
+    catch(e) { fail++; log.innerHTML += `<br>❌ ${table}/${rowId}: ${e.message}`; return null; }
+    const upd = { id: rowId };
     upd[col] = newUrl;
-    const {error} = await supa.from(table).update(upd).eq('id', id);
-    if (error) { fail++; log.innerHTML += `<br>❌ DB업데이트 실패 ${id}: ${error.message}`; return null; }
+    const {error} = await supa.from(table).update(upd).eq('id', rowId);
+    if (error) { fail++; log.innerHTML += `<br>❌ DB업데이트 실패 ${rowId}: ${error.message}`; return null; }
     done++;
     log.innerHTML = `🔄 진행중... ✅${done} ❌${fail} ⏭${skip}`;
     return newUrl;
   }
 
-  // 1. samples 테이블
+  // 1. samples 테이블 — 경로: samples/{SESSION_ID}/{cat_id}.jpg
   log.innerHTML += '<br>📁 samples 테이블...';
   const {data: sData} = await supa.from('samples').select('*').eq('session_id', SESSION_ID);
-  if (sData) for (const row of sData) await migrateUrl('samples', row.id, 'data_url', row.data_url);
+  if (sData) for (const row of sData) {
+    await migrateAndUpdate('samples', row.id, 'data_url', row.data_url,
+      `samples/${SESSION_ID}/${row.cat_id}.jpg`);
+  }
 
-  // 2. photos 테이블
+  // 2. photos 테이블 — 경로: {SESSION_ID}/{submission_id}/{cat_id}.jpg
   log.innerHTML += '<br>📁 photos 테이블...';
   const {data: pData} = await supa.from('photos').select('*').eq('session_id', SESSION_ID);
-  if (pData) for (const row of pData) await migrateUrl('photos', row.id, 'data_url', row.data_url);
+  if (pData) for (const row of pData) {
+    await migrateAndUpdate('photos', row.id, 'data_url', row.data_url,
+      `${SESSION_ID}/${row.submission_id}/${row.cat_id}.jpg`);
+  }
 
-  // 3. evaluations 테이블 photo2/photo3
+  // 3. evaluations 테이블 — photo2: photos/{SESSION_ID}/{sub}/{cat}_p2.jpg
   log.innerHTML += '<br>📁 evaluations 테이블...';
   const {data: eData} = await supa.from('evaluations').select('*').eq('session_id', SESSION_ID);
   if (eData) {
     for (const row of eData) {
-      const new2 = await migrateUrl('evaluations', row.id, 'photo2_data_url', row.photo2_data_url);
+      const newUrl2 = await migrateAndUpdate('evaluations', row.id, 'photo2_data_url',
+        row.photo2_data_url,
+        `photos/${SESSION_ID}/${row.submission_id}/${row.cat_id}_p2.jpg`);
       if (row.photo3_data_url?.startsWith('data:')) {
-        const upd3 = { id: row.id, photo3_data_url: null };
-        const ext = 'jpg';
-        const path = `migrate/evaluations/${row.id}/photo3_data_url.${ext}`;
+        const upd3 = { id: row.id };
         try {
-          upd3.photo3_data_url = await uploadPhoto(path, row.photo3_data_url);
-          if (new2) upd3.photo2_data_url = new2;
+          upd3.photo3_data_url = await uploadPhoto(
+            `photos/${SESSION_ID}/${row.submission_id}/${row.cat_id}_p3.jpg`,
+            row.photo3_data_url);
+          if (newUrl2) upd3.photo2_data_url = newUrl2;
           const {error} = await supa.from('evaluations').update(upd3).eq('id', row.id);
           if (!error) { done++; log.innerHTML = `🔄 진행중... ✅${done} ❌${fail} ⏭${skip}`; }
-          else { fail++; }
-        } catch(e) { fail++; }
+          else { fail++; log.innerHTML += `<br>❌ evaluations p3 DB실패 ${row.id}: ${error.message}`; }
+        } catch(e) { fail++; log.innerHTML += `<br>❌ evaluations p3 업로드 실패 ${row.id}: ${e.message}`; }
       } else { skip++; }
     }
   }
