@@ -532,7 +532,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
       <div class="cam-zone-bottom-label">脇の線まで <span class="cam-zone-label-sub">겨드랑이선까지</span></div>
 
       <!-- 45° angle guide SVG (hidden by default) -->
-      <svg id="cam-angle-guide" viewBox="0 0 400 300"
+      <svg id="cam-angle-guide" viewBox="0 0 300 480" preserveAspectRatio="xMidYMid meet"
            style="position:absolute;inset:0;width:100%;height:100%;overflow:visible;display:none">
       </svg>
       <div class="cam-crosshair" id="cam-crosshair">
@@ -1980,72 +1980,115 @@ function toggleCrosshair() {
   document.getElementById('cam-cross-btn').style.opacity = crosshairVisible ? '1' : '0.35';
 }
 
-// ── 45° ANGLE GUIDE ───────────────────────────────────────────
-// viewBox 400×300 (4:3). Landmarks calibrated to reference photo.
-// Front: face centre (200,115), hair top y≈24, chin y≈205
-// At 45° right oblique (右斜め): nose tip shifts LEFT  (~168,140)
-// At 45° left  oblique (左斜め): nose tip shifts RIGHT (~232,140)
+
+// ── 45° ANGLE GUIDE v2 ────────────────────────────────────────────────────
+// viewBox 300×480 (portrait).
+// Large blue oval + dashed facial axis lines.
+// Lock-on: ring fills over 3s → turns yellow (position confirmed).
+// No auto-capture — user presses shutter after confirming angle.
 
 const _ANGLE_SVG = {
   none: null,
 
-  // 右斜め45° — camera sees patient's RIGHT side more
-  // Nose tip points toward camera's LEFT
+  // 右斜め45°: 患者が右を向いている (camera sees patient's LEFT side)
+  // Facial center axis curves upper-right → lower-left
   right45: `
-    <g opacity="0.9">
-      <!-- face oval, slightly left-shifted -->
-      <ellipse cx="192" cy="115" rx="66" ry="90"
-        fill="none" stroke="rgba(255,210,0,.8)" stroke-width="2.5" stroke-dasharray="10,5"/>
-      <!-- near right eye (fully visible, closer to camera) -->
-      <ellipse cx="214" cy="90" rx="19" ry="11"
-        fill="rgba(255,210,0,.12)" stroke="rgba(255,210,0,.85)" stroke-width="2"/>
-      <!-- far left eye (partially hidden behind nose bridge) -->
-      <ellipse cx="174" cy="93" rx="12" ry="9"
-        fill="rgba(255,210,0,.06)" stroke="rgba(255,210,0,.45)" stroke-width="1.5" stroke-dasharray="5,4"/>
-      <!-- nose tip target circle -->
-      <circle cx="168" cy="138" r="16"
-        fill="rgba(255,200,0,.2)" stroke="rgba(255,210,0,1)" stroke-width="3"/>
-      <circle cx="168" cy="138" r="5.5" fill="white" opacity="0.95"/>
-      <!-- right ear guide (near side, visible) -->
-      <path d="M258,88 Q270,112 258,136"
-        fill="none" stroke="rgba(255,210,0,.55)" stroke-width="2" stroke-dasharray="6,4"/>
-      <!-- hint label -->
-      <rect x="60" y="256" width="280" height="30" rx="6" fill="rgba(0,0,0,.5)"/>
-      <text x="200" y="276" text-anchor="middle"
-        fill="white" font-size="13.5" font-family="'Noto Sans JP',sans-serif">
-        右斜め45° ● に鼻先を合わせてください
+    <g>
+      <!-- Outer positioning oval (blue) -->
+      <ellipse cx="150" cy="192" rx="105" ry="130"
+        class="ag-oval"
+        fill="none" stroke="rgba(30,144,255,.95)" stroke-width="3"/>
+      <!-- Lock-on progress ring (r=113, circ≈710) -->
+      <circle cx="150" cy="192" r="113"
+        class="ag-lockring"
+        fill="none" stroke="rgba(30,144,255,0)" stroke-width="3.5"
+        stroke-dasharray="710" stroke-dashoffset="710"
+        stroke-linecap="round"
+        style="transform-origin:150px 192px;transform:rotate(-90deg)"/>
+      <!-- ─── Facial landmark lines at 45° right oblique ─── -->
+      <!-- Center axis: forehead-center → nose-bridge → nose-tip → chin  -->
+      <!-- Curves from upper-right to lower-left at 45°                  -->
+      <path d="M 165,63 Q 157,110 145,155 Q 137,183 126,242"
+        class="ag-axis"
+        fill="none" stroke="rgba(255,255,255,.93)" stroke-width="2.5"
+        stroke-dasharray="12,7" stroke-linecap="round"/>
+      <!-- Eye-level horizontal (foreshortened for 45°) -->
+      <path d="M 112,137 Q 132,131 168,135"
+        class="ag-axis"
+        fill="none" stroke="rgba(255,255,255,.93)" stroke-width="2.5"
+        stroke-dasharray="10,6" stroke-linecap="round"/>
+      <!-- Sub-nasal / alar base line (shorter — more foreshortened) -->
+      <path d="M 118,157 Q 133,152 152,155"
+        class="ag-axis"
+        fill="none" stroke="rgba(255,255,255,.72)" stroke-width="1.8"
+        stroke-dasharray="8,5" stroke-linecap="round"/>
+      <!-- Jaw / chin curve -->
+      <path d="M 118,242 Q 137,258 158,263"
+        class="ag-axis"
+        fill="none" stroke="rgba(255,255,255,.48)" stroke-width="1.5"
+        stroke-dasharray="7,5" stroke-linecap="round"/>
+      <!-- Label box -->
+      <rect x="22" y="432" width="256" height="38" rx="8" fill="rgba(0,0,0,.62)"/>
+      <text x="150" y="449" text-anchor="middle" class="ag-label"
+        fill="white" font-size="13" font-weight="600"
+        font-family="'Noto Sans JP',sans-serif">右斜め45°</text>
+      <text x="150" y="464" text-anchor="middle" class="ag-label"
+        fill="rgba(255,255,255,.82)" font-size="10"
+        font-family="'Noto Sans JP',sans-serif">
+        ガイドに顔を合わせてください
       </text>
     </g>`,
 
-  // 左斜め45° — camera sees patient's LEFT side more
-  // Nose tip points toward camera's RIGHT
+  // 左斜め45°: 患者が左を向いている (camera sees patient's RIGHT side)
+  // Facial center axis curves upper-left → lower-right
   left45: `
-    <g opacity="0.9">
-      <ellipse cx="208" cy="115" rx="66" ry="90"
-        fill="none" stroke="rgba(255,210,0,.8)" stroke-width="2.5" stroke-dasharray="10,5"/>
-      <!-- near left eye (fully visible) -->
-      <ellipse cx="186" cy="90" rx="19" ry="11"
-        fill="rgba(255,210,0,.12)" stroke="rgba(255,210,0,.85)" stroke-width="2"/>
-      <!-- far right eye (partially hidden) -->
-      <ellipse cx="226" cy="93" rx="12" ry="9"
-        fill="rgba(255,210,0,.06)" stroke="rgba(255,210,0,.45)" stroke-width="1.5" stroke-dasharray="5,4"/>
-      <!-- nose tip target -->
-      <circle cx="232" cy="138" r="16"
-        fill="rgba(255,200,0,.2)" stroke="rgba(255,210,0,1)" stroke-width="3"/>
-      <circle cx="232" cy="138" r="5.5" fill="white" opacity="0.95"/>
-      <!-- left ear guide (near side) -->
-      <path d="M142,88 Q130,112 142,136"
-        fill="none" stroke="rgba(255,210,0,.55)" stroke-width="2" stroke-dasharray="6,4"/>
-      <rect x="60" y="256" width="280" height="30" rx="6" fill="rgba(0,0,0,.5)"/>
-      <text x="200" y="276" text-anchor="middle"
-        fill="white" font-size="13.5" font-family="'Noto Sans JP',sans-serif">
-        左斜め45° ● に鼻先を合わせてください
+    <g>
+      <ellipse cx="150" cy="192" rx="105" ry="130"
+        class="ag-oval"
+        fill="none" stroke="rgba(30,144,255,.95)" stroke-width="3"/>
+      <circle cx="150" cy="192" r="113"
+        class="ag-lockring"
+        fill="none" stroke="rgba(30,144,255,0)" stroke-width="3.5"
+        stroke-dasharray="710" stroke-dashoffset="710"
+        stroke-linecap="round"
+        style="transform-origin:150px 192px;transform:rotate(-90deg)"/>
+      <!-- Center axis: upper-left → lower-right (mirror of right45) -->
+      <path d="M 135,63 Q 143,110 155,155 Q 163,183 174,242"
+        class="ag-axis"
+        fill="none" stroke="rgba(255,255,255,.93)" stroke-width="2.5"
+        stroke-dasharray="12,7" stroke-linecap="round"/>
+      <!-- Eye-level (mirrored) -->
+      <path d="M 132,135 Q 168,131 188,137"
+        class="ag-axis"
+        fill="none" stroke="rgba(255,255,255,.93)" stroke-width="2.5"
+        stroke-dasharray="10,6" stroke-linecap="round"/>
+      <!-- Sub-nasal (mirrored) -->
+      <path d="M 148,155 Q 167,152 182,157"
+        class="ag-axis"
+        fill="none" stroke="rgba(255,255,255,.72)" stroke-width="1.8"
+        stroke-dasharray="8,5" stroke-linecap="round"/>
+      <!-- Jaw (mirrored) -->
+      <path d="M 142,263 Q 163,258 182,242"
+        class="ag-axis"
+        fill="none" stroke="rgba(255,255,255,.48)" stroke-width="1.5"
+        stroke-dasharray="7,5" stroke-linecap="round"/>
+      <rect x="22" y="432" width="256" height="38" rx="8" fill="rgba(0,0,0,.62)"/>
+      <text x="150" y="449" text-anchor="middle" class="ag-label"
+        fill="white" font-size="13" font-weight="600"
+        font-family="'Noto Sans JP',sans-serif">左斜め45°</text>
+      <text x="150" y="464" text-anchor="middle" class="ag-label"
+        fill="rgba(255,255,255,.82)" font-size="10"
+        font-family="'Noto Sans JP',sans-serif">
+        ガイドに顔を合わせてください
       </text>
     </g>`
 };
 
 const _angleModes = ['none', 'right45', 'left45'];
 let _angleModeIdx = 0;
+let _lockRaf     = null;
+let _lockStart   = null;
+const _LOCK_MS   = 3000; // 3 seconds to fill the ring
 
 function cycleAngleMode() {
   _angleModeIdx = (_angleModeIdx + 1) % _angleModes.length;
@@ -2056,13 +2099,14 @@ function _applyAngleGuide() {
   const mode = _angleModes[_angleModeIdx];
   const svg  = document.getElementById('cam-angle-guide');
   const btn  = document.getElementById('cam-angle-btn');
-  const svgContent = _ANGLE_SVG[mode];
-  if (svgContent) {
-    svg.innerHTML = svgContent;
+  _clearLockTimer();
+
+  if (_ANGLE_SVG[mode]) {
+    svg.innerHTML = _ANGLE_SVG[mode];
     svg.style.display = 'block';
     btn.classList.add('active');
-    const labels = { right45:'右45°中', left45:'左45°中' };
-    btn.textContent = labels[mode];
+    btn.textContent = mode === 'right45' ? '右45°中' : '左45°中';
+    _startLockTimer(svg);
   } else {
     svg.innerHTML = '';
     svg.style.display = 'none';
@@ -2071,13 +2115,70 @@ function _applyAngleGuide() {
   }
 }
 
-// Reset angle mode when camera closes
+function _startLockTimer(svg) {
+  _lockStart = performance.now();
+  function tick(now) {
+    const progress = Math.min((now - _lockStart) / _LOCK_MS, 1);
+    const ring = svg.querySelector('.ag-lockring');
+    if (ring) {
+      const circ = 2 * Math.PI * 113; // r=113 → ≈709.9
+      ring.setAttribute('stroke-dashoffset', (circ * (1 - progress)).toFixed(2));
+      if (progress >= 1) {
+        ring.setAttribute('stroke', 'rgba(255,210,0,1)');
+        ring.setAttribute('stroke-width', '5');
+      } else {
+        const alpha = (0.35 + progress * 0.65).toFixed(2);
+        ring.setAttribute('stroke', 'rgba(30,144,255,' + alpha + ')');
+      }
+    }
+    if (progress < 1) {
+      _lockRaf = requestAnimationFrame(tick);
+    } else {
+      _onLockConfirmed(svg);
+    }
+  }
+  _lockRaf = requestAnimationFrame(tick);
+}
+
+function _clearLockTimer() {
+  if (_lockRaf) { cancelAnimationFrame(_lockRaf); _lockRaf = null; }
+  _lockStart = null;
+}
+
+function _onLockConfirmed(svg) {
+  // Turn oval and axis lines yellow — position confirmed
+  svg.querySelectorAll('.ag-oval').forEach(function(el) {
+    el.setAttribute('stroke', 'rgba(255,210,0,1)');
+    el.setAttribute('stroke-width', '3.5');
+  });
+  svg.querySelectorAll('.ag-axis').forEach(function(el) {
+    el.setAttribute('stroke', 'rgba(255,220,0,.95)');
+  });
+  // Update label colors too
+  svg.querySelectorAll('.ag-label').forEach(function(el) {
+    el.setAttribute('fill', 'rgba(255,220,0,1)');
+  });
+  // Update button to show confirmed state
+  const btn = document.getElementById('cam-angle-btn');
+  if (btn) {
+    btn.style.background = 'rgba(255,200,0,.85)';
+    btn.style.borderColor = 'rgba(255,230,0,.95)';
+    btn.style.color = '#000';
+  }
+}
+
+// Reset angle guide when camera closes
 const _origClose = closeCameraOverlay;
 function closeCameraOverlay() {
+  _clearLockTimer();
   _angleModeIdx = 0;
   _applyAngleGuide();
+  // Reset button style
+  const btn = document.getElementById('cam-angle-btn');
+  if (btn) { btn.style.background = ''; btn.style.borderColor = ''; btn.style.color = ''; }
   _origClose();
 }
+
 
 
 async function shootCamera() {
