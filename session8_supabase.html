@@ -757,15 +757,39 @@ function checkPw() {
 let samplesLoaded = false;
 async function loadSamples(force) {
   if (samplesLoaded && !force) return;
+  // ★ localStorage 캐시 확인 — 재접속 시 즉시 복원
+  const CACHE_KEY = 'samples_' + SESSION_ID;
+  if (!force) {
+    try {
+      const cached = localStorage.getItem(CACHE_KEY);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        samples = parsed;
+        samplesLoaded = true;
+        // 백그라운드에서 DB와 동기화 (캐시는 이미 사용)
+        supa.from('samples').select('cat_id,data_url').eq('session_id', SESSION_ID).then(({data}) => {
+          if (data && data.length > 0) {
+            data.forEach(s => { samples[s.cat_id] = s.data_url; });
+            try { localStorage.setItem(CACHE_KEY, JSON.stringify(samples)); } catch(_) {}
+          }
+        });
+        return;
+      }
+    } catch(_) {}
+  }
   try {
     const {data, error} = await supa.from('samples').select('cat_id,data_url').eq('session_id', SESSION_ID);
     if (error) throw error;
     samples = {};
     if (data) data.forEach(s => { samples[s.cat_id] = s.data_url; });
     samplesLoaded = true;
+    // ★ 캐시 저장 (Base64면 용량 초과 가능 — URL이면 가볍게 저장)
+    try {
+      const hasBase64 = Object.values(samples).some(v => v && v.startsWith('data:'));
+      if (!hasBase64) localStorage.setItem(CACHE_KEY, JSON.stringify(samples));
+    } catch(_) {}
   } catch(e) {
     console.warn('샘플 로딩 실패 — 3초 후 자동 재시도:', e);
-    // 3초 후 자동 재시도 → 성공 시 화면 자동 갱신
     setTimeout(async () => {
       if (samplesLoaded) return;
       try {
@@ -774,6 +798,10 @@ async function loadSamples(force) {
         samples = {};
         if (data) data.forEach(s => { samples[s.cat_id] = s.data_url; });
         samplesLoaded = true;
+        try {
+          const hasBase64 = Object.values(samples).some(v => v && v.startsWith('data:'));
+          if (!hasBase64) localStorage.setItem(CACHE_KEY, JSON.stringify(samples));
+        } catch(_) {}
         if (currentView === 'participant' && !submitted) renderParticipant();
       } catch(e2) { console.warn('재시도 실패:', e2); }
     }, 3000);
@@ -795,15 +823,17 @@ async function saveSample(catId, dataUrl) {
   });
   samples[catId] = storeVal;
   samplesLoaded = true;
+  // ★ 캐시 갱신 (Storage URL이면 저장, Base64면 스킵)
+  if (!storeVal.startsWith('data:')) {
+    try { localStorage.setItem('samples_' + SESSION_ID, JSON.stringify(samples)); } catch(_) {}
+  }
 }
 
 // ── PARTICIPANT VIEW ─────────────────────────────────────────
 async function renderParticipant() {
   const v = document.getElementById('participant-view');
   if (submitted) { renderSuccess(v); return; }
-  v.innerHTML = '<div class="loading">📸 ロード中...</div>';
-  await loadSamples();
-
+  // ★ 즉시 렌더링 — 샘플 로딩을 기다리지 않음
   const uploaded = Object.keys(myPhotos).length;
   let html = `
     <div class="submit-sec" style="margin-top:0">
@@ -825,7 +855,7 @@ async function renderParticipant() {
       <div class="photo-pair">
         <div class="photo-slot">
           <div class="slot-label">サンプル / 샘플</div>
-          <div class="photo-frame">
+          <div class="photo-frame" id="sf-${cat.id}">
             ${s ? `<img src="${s}" alt="sample">` : `<div class="frame-ph"><span class="icon">🖼</span><span>準備中</span></div>`}
           </div>
         </div>
@@ -854,6 +884,15 @@ async function renderParticipant() {
     </div>`;
 
   v.innerHTML = html;
+  // ★ 백그라운드에서 샘플 로딩 — 페이지 렌더링 블록 없음
+  if (!samplesLoaded) {
+    loadSamples().then(() => {
+      for (const cat of CATS) {
+        const el = document.getElementById('sf-' + cat.id);
+        if (el && samples[cat.id]) el.innerHTML = `<img src="${samples[cat.id]}" alt="sample">`;
+      }
+    });
+  }
 }
 
 async function handleMyPhoto(catId, input) {
@@ -958,6 +997,7 @@ function renderAdmin() {
     <div class="admin-tabs">
       <button class="admin-tab${adminTab==='samples'?' active':''}" onclick="setAdminTab('samples')">📸 サンプル登録</button>
       <button class="admin-tab${adminTab==='subs'?' active':''}" onclick="setAdminTab('subs')">📋 提出一覧</button>
+      <button class="admin-tab${adminTab==='migrate'?' active':''}" onclick="setAdminTab('migrate')" style="border-color:#e07b00;color:#b85c00">🔧 마이그레이션</button>
     </div>
     <div id="atab-content"><div class="loading">ロード中...</div></div>`;
   renderAdminTab();
@@ -966,7 +1006,7 @@ function renderAdmin() {
 function setAdminTab(tab) {
   adminTab = tab;
   document.querySelectorAll('.admin-tab').forEach((el,i) =>
-    el.classList.toggle('active', (i===0&&tab==='samples')||(i===1&&tab==='subs')));
+    el.classList.toggle('active', (i===0&&tab==='samples')||(i===1&&tab==='subs')||(i===2&&tab==='migrate')));
   renderAdminTab();
 }
 
@@ -974,6 +1014,15 @@ async function renderAdminTab() {
   const c = document.getElementById('atab-content');
   if (!c) return;
 
+  if (adminTab === 'migrate') {
+    c.innerHTML = `<div class="section-box" style="border-color:#e07b00;background:#fffbf0">
+      <div class="section-title" style="color:#b85c00">🔧 Base64 → Storage 마이그레이션</div>
+      <div style="font-size:12px;color:#666;margin-bottom:10px">DB에 Base64로 저장된 기존 사진을 Storage URL로 변환합니다. <strong>처음 한 번만 실행하면 됩니다.</strong></div>
+      <button id="migrate-btn" onclick="migrateBase64ToStorage()" style="padding:8px 18px;background:#b85c00;color:#fff;border:none;border-radius:8px;font-size:13px;font-family:'Noto Sans JP',sans-serif;cursor:pointer;font-weight:600">▶ 마이그레이션 시작</button>
+      <div id="migrate-log" style="margin-top:10px;font-size:12px;color:#444;line-height:1.8;white-space:pre-wrap"></div>
+    </div>`;
+    return;
+  }
   if (adminTab === 'samples') {
     await loadSamples();
     let html = '<div class="section-box"><div class="section-title">サンプル写真の登録 / 샘플 사진 등록</div><div class="sample-grid">';
@@ -2426,6 +2475,72 @@ async function translateKoJaRetry(text, retries = 3) {
   return '';
 }
 
+
+// ── BASE64 → STORAGE 마이그레이션 ───────────────────────────────────
+async function migrateBase64ToStorage() {
+  const btn = document.getElementById('migrate-btn');
+  const log = document.getElementById('migrate-log');
+  if (!btn || !log) return;
+  btn.disabled = true;
+  let done = 0, fail = 0, skip = 0;
+  log.innerHTML = '🔄 마이그레이션 시작...';
+
+  async function migrateUrl(table, id, col, catId, oldUrl, extraFields) {
+    if (!oldUrl || !oldUrl.startsWith('data:')) { skip++; return null; }
+    const ext = oldUrl.includes('data:image/png') ? 'png' : 'jpg';
+    const path = `migrate/${table}/${id}/${col}.${ext}`;
+    let newUrl;
+    try { newUrl = await uploadPhoto(path, oldUrl); }
+    catch(e) { fail++; log.innerHTML += `<br>❌ ${table}/${id}: ${e.message}`; return null; }
+    const upd = { id };
+    upd[col] = newUrl;
+    if (extraFields) Object.assign(upd, extraFields);
+    const {error} = await supa.from(table).update(upd).eq('id', id);
+    if (error) { fail++; log.innerHTML += `<br>❌ DB업데이트 실패 ${id}: ${error.message}`; return null; }
+    done++;
+    log.innerHTML = `🔄 진행중... ✅${done} ❌${fail} ⏭${skip}`;
+    return newUrl;
+  }
+
+  // 1. samples 테이블
+  log.innerHTML += '<br>📁 samples 테이블...';
+  const {data: sData} = await supa.from('samples').select('*').eq('session_id', SESSION_ID);
+  if (sData) {
+    for (const row of sData) {
+      await migrateUrl('samples', row.id, 'data_url', row.cat_id, row.data_url, null);
+    }
+  }
+
+  // 2. photos 테이블
+  log.innerHTML += '<br>📁 photos 테이블...';
+  const {data: pData} = await supa.from('photos').select('*').eq('session_id', SESSION_ID);
+  if (pData) {
+    for (const row of pData) {
+      await migrateUrl('photos', row.id, 'data_url', row.cat_id, row.data_url, null);
+    }
+  }
+
+  // 3. evaluations 테이블 photo2/photo3
+  log.innerHTML += '<br>📁 evaluations 테이블...';
+  const {data: eData} = await supa.from('evaluations').select('*').eq('session_id', SESSION_ID);
+  if (eData) {
+    for (const row of eData) {
+      if (row.photo2_data_url?.startsWith('data:')) {
+        const newUrl2 = await migrateUrl('evaluations', row.id, 'photo2_data_url', row.cat_id, row.photo2_data_url, null);
+        if (newUrl2) row.photo2_data_url = newUrl2;
+      } else { skip++; }
+      if (row.photo3_data_url?.startsWith('data:')) {
+        await migrateUrl('evaluations', row.id, 'photo3_data_url', row.cat_id, row.photo3_data_url, {photo2_data_url: row.photo2_data_url || null});
+      } else { skip++; }
+    }
+  }
+
+  // 캐시 초기화
+  try { localStorage.removeItem('samples_' + SESSION_ID); samplesLoaded = false; } catch(_) {}
+  log.innerHTML += `<br><strong>✅ 완료! 이전:${done} 실패:${fail} 스킵(이미URL):${skip}</strong>`;
+  btn.disabled = false;
+}
+
 async function mpSearch() {
   const name = document.getElementById('mp-name')?.value?.trim();
   if (!name) { toast('이름을 입력해 주세요'); return; }
@@ -2656,11 +2771,17 @@ function mpOpenCamera3(catId) {
 
 async function mpSavePhoto2(catId, dataUrl) {
   const frame = document.getElementById(`mp-frame2-${catId}`);
-  if (frame) frame.innerHTML = `<img src="${dataUrl}">`;
+  if (frame) frame.innerHTML = `<img src="${dataUrl}">`; // 즉시 미리보기
   // Enable 3次 shoot button
   const btn3 = document.getElementById(`mp-shoot3-${catId}`);
   if (btn3) { btn3.disabled = false; btn3.style.opacity = ''; }
   toast('📤 保存中...');
+  // ★ Storage에 업로드 후 URL 저장 (Base64 직접 저장 금지)
+  let urlToSave = dataUrl;
+  try {
+    const path = `photos/${SESSION_ID}/${mpSubmissionId}/${catId}_p2.jpg`;
+    urlToSave = await uploadPhoto(path, dataUrl);
+  } catch(e) { console.warn('2次 Storage 업로드 실패, base64 폴백:', e); }
   const evId = `${mpSubmissionId}_${catId}`;
   const {error} = await supa.from('evaluations').upsert({
     id: evId,
@@ -2670,11 +2791,11 @@ async function mpSavePhoto2(catId, dataUrl) {
     mark: mpEvals[catId]?.mark || null,
     comment_ko: mpEvals[catId]?.comment_ko || null,
     comment_ja: mpEvals[catId]?.comment_ja || null,
-    photo2_data_url: dataUrl
+    photo2_data_url: urlToSave
   });
   if (error) { toast('保存エラー: ' + error.message); return; }
   if (!mpEvals[catId]) mpEvals[catId] = {};
-  mpEvals[catId].photo2_data_url = dataUrl;
+  mpEvals[catId].photo2_data_url = urlToSave;
   toast('✅ 2次写真保存完了！');
   const btn = document.getElementById(`mp-shoot2-${catId}`);
   if (btn) btn.textContent = '📷 再撮影';
@@ -2682,8 +2803,14 @@ async function mpSavePhoto2(catId, dataUrl) {
 
 async function mpSavePhoto3(catId, dataUrl) {
   const frame = document.getElementById(`mp-frame3-${catId}`);
-  if (frame) frame.innerHTML = `<img src="${dataUrl}">`;
+  if (frame) frame.innerHTML = `<img src="${dataUrl}">`; // 즉시 미리보기
   toast('📤 保存中...');
+  // ★ Storage에 업로드 후 URL 저장 (Base64 직접 저장 금지)
+  let urlToSave = dataUrl;
+  try {
+    const path = `photos/${SESSION_ID}/${mpSubmissionId}/${catId}_p3.jpg`;
+    urlToSave = await uploadPhoto(path, dataUrl);
+  } catch(e) { console.warn('3次 Storage 업로드 실패, base64 폴백:', e); }
   const evId = `${mpSubmissionId}_${catId}`;
   const {error} = await supa.from('evaluations').upsert({
     id: evId,
@@ -2694,11 +2821,11 @@ async function mpSavePhoto3(catId, dataUrl) {
     comment_ko: mpEvals[catId]?.comment_ko || null,
     comment_ja: mpEvals[catId]?.comment_ja || null,
     photo2_data_url: mpEvals[catId]?.photo2_data_url || null,
-    photo3_data_url: dataUrl
+    photo3_data_url: urlToSave
   });
   if (error) { toast('保存エラー: ' + error.message); return; }
   if (!mpEvals[catId]) mpEvals[catId] = {};
-  mpEvals[catId].photo3_data_url = dataUrl;
+  mpEvals[catId].photo3_data_url = urlToSave;
   toast('✅ 3次写真保存完了！');
   const btn = document.getElementById(`mp-shoot3-${catId}`);
   if (btn) btn.textContent = '📷 再撮影';
