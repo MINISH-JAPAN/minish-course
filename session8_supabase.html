@@ -812,8 +812,8 @@ async function loadSamples(force) {
 async function saveSample(catId, dataUrl) {
   // 로컬 미리보기는 즉시 업데이트
   samples[catId] = dataUrl;
-  // Storage에 업로드 후 URL을 DB에 저장
-  const path = `samples/${SESSION_ID}/${catId}.jpg`;
+  // Storage에 업로드 후 URL을 DB에 저장 (photos/ 접두사로 RLS 통과)
+  const path = `photos/${SESSION_ID}/samples/${catId}.jpg`;
   let storeVal = dataUrl;
   try { storeVal = await uploadPhoto(path, dataUrl); } catch(_) {}
   await supa.from('samples').upsert({
@@ -933,7 +933,7 @@ async function doSubmit() {
 
     // 사진을 1장씩 개별 insert (batch insert는 payload 한도 초과 위험)
     for (const [catId, dataUrl] of Object.entries(myPhotos)) {
-      const path = `${SESSION_ID}/${sid}/${catId}.jpg`;
+      const path = `photos/${SESSION_ID}/${sid}/${catId}.jpg`;
       let url = dataUrl; // Storage 실패 시 base64 그대로 저장
       try { url = await uploadPhoto(path, dataUrl); } catch(_) {}
       const {error: e2} = await supa.from('photos').insert({
@@ -944,7 +944,7 @@ async function doSubmit() {
     }
     // 2차 사진 insert
     for (const [catId, dataUrl] of Object.entries(secondPhotos)) {
-      const path = `${SESSION_ID}/${sid}/${catId}_p2.jpg`;
+      const path = `photos/${SESSION_ID}/${sid}/${catId}_p2.jpg`;
       let url = dataUrl;
       try { url = await uploadPhoto(path, dataUrl); } catch(_) {}
       const {error: e3} = await supa.from('photos').insert({
@@ -955,7 +955,7 @@ async function doSubmit() {
     }
     // 3차 사진 insert
     for (const [catId, dataUrl] of Object.entries(thirdPhotos)) {
-      const path = `${SESSION_ID}/${sid}/${catId}_p3.jpg`;
+      const path = `photos/${SESSION_ID}/${sid}/${catId}_p3.jpg`;
       let url = dataUrl;
       try { url = await uploadPhoto(path, dataUrl); } catch(_) {}
       const {error: e4} = await supa.from('photos').insert({
@@ -2502,20 +2502,20 @@ async function migrateBase64ToStorage() {
     return newUrl;
   }
 
-  // 1. samples 테이블 — 경로: samples/{SESSION_ID}/{cat_id}.jpg
+  // 1. samples 테이블 — 경로: photos/{SESSION_ID}/samples/{cat_id}.jpg
   log.innerHTML += '<br>📁 samples 테이블...';
   const {data: sData} = await supa.from('samples').select('*').eq('session_id', SESSION_ID);
   if (sData) for (const row of sData) {
     await migrateAndUpdate('samples', row.id, 'data_url', row.data_url,
-      `samples/${SESSION_ID}/${row.cat_id}.jpg`);
+      `photos/${SESSION_ID}/samples/${row.cat_id}.jpg`);
   }
 
-  // 2. photos 테이블 — 경로: {SESSION_ID}/{submission_id}/{cat_id}.jpg
+  // 2. photos 테이블 — 경로: photos/{SESSION_ID}/{submission_id}/{cat_id}.jpg
   log.innerHTML += '<br>📁 photos 테이블...';
   const {data: pData} = await supa.from('photos').select('*').eq('session_id', SESSION_ID);
   if (pData) for (const row of pData) {
     await migrateAndUpdate('photos', row.id, 'data_url', row.data_url,
-      `${SESSION_ID}/${row.submission_id}/${row.cat_id}.jpg`);
+      `photos/${SESSION_ID}/${row.submission_id}/${row.cat_id}.jpg`);
   }
 
   // 3. evaluations 테이블 — photo2: photos/{SESSION_ID}/{sub}/{cat}_p2.jpg
