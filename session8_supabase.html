@@ -445,9 +445,10 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
         <div class="ss-quad-lbl">サンプル / 샘플</div>
         <div id="ss-q-sample" class="ss-quad-ph">未登録</div>
       </div>
-      <div class="ss-quad">
+      <div class="ss-quad" style="position:relative">
         <div class="ss-quad-lbl">1次写真<small>（1차사진）</small></div>
         <div id="ss-q-photo1" class="ss-quad-ph">未提出</div>
+        <canvas id="ss-draw-canvas" class="ss-draw-canvas-ov"></canvas>
       </div>
       <div class="ss-quad">
         <div class="ss-quad-lbl">2次写真<small>（2차사진）</small></div>
@@ -1436,6 +1437,8 @@ function renderSlide() {
       ssRenderSubItems('_p3', c.key);
     });
   }
+  // 드로잉 캔버스 초기화 (슬라이드 전환 후)
+  requestAnimationFrame(() => initSsDrawCanvas(cat.id));
 }
 
 function nextSlide() { if (slideIdx < CATS.length - 1) { slideIdx++; renderSlide(); } }
@@ -2485,52 +2488,55 @@ async function migrateBase64ToStorage() {
   let done = 0, fail = 0, skip = 0;
   log.innerHTML = '🔄 마이그레이션 시작...';
 
-  async function migrateUrl(table, id, col, catId, oldUrl, extraFields) {
+  async function migrateAndUpdate(table, rowId, col, oldUrl, storagePath) {
     if (!oldUrl || !oldUrl.startsWith('data:')) { skip++; return null; }
-    const ext = oldUrl.includes('data:image/png') ? 'png' : 'jpg';
-    const path = `migrate/${table}/${id}/${col}.${ext}`;
     let newUrl;
-    try { newUrl = await uploadPhoto(path, oldUrl); }
-    catch(e) { fail++; log.innerHTML += `<br>❌ ${table}/${id}: ${e.message}`; return null; }
-    const upd = { id };
+    try { newUrl = await uploadPhoto(storagePath, oldUrl); }
+    catch(e) { fail++; log.innerHTML += `<br>❌ ${table}/${rowId}: ${e.message}`; return null; }
+    const upd = { id: rowId };
     upd[col] = newUrl;
-    if (extraFields) Object.assign(upd, extraFields);
-    const {error} = await supa.from(table).update(upd).eq('id', id);
-    if (error) { fail++; log.innerHTML += `<br>❌ DB업데이트 실패 ${id}: ${error.message}`; return null; }
+    const {error} = await supa.from(table).update(upd).eq('id', rowId);
+    if (error) { fail++; log.innerHTML += `<br>❌ DB업데이트 실패 ${rowId}: ${error.message}`; return null; }
     done++;
     log.innerHTML = `🔄 진행중... ✅${done} ❌${fail} ⏭${skip}`;
     return newUrl;
   }
 
-  // 1. samples 테이블
+  // 1. samples 테이블 — 경로: samples/{SESSION_ID}/{cat_id}.jpg
   log.innerHTML += '<br>📁 samples 테이블...';
   const {data: sData} = await supa.from('samples').select('*').eq('session_id', SESSION_ID);
-  if (sData) {
-    for (const row of sData) {
-      await migrateUrl('samples', row.id, 'data_url', row.cat_id, row.data_url, null);
-    }
+  if (sData) for (const row of sData) {
+    await migrateAndUpdate('samples', row.id, 'data_url', row.data_url,
+      `samples/${SESSION_ID}/${row.cat_id}.jpg`);
   }
 
-  // 2. photos 테이블
+  // 2. photos 테이블 — 경로: {SESSION_ID}/{submission_id}/{cat_id}.jpg
   log.innerHTML += '<br>📁 photos 테이블...';
   const {data: pData} = await supa.from('photos').select('*').eq('session_id', SESSION_ID);
-  if (pData) {
-    for (const row of pData) {
-      await migrateUrl('photos', row.id, 'data_url', row.cat_id, row.data_url, null);
-    }
+  if (pData) for (const row of pData) {
+    await migrateAndUpdate('photos', row.id, 'data_url', row.data_url,
+      `${SESSION_ID}/${row.submission_id}/${row.cat_id}.jpg`);
   }
 
-  // 3. evaluations 테이블 photo2/photo3
+  // 3. evaluations 테이블 — photo2: photos/{SESSION_ID}/{sub}/{cat}_p2.jpg
   log.innerHTML += '<br>📁 evaluations 테이블...';
   const {data: eData} = await supa.from('evaluations').select('*').eq('session_id', SESSION_ID);
   if (eData) {
     for (const row of eData) {
-      if (row.photo2_data_url?.startsWith('data:')) {
-        const newUrl2 = await migrateUrl('evaluations', row.id, 'photo2_data_url', row.cat_id, row.photo2_data_url, null);
-        if (newUrl2) row.photo2_data_url = newUrl2;
-      } else { skip++; }
+      const newUrl2 = await migrateAndUpdate('evaluations', row.id, 'photo2_data_url',
+        row.photo2_data_url,
+        `photos/${SESSION_ID}/${row.submission_id}/${row.cat_id}_p2.jpg`);
       if (row.photo3_data_url?.startsWith('data:')) {
-        await migrateUrl('evaluations', row.id, 'photo3_data_url', row.cat_id, row.photo3_data_url, {photo2_data_url: row.photo2_data_url || null});
+        const upd3 = { id: row.id };
+        try {
+          upd3.photo3_data_url = await uploadPhoto(
+            `photos/${SESSION_ID}/${row.submission_id}/${row.cat_id}_p3.jpg`,
+            row.photo3_data_url);
+          if (newUrl2) upd3.photo2_data_url = newUrl2;
+          const {error} = await supa.from('evaluations').update(upd3).eq('id', row.id);
+          if (!error) { done++; log.innerHTML = `🔄 진행중... ✅${done} ❌${fail} ⏭${skip}`; }
+          else { fail++; log.innerHTML += `<br>❌ evaluations p3 DB실패 ${row.id}: ${error.message}`; }
+        } catch(e) { fail++; log.innerHTML += `<br>❌ evaluations p3 업로드 실패 ${row.id}: ${e.message}`; }
       } else { skip++; }
     }
   }
