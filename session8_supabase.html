@@ -378,6 +378,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
 <div id="mypage-view" class="main" style="display:none"></div>
 <div id="admin-view" class="main" style="display:none"></div>
 <div id="review-view" class="main" style="display:none"></div>
+<input type="file" id="choice-camera-input" accept="image/*" capture="environment" style="display:none" onchange="choiceSheetFileSelected(this)">
 
 <!-- Password modal -->
 <div id="pw-modal" class="modal-ov" style="display:none">
@@ -399,7 +400,6 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
     <button onclick="choiceSheetCamera()" style="width:100%;padding:14px;background:var(--accent);color:#fff;border:none;border-radius:10px;font-size:14px;font-family:'Noto Sans JP',sans-serif;cursor:pointer;margin-bottom:10px;display:flex;align-items:center;justify-content:center;gap:8px">📷 カメラで撮影</button>
     <button onclick="choiceSheetFile()" style="width:100%;padding:14px;background:#f1f5f9;color:#333;border:1px solid #dde4ed;border-radius:10px;font-size:14px;font-family:'Noto Sans JP',sans-serif;cursor:pointer;margin-bottom:10px;display:flex;align-items:center;justify-content:center;gap:8px">📁 ファイルから選択</button>
     <input type="file" id="choice-file-input" accept="image/*" style="display:none" onchange="choiceSheetFileSelected(this)">
-    <input type="file" id="choice-camera-input" accept="image/*" capture="environment" style="display:none" onchange="choiceSheetFileSelected(this)">
     <button onclick="closeChoiceSheet()" style="width:100%;padding:11px;background:transparent;color:#999;border:none;font-size:13px;font-family:'Noto Sans JP',sans-serif;cursor:pointer">キャンセル</button>
   </div>
 </div>
@@ -1670,8 +1670,8 @@ function closeChoiceSheet() {
   document.getElementById('upload-choice-sheet').style.display = 'none';
 }
 function choiceSheetCamera() {
-  closeChoiceSheet();
   document.getElementById('choice-camera-input').click();
+  closeChoiceSheet();
 }
 function choiceSheetFile() {
   document.getElementById('choice-file-input').click();
