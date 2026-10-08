@@ -359,6 +359,126 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
 .eval-mark-badge.none{background:#f0f0f0;border-color:#bbb;color:#999;font-size:16px}
 .eval-comment-ko{font-size:12px;color:var(--text);line-height:1.5}
 .eval-comment-ja{font-size:11px;color:var(--muted);line-height:1.5;font-style:italic}
+
+/* ── CUSTOM CAMERA OVERLAY ──────────────────────────────── */
+#cam-overlay {
+  display:none; position:fixed; inset:0; background:#000;
+  z-index:9999; flex-direction:column; align-items:center;
+  justify-content:space-between; overflow:hidden;
+}
+.cam-top-bar {
+  width:100%; display:flex; justify-content:space-between;
+  align-items:center; padding:12px 16px; flex-shrink:0;
+  background:rgba(0,0,0,.55);
+}
+.cam-cancel-btn {
+  padding:8px 16px; background:rgba(255,255,255,.15);
+  border:1px solid rgba(255,255,255,.35); border-radius:8px;
+  color:#fff; font-size:14px; cursor:pointer; font-family:'Noto Sans JP',sans-serif;
+}
+.cam-cross-btn {
+  padding:8px 14px; background:rgba(255,255,255,.15);
+  border:1px solid rgba(255,255,255,.35); border-radius:8px;
+  color:#fff; font-size:20px; cursor:pointer; transition:opacity .2s;
+}
+.cam-video-wrap {
+  position:relative; width:100%; flex:1;
+  display:flex; align-items:center; justify-content:center; overflow:hidden;
+}
+#cam-video {
+  width:100%; height:100%; object-fit:cover; display:block;
+}
+.cam-guide-wrap {
+  position:absolute; inset:0; pointer-events:none;
+}
+.cam-zone-top {
+  position:absolute; top:0; left:0; right:0; height:8%;
+  background:rgba(30,100,255,.28);
+  border-bottom:2px solid rgba(80,160,255,.85);
+}
+.cam-zone-top-label {
+  position:absolute; left:50%; top:calc(8% + 4px); transform:translateX(-50%);
+  color:#fff; font-size:10px; font-weight:600; font-family:'Noto Sans JP',sans-serif;
+  text-shadow:0 1px 3px rgba(0,0,0,.85); white-space:nowrap; pointer-events:none;
+  background:rgba(0,0,40,.35); padding:2px 8px; border-radius:4px;
+}
+.cam-zone-bottom {
+  position:absolute; bottom:0; left:0; right:0; height:32%;
+  background:rgba(30,100,255,.25);
+  border-top:2px solid rgba(80,160,255,.85);
+}
+.cam-zone-bottom-label {
+  position:absolute; left:50%; bottom:calc(32% + 4px); transform:translateX(-50%);
+  color:#fff; font-size:10px; font-weight:600; font-family:'Noto Sans JP',sans-serif;
+  text-shadow:0 1px 3px rgba(0,0,0,.85); white-space:nowrap; pointer-events:none;
+  background:rgba(0,0,40,.35); padding:2px 8px; border-radius:4px;
+}
+.cam-zone-label-sub {
+  font-size:8.5px; opacity:.8; margin-left:4px;
+}
+/* 45° angle guide toggle button */
+.cam-angle-btn {
+  padding:7px 11px; background:rgba(255,255,255,.15);
+  border:1px solid rgba(255,255,255,.35); border-radius:8px;
+  color:#fff; font-size:12px; cursor:pointer; font-family:'Noto Sans JP',sans-serif;
+  transition:all .2s; white-space:nowrap;
+}
+.cam-angle-btn.active { background:rgba(255,170,0,.75); border-color:rgba(255,200,0,.9); }
+.cam-crosshair {
+  position:absolute; inset:0; transition:opacity .2s;
+}
+.cam-crosshair-v {
+  position:absolute; left:50%; top:0; bottom:0; width:0;
+  border-left:2px dashed rgba(255,255,255,.75);
+  transform:translateX(-50%);
+}
+.cam-crosshair-h {
+  position:absolute; top:50%; left:0; right:0; height:0;
+  border-top:2px dashed rgba(255,255,255,.75);
+  transform:translateY(-50%);
+}
+.cam-bottom-bar {
+  width:100%; display:flex; align-items:center; justify-content:space-around;
+  padding:16px 20px 30px; flex-shrink:0; background:rgba(0,0,0,.55);
+  gap:10px;
+}
+.cam-zoom-group { display:flex; gap:8px; }
+.cam-zoom-btn {
+  padding:10px 18px; border:1.5px solid rgba(255,255,255,.45);
+  border-radius:8px; color:#fff; font-size:14px; font-weight:700;
+  cursor:pointer; font-family:'Noto Sans JP',sans-serif; transition:all .2s;
+  background:rgba(255,255,255,.15);
+}
+.cam-zoom-btn.active { background:var(--accent); border-color:var(--accent); }
+.cam-shutter {
+  width:68px; height:68px; border-radius:50%; background:#fff;
+  border:5px solid rgba(255,255,255,.45); cursor:pointer;
+  flex-shrink:0; transition:transform .12s;
+}
+.cam-shutter:active { transform:scale(.88); }
+
+/* ── UPLOAD CHOICE SHEET ─────────────────────────────────── */
+#upload-choice-ov {
+  display:none; position:fixed; inset:0; background:rgba(0,0,0,.5);
+  z-index:8000; align-items:flex-end; justify-content:center;
+}
+.upload-choice-box {
+  width:100%; max-width:600px; background:#fff; border-radius:18px 18px 0 0;
+  padding:20px 20px 36px;
+}
+.upload-choice-title {
+  font-size:13px; color:var(--muted); text-align:center; margin-bottom:16px;
+}
+.upload-choice-btns { display:flex; flex-direction:column; gap:10px; }
+.uc-btn {
+  width:100%; padding:14px; border-radius:10px; border:none;
+  font-size:15px; font-family:'Noto Sans JP',sans-serif;
+  cursor:pointer; font-weight:500; transition:background .15s;
+}
+.uc-btn-cam  { background:var(--accent); color:#fff; }
+.uc-btn-gal  { background:var(--bg); color:var(--text); border:1px solid var(--border); }
+.uc-btn-cancel { background:none; color:var(--muted); font-size:14px; margin-top:4px; }
+
 </style>
 </head>
 <body>
@@ -390,7 +510,61 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
 </div>
 
 <!-- Native file input -->
-<input type="file" id="native-file-input" accept="image/*" style="display:none" onchange="nativeFileSelected(this)">
+<!-- native-file-input moved to camera section -->
+
+
+<!-- Custom Camera Overlay -->
+<div id="cam-overlay" style="display:none;flex-direction:column;">
+  <div class="cam-top-bar">
+    <button class="cam-cancel-btn" onclick="closeCameraOverlay()">✕ キャンセル</button>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <button class="cam-angle-btn" id="cam-angle-btn" onclick="cycleAngleMode()">45°ガイド</button>
+      <button class="cam-cross-btn" id="cam-cross-btn" onclick="toggleCrosshair()" title="十字線のオン/オフ">⊕</button>
+    </div>
+  </div>
+  <div class="cam-video-wrap">
+    <video id="cam-video" autoplay playsinline muted></video>
+    <div class="cam-guide-wrap">
+      <div class="cam-zone-top"></div>
+      <!-- zone labels float outside the zone lines -->
+      <div class="cam-zone-top-label">頭部上の余白 <span class="cam-zone-label-sub">머리 위 여백</span></div>
+      <div class="cam-zone-bottom"></div>
+      <div class="cam-zone-bottom-label">脇の線まで <span class="cam-zone-label-sub">겨드랑이선까지</span></div>
+
+      <!-- 45° angle guide SVG (hidden by default) -->
+      <svg id="cam-angle-guide" viewBox="0 0 400 300"
+           style="position:absolute;inset:0;width:100%;height:100%;overflow:visible;display:none">
+      </svg>
+      <div class="cam-crosshair" id="cam-crosshair">
+        <div class="cam-crosshair-v"></div>
+        <div class="cam-crosshair-h"></div>
+      </div>
+    </div>
+  </div>
+  <div class="cam-bottom-bar">
+    <div class="cam-zoom-group">
+      <button class="cam-zoom-btn active" id="cam-zoom2" onclick="setCameraZoom(2)">2x</button>
+      <button class="cam-zoom-btn" id="cam-zoom3" onclick="setCameraZoom(3)">3x</button>
+    </div>
+    <button class="cam-shutter" onclick="shootCamera()" title="撮影"></button>
+    <div style="width:88px"></div>
+  </div>
+</div>
+
+<!-- Upload Choice Sheet -->
+<div id="upload-choice-ov" style="display:none;align-items:flex-end;">
+  <div class="upload-choice-box">
+    <div class="upload-choice-title">写真の選択方法 / 사진 선택 방법</div>
+    <div class="upload-choice-btns">
+      <button class="uc-btn uc-btn-cam" onclick="choiceCamera()">📷 撮影する（커스텀 카메라）</button>
+      <button class="uc-btn uc-btn-gal" onclick="choiceGallery()">🖼 アルバムから選択（앨범에서 선택）</button>
+      <button class="uc-btn uc-btn-cancel" onclick="closeChoiceSheet()">キャンセル</button>
+    </div>
+  </div>
+</div>
+
+<!-- Native file input for gallery pick -->
+<input type="file" id="native-file-input" accept="image/*" style="position:absolute;left:-9999px;top:-9999px;opacity:0;" onchange="nativeFileSelected(this)">
 
 <!-- Slideshow overlay -->
 <div id="ss-overlay" class="ss-overlay" style="display:none"
@@ -1645,8 +1819,7 @@ async function ssSaveEval() {
   return await saveAllEvaluations();
 }
 
-// ── CAMERA OVERLAY ───────────────────────────────────────────
-let camStream = null;
+// ── CAMERA OVERLAY (vars moved to camera section below) ──────
 let camCatId  = null;
 let currentZoom = 1;
 let nativeZoomSupported = false;
@@ -1672,13 +1845,6 @@ function getScreenTilt(e) {
   return gamma;                  // portrait normal
 }
 
-
-
-function handleUploadClick(catId) {
-  choiceCatId = catId;
-  choiceMode  = 'main';
-  document.getElementById('native-file-input').click();
-}
 
 
 async function handleSecondPhoto(catId, input) {
@@ -1715,69 +1881,286 @@ async function handleThirdPhoto(catId, input) {
 
 
 
-// ── NATIVE FILE INPUT ─────────────────────────────────────
+
+// ── UPLOAD CHOICE + CUSTOM CAMERA ─────────────────────────
 let choiceCatId = null;
 let choiceMode  = 'main';
+let camStream   = null;
+let camZoomLevel = 2;
+let crosshairVisible = true;
 
-function handleUploadClick(catId) {
-  choiceCatId = catId; choiceMode = 'main';
-  document.getElementById('native-file-input').click();
+// Entry point: show choice sheet (camera OR gallery)
+function handleUploadClick(catId)  { showChoiceSheet(catId, 'main'); }
+function openSecondCameraFn(catId) { showChoiceSheet(catId, 'second'); }
+function openThirdCameraFn(catId)  { showChoiceSheet(catId, 'third'); }
+function mpOpenCamera(catId)       { showChoiceSheet(catId, 'mypage'); }
+function mpOpenCamera3(catId)      { showChoiceSheet(catId, 'mypage3'); }
+
+function showChoiceSheet(catId, mode) {
+  choiceCatId = catId;
+  choiceMode  = mode || 'main';
+  const ov = document.getElementById('upload-choice-ov');
+  ov.style.display = 'flex';
 }
-function openSecondCameraFn(catId) {
-  choiceCatId = catId; choiceMode = 'second';
-  document.getElementById('native-file-input').click();
+function closeChoiceSheet() {
+  document.getElementById('upload-choice-ov').style.display = 'none';
 }
-function openThirdCameraFn(catId) {
-  choiceCatId = catId; choiceMode = 'third';
-  document.getElementById('native-file-input').click();
+function choiceCamera() {
+  closeChoiceSheet();
+  openCameraOverlay(choiceCatId, choiceMode);
 }
-function mpOpenCamera(catId) {
-  choiceCatId = catId; choiceMode = 'mypage';
-  document.getElementById('native-file-input').click();
+function choiceGallery() {
+  closeChoiceSheet();
+  // Trigger native file picker (album only, no camera)
+  const inp = document.getElementById('native-file-input');
+  inp.value = '';
+  inp.click();
 }
-function mpOpenCamera3(catId) {
-  choiceCatId = catId; choiceMode = 'mypage3';
-  document.getElementById('native-file-input').click();
+
+// Custom camera overlay
+function openCameraOverlay(catId, mode) {
+  choiceCatId = catId;
+  choiceMode  = mode || 'main';
+  const ov = document.getElementById('cam-overlay');
+  ov.style.display = 'flex';
+  startCamera();
 }
+
+async function startCamera() {
+  try {
+    if (camStream) { camStream.getTracks().forEach(t => t.stop()); camStream = null; }
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode:'environment', width:{ideal:1920}, height:{ideal:1440}, aspectRatio:{ideal:4/3} }
+    });
+    camStream = stream;
+    const v = document.getElementById('cam-video');
+    v.srcObject = stream;
+    await v.play();
+    setTimeout(() => applyCamZoom(camZoomLevel), 600);
+  } catch(e) {
+    toast('カメラを開けませんでした');
+    closeCameraOverlay();
+  }
+}
+
+function closeCameraOverlay() {
+  if (camStream) { camStream.getTracks().forEach(t => t.stop()); camStream = null; }
+  document.getElementById('cam-overlay').style.display = 'none';
+}
+
+function setCameraZoom(z) {
+  camZoomLevel = z;
+  applyCamZoom(z);
+  document.getElementById('cam-zoom2').classList.toggle('active', z === 2);
+  document.getElementById('cam-zoom3').classList.toggle('active', z === 3);
+}
+
+function applyCamZoom(z) {
+  if (!camStream) return;
+  const track = camStream.getVideoTracks()[0];
+  if (!track) return;
+  const caps = track.getCapabilities ? track.getCapabilities() : {};
+  if (caps.zoom) {
+    const cz = Math.min(caps.zoom.max || 10, Math.max(caps.zoom.min || 1, z));
+    track.applyConstraints({ advanced: [{ zoom: cz }] }).catch(() => {
+      const v = document.getElementById('cam-video');
+      v.style.transform = `scale(${z})`;
+      v.style.transformOrigin = 'center center';
+    });
+  } else {
+    const v = document.getElementById('cam-video');
+    v.style.transform = `scale(${z})`;
+    v.style.transformOrigin = 'center center';
+  }
+}
+
+function toggleCrosshair() {
+  crosshairVisible = !crosshairVisible;
+  document.getElementById('cam-crosshair').style.opacity = crosshairVisible ? '1' : '0';
+  document.getElementById('cam-cross-btn').style.opacity = crosshairVisible ? '1' : '0.35';
+}
+
+// ── 45° ANGLE GUIDE ───────────────────────────────────────────
+// viewBox 400×300 (4:3). Landmarks calibrated to reference photo.
+// Front: face centre (200,115), hair top y≈24, chin y≈205
+// At 45° right oblique (右斜め): nose tip shifts LEFT  (~168,140)
+// At 45° left  oblique (左斜め): nose tip shifts RIGHT (~232,140)
+
+const _ANGLE_SVG = {
+  none: null,
+
+  // 右斜め45° — camera sees patient's RIGHT side more
+  // Nose tip points toward camera's LEFT
+  right45: `
+    <g opacity="0.9">
+      <!-- face oval, slightly left-shifted -->
+      <ellipse cx="192" cy="115" rx="66" ry="90"
+        fill="none" stroke="rgba(255,210,0,.8)" stroke-width="2.5" stroke-dasharray="10,5"/>
+      <!-- near right eye (fully visible, closer to camera) -->
+      <ellipse cx="214" cy="90" rx="19" ry="11"
+        fill="rgba(255,210,0,.12)" stroke="rgba(255,210,0,.85)" stroke-width="2"/>
+      <!-- far left eye (partially hidden behind nose bridge) -->
+      <ellipse cx="174" cy="93" rx="12" ry="9"
+        fill="rgba(255,210,0,.06)" stroke="rgba(255,210,0,.45)" stroke-width="1.5" stroke-dasharray="5,4"/>
+      <!-- nose tip target circle -->
+      <circle cx="168" cy="138" r="16"
+        fill="rgba(255,200,0,.2)" stroke="rgba(255,210,0,1)" stroke-width="3"/>
+      <circle cx="168" cy="138" r="5.5" fill="white" opacity="0.95"/>
+      <!-- right ear guide (near side, visible) -->
+      <path d="M258,88 Q270,112 258,136"
+        fill="none" stroke="rgba(255,210,0,.55)" stroke-width="2" stroke-dasharray="6,4"/>
+      <!-- hint label -->
+      <rect x="60" y="256" width="280" height="30" rx="6" fill="rgba(0,0,0,.5)"/>
+      <text x="200" y="276" text-anchor="middle"
+        fill="white" font-size="13.5" font-family="'Noto Sans JP',sans-serif">
+        右斜め45° ● に鼻先を合わせてください
+      </text>
+    </g>`,
+
+  // 左斜め45° — camera sees patient's LEFT side more
+  // Nose tip points toward camera's RIGHT
+  left45: `
+    <g opacity="0.9">
+      <ellipse cx="208" cy="115" rx="66" ry="90"
+        fill="none" stroke="rgba(255,210,0,.8)" stroke-width="2.5" stroke-dasharray="10,5"/>
+      <!-- near left eye (fully visible) -->
+      <ellipse cx="186" cy="90" rx="19" ry="11"
+        fill="rgba(255,210,0,.12)" stroke="rgba(255,210,0,.85)" stroke-width="2"/>
+      <!-- far right eye (partially hidden) -->
+      <ellipse cx="226" cy="93" rx="12" ry="9"
+        fill="rgba(255,210,0,.06)" stroke="rgba(255,210,0,.45)" stroke-width="1.5" stroke-dasharray="5,4"/>
+      <!-- nose tip target -->
+      <circle cx="232" cy="138" r="16"
+        fill="rgba(255,200,0,.2)" stroke="rgba(255,210,0,1)" stroke-width="3"/>
+      <circle cx="232" cy="138" r="5.5" fill="white" opacity="0.95"/>
+      <!-- left ear guide (near side) -->
+      <path d="M142,88 Q130,112 142,136"
+        fill="none" stroke="rgba(255,210,0,.55)" stroke-width="2" stroke-dasharray="6,4"/>
+      <rect x="60" y="256" width="280" height="30" rx="6" fill="rgba(0,0,0,.5)"/>
+      <text x="200" y="276" text-anchor="middle"
+        fill="white" font-size="13.5" font-family="'Noto Sans JP',sans-serif">
+        左斜め45° ● に鼻先を合わせてください
+      </text>
+    </g>`
+};
+
+const _angleModes = ['none', 'right45', 'left45'];
+let _angleModeIdx = 0;
+
+function cycleAngleMode() {
+  _angleModeIdx = (_angleModeIdx + 1) % _angleModes.length;
+  _applyAngleGuide();
+}
+
+function _applyAngleGuide() {
+  const mode = _angleModes[_angleModeIdx];
+  const svg  = document.getElementById('cam-angle-guide');
+  const btn  = document.getElementById('cam-angle-btn');
+  const svgContent = _ANGLE_SVG[mode];
+  if (svgContent) {
+    svg.innerHTML = svgContent;
+    svg.style.display = 'block';
+    btn.classList.add('active');
+    const labels = { right45:'右45°中', left45:'左45°中' };
+    btn.textContent = labels[mode];
+  } else {
+    svg.innerHTML = '';
+    svg.style.display = 'none';
+    btn.classList.remove('active');
+    btn.textContent = '45°ガイド';
+  }
+}
+
+// Reset angle mode when camera closes
+const _origClose = closeCameraOverlay;
+function closeCameraOverlay() {
+  _angleModeIdx = 0;
+  _applyAngleGuide();
+  _origClose();
+}
+
+
+async function shootCamera() {
+  const v = document.getElementById('cam-video');
+  if (!v.videoWidth) { toast('カメラ準備中...'); return; }
+  const canvas = document.createElement('canvas');
+  canvas.width = v.videoWidth; canvas.height = v.videoHeight;
+  canvas.getContext('2d').drawImage(v, 0, 0, canvas.width, canvas.height);
+  const raw = canvas.toDataURL('image/jpeg', 0.92);
+  const cid = choiceCatId, mode = choiceMode;
+  closeCameraOverlay();
+  toast('処理中...');
+  try {
+    const dataUrl = await compressDataUrl(raw);
+    await routePhoto(cid, mode, dataUrl);
+  } catch(e) { toast('エラーが発生しました'); }
+}
+
+// Gallery file selected via native input
 async function nativeFileSelected(input) {
   if (!input.files || !input.files[0]) return;
   const file = input.files[0];
-  const cid  = choiceCatId;
-  const mode = choiceMode;
+  const cid = choiceCatId, mode = choiceMode;
   input.value = '';
   toast('処理中...');
   try {
     const dataUrl = await compress(file);
-    if (mode === 'mypage') {
-      await mpSavePhoto2(cid, dataUrl);
-    } else if (mode === 'mypage3') {
-      await mpSavePhoto3(cid, dataUrl);
-    } else if (mode === 'second') {
-      secondPhotos[cid] = dataUrl;
-      const frame = document.getElementById(`sp2-frame-${cid}`);
-      if (frame) frame.innerHTML = `<img src="${dataUrl}">`;
-      const ev2 = document.getElementById(`sp2-eval-${cid}`);
-      if (ev2) ev2.style.display = 'block';
-      const sp3btn = document.getElementById(`sp3-btn-${cid}`);
-      if (sp3btn) { sp3btn.disabled = false; sp3btn.style.opacity = ''; sp3btn.style.cursor = ''; }
-      toast('✅ 2枚目を登録しました');
-    } else if (mode === 'third') {
-      thirdPhotos[cid] = dataUrl;
-      const frame = document.getElementById(`sp3-frame-${cid}`);
-      if (frame) frame.innerHTML = `<img src="${dataUrl}">`;
-      const ev3 = document.getElementById(`sp3-eval-${cid}`);
-      if (ev3) ev3.style.display = 'block';
-      toast('✅ 3枚目を登録しました');
-    } else {
-      const savedName = document.getElementById('p-name')?.value || '';
-      myPhotos[cid] = dataUrl;
-      await renderParticipant();
-      const nameEl = document.getElementById('p-name');
-      if (nameEl && savedName) nameEl.value = savedName;
-      toast('✅ 写真を登録しました');
-    }
+    await routePhoto(cid, mode, dataUrl);
   } catch(e) { toast('エラーが発生しました'); }
 }
+
+// Shared routing logic
+async function routePhoto(cid, mode, dataUrl) {
+  if (mode === 'mypage') {
+    await mpSavePhoto2(cid, dataUrl);
+  } else if (mode === 'mypage3') {
+    await mpSavePhoto3(cid, dataUrl);
+  } else if (mode === 'second') {
+    secondPhotos[cid] = dataUrl;
+    const frame = document.getElementById(`sp2-frame-${cid}`);
+    if (frame) frame.innerHTML = `<img src="${dataUrl}">`;
+    const ev2 = document.getElementById(`sp2-eval-${cid}`);
+    if (ev2) ev2.style.display = 'block';
+    const sp3btn = document.getElementById(`sp3-btn-${cid}`);
+    if (sp3btn) { sp3btn.disabled = false; sp3btn.style.opacity = ''; sp3btn.style.cursor = ''; }
+    toast('✅ 2枚目を登録しました');
+  } else if (mode === 'third') {
+    thirdPhotos[cid] = dataUrl;
+    const frame = document.getElementById(`sp3-frame-${cid}`);
+    if (frame) frame.innerHTML = `<img src="${dataUrl}">`;
+    const ev3 = document.getElementById(`sp3-eval-${cid}`);
+    if (ev3) ev3.style.display = 'block';
+    toast('✅ 3枚目を登録しました');
+  } else {
+    const savedName = document.getElementById('p-name')?.value || '';
+    myPhotos[cid] = dataUrl;
+    await renderParticipant();
+    const nameEl = document.getElementById('p-name');
+    if (nameEl && savedName) nameEl.value = savedName;
+    toast('✅ 写真を登録しました');
+  }
+}
+
+async function compressDataUrl(dataUrl) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      const MAX = 1200;
+      let w = img.width, h = img.height;
+      if (w > MAX || h > MAX) {
+        if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
+        else { w = Math.round(w * MAX / h); h = MAX; }
+      }
+      const c = document.createElement('canvas');
+      c.width = w; c.height = h;
+      c.getContext('2d').drawImage(img, 0, 0, w, h);
+      resolve(c.toDataURL('image/jpeg', 0.85));
+    };
+    img.onerror = reject;
+    img.src = dataUrl;
+  });
+}
+
 
 // ── EVALUATION STATE ─────────────────────────────────────────
 const DEEPL_API_KEY = '2e3d4519-10dc-4fbc-be60-da1348d590a6';
@@ -2484,17 +2867,7 @@ async function mpTransCard(catId, btn) {
   }
 }
 
-function mpOpenCamera(catId) {
-  choiceCatId = catId;
-  choiceMode  = 'mypage';
-  document.getElementById('native-file-input').click();
-}
 
-function mpOpenCamera3(catId) {
-  choiceCatId = catId;
-  choiceMode  = 'mypage3';
-  document.getElementById('native-file-input').click();
-}
 
 async function mpSavePhoto2(catId, dataUrl) {
   const frame = document.getElementById(`mp-frame2-${catId}`);
