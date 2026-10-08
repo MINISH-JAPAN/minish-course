@@ -253,6 +253,19 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
 .mp-mark-badge.batu{background:#fdeded;border-color:#c0392b;color:#c0392b}
 .mp-mark-badge.none{background:#f0f0f0;border-color:#ccc;color:#aaa;font-size:13px}
 .mp-comments{flex:1;display:flex;flex-direction:column;gap:4px}
+/* eval trio grid — PC 3-col, mobile stacked */
+.mp-eval-trio{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;padding:8px 10px 10px;border-top:1px dashed var(--border)}
+@media(max-width:620px){.mp-eval-trio{grid-template-columns:1fr}}
+.mp-eval-col{padding:6px 8px;border-radius:8px;font-size:11px;border:1px solid}
+.mp-eval-col.p1{background:#f0f4fa;border-color:#d0dcea}
+.mp-eval-col.p2{background:#edf2f9;border-color:#c8d8ec}
+.mp-eval-col.p3{background:#edf9ed;border-color:#b8e0b8}
+.mp-eval-col.no-photo{opacity:.4;pointer-events:none}
+.mp-eval-col-hdr{font-size:10px;font-weight:700;margin-bottom:4px;padding-bottom:3px;border-bottom:1px solid rgba(0,0,0,.08)}
+.mp-eval-col-hdr.hdr-p1{color:var(--primary)}
+.mp-eval-col-hdr.hdr-p2{color:#1a6b9e}
+.mp-eval-col-hdr.hdr-p3{color:#1a7a40}
+.mp-eval-col-mark{font-size:15px;font-weight:700;margin-bottom:2px}
 .mp-cmt-ko{font-size:12px;color:var(--text);line-height:1.6}
 .mp-cmt-ja{font-size:11px;color:var(--muted);line-height:1.5;font-style:italic}
 .mp-action-btn{padding:7px 12px;border:none;border-radius:7px;font-size:12px;font-family:'Noto Sans JP',sans-serif;cursor:pointer;font-weight:500;transition:all .2s;white-space:nowrap}
@@ -705,12 +718,36 @@ function checkPw() {
 let samplesLoaded = false;
 async function loadSamples(force) {
   if (samplesLoaded && !force) return;
+  // ★ localStorage 캐시 확인 — 재접속 시 즉시 복원
+  const CACHE_KEY = 'samples_' + SESSION_ID;
+  if (!force) {
+    try {
+      const cached = localStorage.getItem(CACHE_KEY);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        samples = parsed;
+        samplesLoaded = true;
+        // 백그라운드에서 DB와 동기화
+        supa.from('samples').select('cat_id,data_url').eq('session_id', SESSION_ID).then(({data}) => {
+          if (data && data.length > 0) {
+            data.forEach(s => { samples[s.cat_id] = s.data_url; });
+            try { localStorage.setItem(CACHE_KEY, JSON.stringify(samples)); } catch(_) {}
+          }
+        });
+        return;
+      }
+    } catch(_) {}
+  }
   try {
     const {data, error} = await supa.from('samples').select('cat_id,data_url').eq('session_id', SESSION_ID);
     if (error) throw error;
     samples = {};
     if (data) data.forEach(s => { samples[s.cat_id] = s.data_url; });
     samplesLoaded = true;
+    try {
+      const hasBase64 = Object.values(samples).some(v => v && v.startsWith('data:'));
+      if (!hasBase64) localStorage.setItem(CACHE_KEY, JSON.stringify(samples));
+    } catch(_) {}
   } catch(e) {
     console.warn('샘플 로딩 실패 — 3초 후 자동 재시도:', e);
     setTimeout(async () => {
@@ -721,6 +758,10 @@ async function loadSamples(force) {
         samples = {};
         if (data) data.forEach(s => { samples[s.cat_id] = s.data_url; });
         samplesLoaded = true;
+        try {
+          const hasBase64 = Object.values(samples).some(v => v && v.startsWith('data:'));
+          if (!hasBase64) localStorage.setItem(CACHE_KEY, JSON.stringify(samples));
+        } catch(_) {}
         if (currentView === 'participant' && !submitted) renderParticipant();
       } catch(e2) { console.warn('재시도 실패:', e2); }
     }, 3000);
@@ -740,14 +781,16 @@ async function saveSample(catId, dataUrl) {
   });
   samples[catId] = storeVal;
   samplesLoaded = true;
+  // ★ 캐시 갱신
+  if (!storeVal.startsWith('data:')) {
+    try { localStorage.setItem('samples_' + SESSION_ID, JSON.stringify(samples)); } catch(_) {}
+  }
 }
 
 async function renderParticipant() {
   const v = document.getElementById('participant-view');
   if (submitted) { renderSuccess(v); return; }
-  v.innerHTML = '<div class="loading">📸 ロード中...</div>';
-  await loadSamples();
-
+  // ★ 즉시 렌더링 — 샘플 로딩을 기다리지 않음
   const uploaded = Object.keys(myPhotos).length;
   let html = `
     <div class="submit-sec" style="margin-top:0">
@@ -769,7 +812,7 @@ async function renderParticipant() {
       <div class="photo-pair">
         <div class="photo-slot">
           <div class="slot-label">サンプル / 샘플</div>
-          <div class="photo-frame">
+          <div class="photo-frame" id="sf-${cat.id}">
             ${s ? `<img src="${s}" alt="sample">` : `<div class="frame-ph"><span class="icon">🖼</span><span>準備中</span></div>`}
           </div>
         </div>
@@ -798,6 +841,15 @@ async function renderParticipant() {
     </div>`;
 
   v.innerHTML = html;
+  // ★ 백그라운드에서 샘플 로딩 — 페이지 렌더링 블록 없음
+  if (!samplesLoaded) {
+    loadSamples().then(() => {
+      for (const cat of CATS) {
+        const el = document.getElementById('sf-' + cat.id);
+        if (el && samples[cat.id]) el.innerHTML = `<img src="${samples[cat.id]}" alt="sample">`;
+      }
+    });
+  }
 }
 
 async function handleMyPhoto(catId, input) {
@@ -901,6 +953,7 @@ function renderAdmin() {
     <div class="admin-tabs">
       <button class="admin-tab${adminTab==='samples'?' active':''}" onclick="setAdminTab('samples')">📸 サンプル登録</button>
       <button class="admin-tab${adminTab==='subs'?' active':''}" onclick="setAdminTab('subs')">📋 提出一覧</button>
+      <button class="admin-tab${adminTab==='migrate'?' active':''}" onclick="setAdminTab('migrate')" style="border-color:#e07b00;color:#b85c00">🔧 마이그레이션</button>
     </div>
     <div id="atab-content"><div class="loading">ロード中...</div></div>`;
   renderAdminTab();
@@ -909,7 +962,7 @@ function renderAdmin() {
 function setAdminTab(tab) {
   adminTab = tab;
   document.querySelectorAll('.admin-tab').forEach((el,i) =>
-    el.classList.toggle('active', (i===0&&tab==='samples')||(i===1&&tab==='subs')));
+    el.classList.toggle('active', (i===0&&tab==='samples')||(i===1&&tab==='subs')||(i===2&&tab==='migrate')));
   renderAdminTab();
 }
 
@@ -917,6 +970,15 @@ async function renderAdminTab() {
   const c = document.getElementById('atab-content');
   if (!c) return;
 
+  if (adminTab === 'migrate') {
+    c.innerHTML = `<div class="section-box" style="border-color:#e07b00;background:#fffbf0">
+      <div class="section-title" style="color:#b85c00">🔧 Base64 → Storage 마이그레이션</div>
+      <div style="font-size:12px;color:#666;margin-bottom:10px">DB에 Base64로 저장된 기존 사진을 Storage URL로 변환합니다. <strong>처음 한 번만 실행하면 됩니다.</strong></div>
+      <button id="migrate-btn" onclick="migrateBase64ToStorage()" style="padding:8px 18px;background:#b85c00;color:#fff;border:none;border-radius:8px;font-size:13px;font-family:'Noto Sans JP',sans-serif;cursor:pointer;font-weight:600">▶ 마이그레이션 시작</button>
+      <div id="migrate-log" style="margin-top:10px;font-size:12px;color:#444;line-height:1.8;white-space:pre-wrap"></div>
+    </div>`;
+    return;
+  }
   if (adminTab === 'samples') {
     await loadSamples();
     let html = '<div class="section-box"><div class="section-title">サンプル写真の登録 / 샘플 사진 등록</div><div class="sample-grid">';
@@ -1994,6 +2056,69 @@ function renderMyPage() {
     <div id="mp-result"></div>`;
 }
 
+
+// ── BASE64 → STORAGE 마이그레이션 ───────────────────────────────────
+async function migrateBase64ToStorage() {
+  const btn = document.getElementById('migrate-btn');
+  const log = document.getElementById('migrate-log');
+  if (!btn || !log) return;
+  btn.disabled = true;
+  let done = 0, fail = 0, skip = 0;
+  log.innerHTML = '🔄 마이그레이션 시작...';
+
+  async function migrateUrl(table, id, col, oldUrl) {
+    if (!oldUrl || !oldUrl.startsWith('data:')) { skip++; return null; }
+    const ext = oldUrl.includes('data:image/png') ? 'png' : 'jpg';
+    const path = `migrate/${table}/${id}/${col}.${ext}`;
+    let newUrl;
+    try { newUrl = await uploadPhoto(path, oldUrl); }
+    catch(e) { fail++; log.innerHTML += `<br>❌ ${table}/${id}: ${e.message}`; return null; }
+    const upd = { id };
+    upd[col] = newUrl;
+    const {error} = await supa.from(table).update(upd).eq('id', id);
+    if (error) { fail++; log.innerHTML += `<br>❌ DB업데이트 실패 ${id}: ${error.message}`; return null; }
+    done++;
+    log.innerHTML = `🔄 진행중... ✅${done} ❌${fail} ⏭${skip}`;
+    return newUrl;
+  }
+
+  // 1. samples 테이블
+  log.innerHTML += '<br>📁 samples 테이블...';
+  const {data: sData} = await supa.from('samples').select('*').eq('session_id', SESSION_ID);
+  if (sData) for (const row of sData) await migrateUrl('samples', row.id, 'data_url', row.data_url);
+
+  // 2. photos 테이블
+  log.innerHTML += '<br>📁 photos 테이블...';
+  const {data: pData} = await supa.from('photos').select('*').eq('session_id', SESSION_ID);
+  if (pData) for (const row of pData) await migrateUrl('photos', row.id, 'data_url', row.data_url);
+
+  // 3. evaluations 테이블 photo2/photo3
+  log.innerHTML += '<br>📁 evaluations 테이블...';
+  const {data: eData} = await supa.from('evaluations').select('*').eq('session_id', SESSION_ID);
+  if (eData) {
+    for (const row of eData) {
+      const new2 = await migrateUrl('evaluations', row.id, 'photo2_data_url', row.photo2_data_url);
+      if (row.photo3_data_url?.startsWith('data:')) {
+        const upd3 = { id: row.id, photo3_data_url: null };
+        const ext = 'jpg';
+        const path = `migrate/evaluations/${row.id}/photo3_data_url.${ext}`;
+        try {
+          upd3.photo3_data_url = await uploadPhoto(path, row.photo3_data_url);
+          if (new2) upd3.photo2_data_url = new2;
+          const {error} = await supa.from('evaluations').update(upd3).eq('id', row.id);
+          if (!error) { done++; log.innerHTML = `🔄 진행중... ✅${done} ❌${fail} ⏭${skip}`; }
+          else { fail++; }
+        } catch(e) { fail++; }
+      } else { skip++; }
+    }
+  }
+
+  // 캐시 초기화
+  try { localStorage.removeItem('samples_' + SESSION_ID); samplesLoaded = false; } catch(_) {}
+  log.innerHTML += `<br><strong>✅ 완료! 이전:${done} 실패:${fail} 스킵(이미URL):${skip}</strong>`;
+  btn.disabled = false;
+}
+
 async function mpSearch() {
   const name = document.getElementById('mp-name')?.value?.trim();
   if (!name) { toast('お名前を入力してください'); return; }
@@ -2112,7 +2237,7 @@ async function mpLoadDetail(idx) {
         const st = ev._criteria[c.key] || {mark:'',items:[]};
         if (!st.mark) return;
         const itemsHtml = (st.items||[]).map(i => `<li>${c.ja[i]}（${c.ko[i]}）</li>`).join('');
-        critHtml += `<div style="font-size:11px;margin-top:3px"><strong>${c.label}:</strong> ${st.mark}${itemsHtml?`<ul style="margin-left:14px">${itemsHtml}</ul>`:''}</div>`;
+        critHtml += `<div style="font-size:10px;margin-top:2px"><strong>${c.label}:</strong> ${st.mark}${itemsHtml?`<ul style="margin-left:12px">${itemsHtml}</ul>`:''}</div>`;
       });
     }
 
@@ -2144,49 +2269,44 @@ async function mpLoadDetail(idx) {
           <button class="mp-shoot-btn" onclick="mpOpenCamera3('${cat.id}')" ${photo2?'':'disabled style="opacity:.4"'} id="mp-shoot3-${cat.id}">📷 撮影</button>
         </div>
       </div>
-      <div class="mp-eval">
-        <div class="mp-mark-badge ${markCls}">${mark||'—'}</div>
-        <div class="mp-comments">
-          ${critHtml}
-          ${ev.comment_ko ? `<div class="mp-cmt-ko">${ev.comment_ko}</div>` : ''}
-          ${ev.comment_ja
-            ? `<div class="mp-cmt-ja" id="mp-ja-${cat.id}">🇯🇵 ${ev.comment_ja}</div>`
-            : ev.comment_ko
-              ? `<div id="mp-ja-${cat.id}"></div>`
-              : ''}
+      <div class="mp-eval-trio">
+        <!-- 1次 評価 -->
+        <div class="mp-eval-col p1">
+          <div class="mp-eval-col-hdr hdr-p1">1次写真 評価<small style="font-weight:400;color:var(--muted);font-size:9px">（1차사진）</small></div>
+          ${mark?`<div class="mp-eval-col-mark">${mark}</div>`:''}
+          ${critHtml||(!mark?'<div style="font-size:10px;color:#bbb">未評価</div>':'')}
+          ${ev.comment_ko?`<div class="mp-cmt-ko" style="margin-top:4px">${ev.comment_ko}</div>`:''}
+          ${ev.comment_ja?`<div class="mp-cmt-ja" id="mp-ja-${cat.id}" style="margin-top:2px">🇯🇵 ${ev.comment_ja}</div>`:ev.comment_ko?`<div id="mp-ja-${cat.id}"></div>`:''}
         </div>
+        <!-- 2次 評価 -->
+        ${(() => {
+          const ev2 = mpEvals[cat.id+'_p2'] || {};
+          const m2 = ev2.mark || '';
+          const crit2Html = ev2._criteria ? EVAL_CRITERIA.map(c => {
+            const st = ev2._criteria[c.key]||{mark:'',items:[]};
+            if (!st.mark) return '';
+            const itemsHtml = (st.items||[]).map(i=>`<li>${c.ja[i]}（${c.ko[i]}）</li>`).join('');
+            return `<div style="font-size:10px;margin-top:2px"><strong>${c.label}:</strong> ${st.mark}${itemsHtml?`<ul style="margin-left:12px">${itemsHtml}</ul>`:''}</div>`;
+          }).join('') : '';
+          const hdr2 = '<div class="mp-eval-col-hdr hdr-p2">2次写真 評価<small style="font-weight:400;color:var(--muted);font-size:9px">（2차사진）</small></div>';
+          if (!photo2) return `<div class="mp-eval-col p2 no-photo">${hdr2}<div style="font-size:10px;color:#bbb">写真未提出</div></div>`;
+          return `<div class="mp-eval-col p2">${hdr2}${m2?`<div class="mp-eval-col-mark">${m2}</div>`:''}${crit2Html||'<div style="font-size:10px;color:#bbb">未評価</div>'}</div>`;
+        })()}
+        <!-- 3次 評価 -->
+        ${(() => {
+          const ev3 = mpEvals[cat.id+'_p3'] || {};
+          const m3 = ev3.mark || '';
+          const crit3Html = ev3._criteria ? EVAL_CRITERIA.map(c => {
+            const st = ev3._criteria[c.key]||{mark:'',items:[]};
+            if (!st.mark) return '';
+            const itemsHtml = (st.items||[]).map(i=>`<li>${c.ja[i]}（${c.ko[i]}）</li>`).join('');
+            return `<div style="font-size:10px;margin-top:2px"><strong>${c.label}:</strong> ${st.mark}${itemsHtml?`<ul style="margin-left:12px">${itemsHtml}</ul>`:''}</div>`;
+          }).join('') : '';
+          const hdr3 = '<div class="mp-eval-col-hdr hdr-p3">3次写真 評価<small style="font-weight:400;color:var(--muted);font-size:9px">（3차사진）</small></div>';
+          if (!photo3) return `<div class="mp-eval-col p3 no-photo">${hdr3}<div style="font-size:10px;color:#bbb">写真未提出</div></div>`;
+          return `<div class="mp-eval-col p3">${hdr3}${m3?`<div class="mp-eval-col-mark">${m3}</div>`:''}${crit3Html||'<div style="font-size:10px;color:#bbb">未評価</div>'}</div>`;
+        })()}
       </div>
-      ${(() => {
-        const ev2 = mpEvals[cat.id+'_p2'] || {};
-        const m2 = ev2.mark || '';
-        const crit2Html = ev2._criteria ? EVAL_CRITERIA.map(c => {
-          const st = ev2._criteria[c.key]||{mark:'',items:[]};
-          if (!st.mark) return '';
-          const itemsHtml = (st.items||[]).map(i=>`<li>${c.ja[i]}（${c.ko[i]}）</li>`).join('');
-          return `<div style="font-size:10px;margin-top:2px"><strong>${c.label}:</strong> ${st.mark}${itemsHtml?`<ul style="margin-left:12px">${itemsHtml}</ul>`:''}</div>`;
-        }).join('') : '';
-        const ev3 = mpEvals[cat.id+'_p3'] || {};
-        const m3 = ev3.mark || '';
-        const crit3Html = ev3._criteria ? EVAL_CRITERIA.map(c => {
-          const st = ev3._criteria[c.key]||{mark:'',items:[]};
-          if (!st.mark) return '';
-          const itemsHtml = (st.items||[]).map(i=>`<li>${c.ja[i]}（${c.ko[i]}）</li>`).join('');
-          return `<div style="font-size:10px;margin-top:2px"><strong>${c.label}:</strong> ${st.mark}${itemsHtml?`<ul style="margin-left:12px">${itemsHtml}</ul>`:''}</div>`;
-        }).join('') : '';
-        const show2 = photo2 && (m2||crit2Html);
-        const show3 = photo3 && (m3||crit3Html);
-        if (!show2 && !show3) return '';
-        return `<div style="display:grid;grid-template-columns:${show2&&show3?'1fr 1fr':'1fr'};gap:6px;margin-top:6px">
-          ${show2?`<div style="padding:6px 8px;background:#edf2f9;border-radius:6px;border:1px solid #c8d8ec;font-size:11px">
-            <div style="font-weight:700;color:var(--primary);margin-bottom:3px">2次写真 評価</div>
-            <div style="font-size:13px;font-weight:700">${m2||'—'}</div>${crit2Html}
-          </div>`:''}
-          ${show3?`<div style="padding:6px 8px;background:#edf9ed;border-radius:6px;border:1px solid #b8e0b8;font-size:11px">
-            <div style="font-weight:700;color:#1a7a40;margin-bottom:3px">3次写真 評価</div>
-            <div style="font-size:13px;font-weight:700">${m3||'—'}</div>${crit3Html}
-          </div>`:''}
-        </div>`;
-      })()}
     </div>`;
   }
 
@@ -2237,25 +2357,31 @@ async function mpOpenCamera(catId) {
 
 async function mpSavePhoto2(catId, dataUrl) {
   if (!mpSub) return;
-  const evId = `${mpSub.id}_${catId}`;
+  const frame = document.getElementById(`mp-frame2-${catId}`);
+  if (frame) frame.innerHTML = `<img src="${dataUrl}">`; // 즉시 미리보기
+  const btn3 = document.getElementById(`mp-shoot3-${catId}`);
+  if (btn3) { btn3.disabled = false; btn3.style.opacity = ''; }
   toast('📤 保存中...');
+  // ★ Storage에 업로드 후 URL 저장
+  let urlToSave = dataUrl;
+  try {
+    const path = `photos/${SESSION_ID}/${mpSub.id}/${catId}_p2.jpg`;
+    urlToSave = await uploadPhoto(path, dataUrl);
+  } catch(e) { console.warn('2次 Storage 업로드 실패, base64 폴백:', e); }
+  const evId = `${mpSub.id}_${catId}`;
   const {error} = await supa.from('evaluations').upsert({
     id: evId,
     submission_id: mpSub.id,
     session_id: SESSION_ID,
     cat_id: catId,
-    photo2_data_url: dataUrl
+    photo2_data_url: urlToSave
   });
   if (error) { toast('保存エラー: ' + error.message); return; }
   if (!mpEvals[catId]) mpEvals[catId] = {};
-  mpEvals[catId].photo2_data_url = dataUrl;
+  mpEvals[catId].photo2_data_url = urlToSave;
   toast('✅ 2次写真保存完了！');
-  const frame = document.getElementById(`mp-frame2-${catId}`);
-  if (frame) frame.innerHTML = `<img src="${dataUrl}">`;
   const btn = document.getElementById(`mp-shoot2-${catId}`);
   if (btn) btn.textContent = '📷 再撮影';
-  const btn3 = document.getElementById(`mp-shoot3-${catId}`);
-  if (btn3) { btn3.disabled = false; btn3.style.opacity = ''; }
 }
 
 async function mpOpenCamera3(catId) {
@@ -2268,8 +2394,16 @@ async function mpOpenCamera3(catId) {
 
 async function mpSavePhoto3(catId, dataUrl) {
   if (!mpSub) return;
-  const evId = `${mpSub.id}_${catId}`;
+  const frame = document.getElementById(`mp-frame3-${catId}`);
+  if (frame) frame.innerHTML = `<img src="${dataUrl}">`; // 즉시 미리보기
   toast('📤 保存中...');
+  // ★ Storage에 업로드 후 URL 저장
+  let urlToSave = dataUrl;
+  try {
+    const path = `photos/${SESSION_ID}/${mpSub.id}/${catId}_p3.jpg`;
+    urlToSave = await uploadPhoto(path, dataUrl);
+  } catch(e) { console.warn('3次 Storage 업로드 실패, base64 폴백:', e); }
+  const evId = `${mpSub.id}_${catId}`;
   const {error} = await supa.from('evaluations').upsert({
     id: evId,
     submission_id: mpSub.id,
@@ -2279,14 +2413,12 @@ async function mpSavePhoto3(catId, dataUrl) {
     comment_ko: mpEvals[catId]?.comment_ko || null,
     comment_ja: mpEvals[catId]?.comment_ja || null,
     photo2_data_url: mpEvals[catId]?.photo2_data_url || null,
-    photo3_data_url: dataUrl
+    photo3_data_url: urlToSave
   });
   if (error) { toast('保存エラー: ' + error.message); return; }
   if (!mpEvals[catId]) mpEvals[catId] = {};
-  mpEvals[catId].photo3_data_url = dataUrl;
+  mpEvals[catId].photo3_data_url = urlToSave;
   toast('✅ 3次写真保存完了！');
-  const frame = document.getElementById(`mp-frame3-${catId}`);
-  if (frame) frame.innerHTML = `<img src="${dataUrl}">`;
   const btn = document.getElementById(`mp-shoot3-${catId}`);
   if (btn) btn.textContent = '📷 再撮影';
 }
