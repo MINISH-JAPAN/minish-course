@@ -1055,17 +1055,43 @@ async function loadSamples(force) {
 async function saveSample(catId, dataUrl) {
   // 로컬 미리보기는 즉시 업데이트
   samples[catId] = dataUrl;
-  // Storage에 업로드 후 URL을 DB에 저장 (photos/ 접두사로 RLS 통과)
-  const path = `photos/${SESSION_ID}/samples/${catId}.jpg`;
+
+  // ① 기존 Storage 파일 경로 조회 (업로드 후 삭제용)
+  let oldStoragePath = null;
+  try {
+    const {data: existing} = await supa.from('samples')
+      .select('data_url')
+      .eq('id', `${SESSION_ID}_${catId}`)
+      .single();
+    if (existing?.data_url) {
+      // URL 예: https://xxx.supabase.co/storage/v1/object/public/photos/photos/SID/samples/oral_front.jpg
+      const marker = '/object/public/photos/';
+      const idx = existing.data_url.indexOf(marker);
+      if (idx !== -1) oldStoragePath = existing.data_url.slice(idx + marker.length);
+    }
+  } catch(_) {}
+
+  // ② 타임스탬프 경로로 새 파일 업로드 (CDN 캐시 우회)
+  const ts = Date.now();
+  const path = `photos/${SESSION_ID}/samples/${catId}_${ts}.jpg`;
   let storeVal = dataUrl;
   try { storeVal = await uploadPhoto(path, dataUrl); } catch(_) {}
+
+  // ③ 구버전 파일 삭제 (마이그레이션)
+  if (oldStoragePath) {
+    try { await supa.storage.from('photos').remove([oldStoragePath]); } catch(_) {}
+  }
+
+  // ④ DB 갱신
   await supa.from('samples').upsert({
     id: `${SESSION_ID}_${catId}`,
     session_id: SESSION_ID, cat_id: catId, data_url: storeVal
   });
   samples[catId] = storeVal;
   samplesLoaded = true;
-  // ★ 캐시 갱신
+
+  // ⑤ localStorage 캐시 무효화 → 참여자가 다음 접속 시 DB에서 신규 URL 수신
+  try { localStorage.removeItem('samples_' + SESSION_ID); } catch(_) {}
   if (!storeVal.startsWith('data:')) {
     try { localStorage.setItem('samples_' + SESSION_ID, JSON.stringify(samples)); } catch(_) {}
   }
