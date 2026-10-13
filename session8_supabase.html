@@ -403,12 +403,12 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
   background:rgba(0,0,40,.35); padding:2px 8px; border-radius:4px;
 }
 .cam-zone-bottom {
-  position:absolute; bottom:0; left:0; right:0; height:32%;
+  position:absolute; bottom:0; left:0; right:0; height:8%;
   background:rgba(30,100,255,.25);
   border-top:2px solid rgba(80,160,255,.85);
 }
 .cam-zone-bottom-label {
-  position:absolute; left:50%; bottom:calc(32% + 4px); transform:translateX(-50%);
+  position:absolute; left:50%; bottom:calc(8% + 4px); transform:translateX(-50%);
   color:#fff; font-size:10px; font-weight:600; font-family:'Noto Sans JP',sans-serif;
   text-shadow:0 1px 3px rgba(0,0,0,.85); white-space:nowrap; pointer-events:none;
   background:rgba(0,0,40,.35); padding:2px 8px; border-radius:4px;
@@ -429,12 +429,12 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
 }
 .cam-crosshair-v {
   position:absolute; left:50%; top:0; bottom:0; width:0;
-  border-left:2px dashed rgba(255,255,255,.75);
+  border-left:3px dashed rgba(255,255,255,.95);
   transform:translateX(-50%);
 }
 .cam-crosshair-h {
   position:absolute; top:50%; left:0; right:0; height:0;
-  border-top:2px dashed rgba(255,255,255,.75);
+  border-top:3px dashed rgba(255,255,255,.95);
   transform:translateY(-50%);
 }
 .cam-bottom-bar {
@@ -478,6 +478,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
 .uc-btn-cam  { background:var(--accent); color:#fff; }
 .uc-btn-gal  { background:var(--bg); color:var(--text); border:1px solid var(--border); }
 .uc-btn-cancel { background:none; color:var(--muted); font-size:14px; margin-top:4px; }
+.uc-btn-file  { background:var(--bg); color:var(--text); border:1px solid var(--border); }
 
 </style>
 </head>
@@ -556,8 +557,9 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
   <div class="upload-choice-box">
     <div class="upload-choice-title">写真の選択方法 / 사진 선택 방법</div>
     <div class="upload-choice-btns">
-      <button class="uc-btn uc-btn-cam" onclick="choiceCamera()">📷 撮影する（커스텀 카메라）</button>
-      <button class="uc-btn uc-btn-gal" onclick="choiceGallery()">🖼 アルバムから選択（앨범에서 선택）</button>
+      <button class="uc-btn uc-btn-gal" onclick="choiceGallery()">🖼 사진첨부（사진 앨범에서 선택）</button>
+      <button class="uc-btn uc-btn-file" onclick="choiceFile()">📎 파일첨부（ファイルを添付）</button>
+      <button class="uc-btn uc-btn-cam" onclick="choiceCamera()">📷 촬영（カスタムカメラ）</button>
       <button class="uc-btn uc-btn-cancel" onclick="closeChoiceSheet()">キャンセル</button>
     </div>
   </div>
@@ -565,6 +567,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
 
 <!-- Native file input for gallery pick -->
 <input type="file" id="native-file-input" accept="image/*" style="position:absolute;left:-9999px;top:-9999px;opacity:0;" onchange="nativeFileSelected(this)">
+<input type="file" id="native-file-input-all" accept="*/*" style="position:absolute;left:-9999px;top:-9999px;opacity:0;" onchange="nativeFileSelected(this)">
 
 <!-- Slideshow overlay -->
 <div id="ss-overlay" class="ss-overlay" style="display:none"
@@ -755,28 +758,210 @@ const CATS = [
 ];
 const TOTAL = 8;
 
-const EVAL_CRITERIA = [
-  {
-    key:'setup', label:'SETUP',
-    ko:['촬영자가 환자 정면에 위치하지 않음','환자의 몸이 정면에 위치하지 않음','환자의 고개가 정면에 위치하지 않음','환자의 시선이 카메라 정면을 향하지 않음','평소 교합대로 물지 않음'],
-    ja:['撮影者が患者の正面に位置していない','患者の体が正面を向いていない','患者の頭が正面を向いていない','患者の視線がカメラ正面を向いていない','普段の咬合で噛んでいない']
-  },
-  {
-    key:'angle', label:'ANGLE',
-    ko:['환자가 좌측으로 치우침','환자가 우측으로 치우침','카메라가 위로 기울어짐','카메라가 아래로 기울어짐'],
-    ja:['患者が左側に偏っている','患者が右側に偏っている','カメラが上に傾いている','カメラが下に傾いている']
-  },
-  {
-    key:'frame', label:'FRAME',
-    ko:['머리가 잘림','겨드랑이선이 잘림','겨드랑이선 아래까지 너무 넓게 촬영됨','정면・측면 촬영 거리가 다름'],
-    ja:['頭が切れている','脇のラインが切れている','脇のライン以下まで広く撮影されている','正面・側面の撮影距離が異なる']
-  },
-  {
-    key:'quality', label:'QUALITY',
-    ko:['초점이 맞지 않음'],
-    ja:['ピントが合っていない']
-  }
-];
+// ── Per-category evaluation criteria ─────────────────────────────────────────
+// Each category has its own criteria set.
+// getEvalCriteria(catId) returns the criteria array for that category.
+const EVAL_CRITERIA_BY_CAT = {
+
+  // 1. 스마일 정면 (안모 정면) ──────────────────────────────────────────────────
+  smile_front: [
+    {
+      key:'setup', label:'SETUP',
+      ko:['촬영자가 환자 정면에 위치하지 않음','환자의 몸이 정면에 위치하지 않음','환자의 고개가 정면에 위치하지 않음','환자의 시선이 카메라 정면을 향하지 않음','평소 교합대로 물지 않음'],
+      ja:['撮影者が患者の正面に位置していない','患者の体が正面を向いていない','患者の頭が正面を向いていない','患者の視線がカメラ正面を向いていない','普段の咬合で噛んでいない']
+    },
+    {
+      key:'angle', label:'ANGLE',
+      ko:['환자가 좌측으로 치우침','환자가 우측으로 치우침','카메라가 위로 기울어짐','카메라가 아래로 기울어짐'],
+      ja:['患者が左側に偏っている','患者が右側に偏っている','カメラが上に傾いている','カメラが下に傾いている']
+    },
+    {
+      key:'frame', label:'FRAME',
+      ko:['머리가 잘림','겨드랑이선이 잘림','겨드랑이선 아래까지 너무 넓게 촬영됨'],
+      ja:['頭が切れている','脇のラインが切れている','脇のライン以下まで広く撮影されている']
+    },
+    {
+      key:'quality', label:'QUALITY',
+      ko:['초점이 맞지 않음','밝기가 맞지 않음','불필요한 그림자가 있음'],
+      ja:['ピントが合っていない','明るさが適切でない','不要な影が入っている']
+    }
+  ],
+
+  // 2. 스마일 좌측 (안모 좌측) ─ 환자 우측 45° 방향 ────────────────────────────
+  smile_left: [
+    {
+      key:'setup', label:'SETUP',
+      ko:['촬영자가 환자 좌측에 위치하지 않음','환자의 몸이 우측 45° 방향을 향하지 않음','환자의 고개가 우측 45° 방향을 향하지 않음','환자의 시선이 카메라를 향하지 않음','평소 교합대로 물지 않음'],
+      ja:['撮影者が患者の左側に位置していない','患者の体が右斜め45°を向いていない','患者の頭が右斜め45°を向いていない','患者の視線がカメラを向いていない','普段の咬合で噛んでいない']
+    },
+    {
+      key:'angle', label:'ANGLE',
+      ko:['환자가 좌측으로 치우침','환자가 우측으로 치우침','카메라가 위로 기울어짐','카메라가 아래로 기울어짐'],
+      ja:['患者が左側に偏っている','患者が右側に偏っている','カメラが上に傾いている','カメラが下に傾いている']
+    },
+    {
+      key:'frame', label:'FRAME',
+      ko:['머리가 잘림','겨드랑이선이 잘림','겨드랑이선 아래까지 너무 넓게 촬영됨','정면・측면 촬영 거리가 다름'],
+      ja:['頭が切れている','脇のラインが切れている','脇のライン以下まで広く撮影されている','正面・側面の撮影距離が異なる']
+    },
+    {
+      key:'quality', label:'QUALITY',
+      ko:['초점이 맞지 않음','밝기가 맞지 않음','불필요한 그림자가 있음'],
+      ja:['ピントが合っていない','明るさが適切でない','不要な影が入っている']
+    }
+  ],
+
+  // 3. 스마일 우측 (안모 우측) ─ 환자 좌측 45° 방향 ────────────────────────────
+  smile_right: [
+    {
+      key:'setup', label:'SETUP',
+      ko:['촬영자가 환자 우측에 위치하지 않음','환자의 몸이 좌측 45° 방향을 향하지 않음','환자의 고개가 좌측 45° 방향을 향하지 않음','환자의 시선이 카메라를 향하지 않음','평소 교합대로 물지 않음'],
+      ja:['撮影者が患者の右側に位置していない','患者の体が左斜め45°を向いていない','患者の頭が左斜め45°を向いていない','患者の視線がカメラを向いていない','普段の咬合で噛んでいない']
+    },
+    {
+      key:'angle', label:'ANGLE',
+      ko:['환자가 좌측으로 치우침','환자가 우측으로 치우침','카메라가 위로 기울어짐','카메라가 아래로 기울어짐'],
+      ja:['患者が左側に偏っている','患者が右側に偏っている','カメラが上に傾いている','カメラが下に傾いている']
+    },
+    {
+      key:'frame', label:'FRAME',
+      ko:['머리가 잘림','겨드랑이선이 잘림','겨드랑이선 아래까지 너무 넓게 촬영됨','정면・측면 촬영 거리가 다름'],
+      ja:['頭が切れている','脇のラインが切れている','脇のライン以下まで広く撮影されている','正面・側面の撮影距離が異なる']
+    },
+    {
+      key:'quality', label:'QUALITY',
+      ko:['초점이 맞지 않음','밝기가 맞지 않음','불필요한 그림자가 있음'],
+      ja:['ピントが合っていない','明るさが適切でない','不要な影が入っている']
+    }
+  ],
+
+  // 4. 스마일 정면 반모 (반모 정면) ────────────────────────────────────────────
+  smile_front_half: [
+    {
+      key:'setup', label:'SETUP',
+      ko:['촬영자가 환자 정면에 위치하지 않음','환자의 몸이 정면에 위치하지 않음','환자의 고개가 정면에 위치하지 않음','환자의 시선이 카메라 정면을 향하지 않음','치아가 보이게 미소짓지 않음'],
+      ja:['撮影者が患者の正面に位置していない','患者の体が正面を向いていない','患者の頭が正面を向いていない','患者の視線がカメラ正面を向いていない','歯が見えるように笑っていない']
+    },
+    {
+      key:'angle', label:'ANGLE',
+      ko:['환자가 좌측으로 치우침','환자가 우측으로 치우침','카메라가 위로 기울어짐','카메라가 아래로 기울어짐'],
+      ja:['患者が左側に偏っている','患者が右側に偏っている','カメラが上に傾いている','カメラが下に傾いている']
+    },
+    {
+      key:'frame', label:'FRAME',
+      ko:['콧망울이 잘림','턱끝이 잘림','눈밑 광대뼈까지 너무 넓게 촬영됨','목 아래까지 너무 넓게 촬영됨'],
+      ja:['小鼻が切れている','顎先が切れている','目の下の頬骨まで広く撮影されている','首の下まで広く撮影されている']
+    },
+    {
+      key:'quality', label:'QUALITY',
+      ko:['초점이 맞지 않음','밝기가 맞지 않음','불필요한 그림자가 있음'],
+      ja:['ピントが合っていない','明るさが適切でない','不要な影が入っている']
+    }
+  ],
+
+  // 5. 스마일 좌측 반모 (반모 좌측) ─ 환자 우측 45° ────────────────────────────
+  smile_left_half: [
+    {
+      key:'setup', label:'SETUP',
+      ko:['촬영자가 환자 좌측에 위치하지 않음','환자의 몸이 우측 45° 방향을 향하지 않음','환자의 고개가 우측 45° 방향을 향하지 않음','환자의 시선이 카메라를 향하지 않음','치아가 보이게 미소짓지 않음'],
+      ja:['撮影者が患者の左側に位置していない','患者の体が右斜め45°を向いていない','患者の頭が右斜め45°を向いていない','患者の視線がカメラを向いていない','歯が見えるように笑っていない']
+    },
+    {
+      key:'angle', label:'ANGLE',
+      ko:['환자가 좌측으로 치우침','환자가 우측으로 치우침','카메라가 위로 기울어짐','카메라가 아래로 기울어짐'],
+      ja:['患者が左側に偏っている','患者が右側に偏っている','カメラが上に傾いている','カメラが下に傾いている']
+    },
+    {
+      key:'frame', label:'FRAME',
+      ko:['콧망울이 잘림','턱끝이 잘림','눈밑 광대뼈까지 너무 넓게 촬영됨','목 아래까지 너무 넓게 촬영됨'],
+      ja:['小鼻が切れている','顎先が切れている','目の下の頬骨まで広く撮影されている','首の下まで広く撮影されている']
+    },
+    {
+      key:'quality', label:'QUALITY',
+      ko:['초점이 맞지 않음','밝기가 맞지 않음','불필요한 그림자가 있음'],
+      ja:['ピントが合っていない','明るさが適切でない','不要な影が入っている']
+    }
+  ],
+
+  // 6. 스마일 우측 반모 (반모 우측) ─ 환자 좌측 45° ────────────────────────────
+  smile_right_half: [
+    {
+      key:'setup', label:'SETUP',
+      ko:['촬영자가 환자 우측에 위치하지 않음','환자의 몸이 좌측 45° 방향을 향하지 않음','환자의 고개가 좌측 45° 방향을 향하지 않음','환자의 시선이 카메라를 향하지 않음','치아가 보이게 미소짓지 않음'],
+      ja:['撮影者が患者の右側に位置していない','患者の体が左斜め45°を向いていない','患者の頭が左斜め45°を向いていない','患者の視線がカメラを向いていない','歯が見えるように笑っていない']
+    },
+    {
+      key:'angle', label:'ANGLE',
+      ko:['환자가 좌측으로 치우침','환자가 우측으로 치우침','카메라가 위로 기울어짐','카메라가 아래로 기울어짐'],
+      ja:['患者が左側に偏っている','患者が右側に偏っている','カメラが上に傾いている','カメラが下に傾いている']
+    },
+    {
+      key:'frame', label:'FRAME',
+      ko:['콧망울이 잘림','턱끝이 잘림','눈밑 광대뼈까지 너무 넓게 촬영됨','목 아래까지 너무 넓게 촬영됨'],
+      ja:['小鼻が切れている','顎先が切れている','目の下の頬骨まで広く撮影されている','首の下まで広く撮影されている']
+    },
+    {
+      key:'quality', label:'QUALITY',
+      ko:['초점이 맞지 않음','밝기가 맞지 않음','불필요한 그림자가 있음'],
+      ja:['ピントが合っていない','明るさが適切でない','不要な影が入っている']
+    }
+  ],
+
+  // 7. 프렙 후 안모 ─────────────────────────────────────────────────────────────
+  prep_face: [
+    {
+      key:'setup', label:'SETUP',
+      ko:['촬영자가 환자 정면에 위치하지 않음','환자의 몸이 정면에 위치하지 않음','환자의 고개가 정면에 위치하지 않음','환자의 시선이 카메라 정면을 향하지 않음','평소 교합대로 물지 않음'],
+      ja:['撮影者が患者の正面に位置していない','患者の体が正面を向いていない','患者の頭が正面を向いていない','患者の視線がカメラ正面を向いていない','普段の咬合で噛んでいない']
+    },
+    {
+      key:'angle', label:'ANGLE',
+      ko:['환자가 좌측으로 치우침','환자가 우측으로 치우침','카메라가 위로 기울어짐','카메라가 아래로 기울어짐'],
+      ja:['患者が左側に偏っている','患者が右側に偏っている','カメラが上に傾いている','カメラが下に傾いている']
+    },
+    {
+      key:'frame', label:'FRAME',
+      ko:['머리가 잘림','겨드랑이선이 잘림','겨드랑이선 아래까지 너무 넓게 촬영됨'],
+      ja:['頭が切れている','脇のラインが切れている','脇のライン以下まで広く撮影されている']
+    },
+    {
+      key:'quality', label:'QUALITY',
+      ko:['초점이 맞지 않음','밝기가 맞지 않음','불필요한 그림자가 있음'],
+      ja:['ピントが合っていない','明るさが適切でない','不要な影が入っている']
+    }
+  ],
+
+  // 8. 프렙 후 개구기 안모 ───────────────────────────────────────────────────────
+  opener_face: [
+    {
+      key:'setup', label:'SETUP',
+      ko:['촬영자가 환자 정면에 위치하지 않음','환자의 몸이 정면에 위치하지 않음','환자의 고개가 정면에 위치하지 않음','환자의 시선이 카메라 정면을 향하지 않음','개구기 장착 방법이 올바르지 않음','프렙된 치아가 개구기에 의해 가려짐'],
+      ja:['撮影者が患者の正面に位置していない','患者の体が正面を向いていない','患者の頭が正面を向いていない','患者の視線がカメラ正面を向いていない','開口器の装着方法が正しくない','プレップした歯が開口器で隠れている']
+    },
+    {
+      key:'angle', label:'ANGLE',
+      ko:['환자가 좌측으로 치우침','환자가 우측으로 치우침','카메라가 위로 기울어짐','카메라가 아래로 기울어짐'],
+      ja:['患者が左側に偏っている','患者が右側に偏っている','カメラが上に傾いている','カメラが下に傾いている']
+    },
+    {
+      key:'frame', label:'FRAME',
+      ko:['머리가 잘림','겨드랑이선이 잘림','겨드랑이선 아래까지 너무 넓게 촬영됨'],
+      ja:['頭が切れている','脇のラインが切れている','脇のライン以下まで広く撮影されている']
+    },
+    {
+      key:'quality', label:'QUALITY',
+      ko:['초점이 맞지 않음','밝기가 맞지 않음','불필요한 그림자가 있음'],
+      ja:['ピントが合っていない','明るさが適切でない','不要な影が入っている']
+    }
+  ]
+};
+
+// Helper: returns the criteria array for a given category id.
+// catId may include a suffix like '_p2' or '_p3' — strip it.
+function getEvalCriteria(catId) {
+  const baseCatId = (catId || '').replace(/_p[23]$/, '');
+  return EVAL_CRITERIA_BY_CAT[baseCatId] || EVAL_CRITERIA_BY_CAT.smile_front;
+}
 
 // ── SUPABASE ────────────────────────────────────────────────
 const {createClient} = supabase;
@@ -1301,7 +1486,7 @@ async function openReview(submissionId, name) {
         </div>
       </div>
       <div class="card-eval-section">
-        ${EVAL_CRITERIA.map((c,ci) => {
+        ${getEvalCriteria(cat.id).map((c,ci) => {
           const st = ev[c.key] || {mark:'',items:[]};
           const subHtml = st.mark === '×'
             ? c.ko.map((ko,i) => `<label class="card-sub-chk"><input type="checkbox" ${(st.items||[]).includes(i)?'checked':''} onchange="cardCritItem('${cat.id}','${c.key}',${i},this.checked)"><span>${c.ja[i]}<small>（${ko}）</small></span></label>`).join('')
@@ -1347,11 +1532,11 @@ async function openReview(submissionId, name) {
 
         <div id="sp2-eval-${cat.id}" style="margin-top:7px;padding:6px 8px;background:#edf2f9;border-radius:6px;border:1px solid #c8d8ec;display:${secondPhotos[cat.id]?'block':'none'}">
           <div style="font-size:10px;font-weight:700;color:var(--primary);margin-bottom:4px">2次写真 評価<small style="font-weight:400;color:var(--muted);font-size:9px">（2차사진）</small></div>
-          ${EVAL_CRITERIA.map(c=>{const st=evalState[cat.id+'_p2']?.[c.key]||{mark:'',items:[]};const subHtml=st.mark==='×'?cardRenderSubItems(cat.id+'_p2',c.key):'';return `<div class="card-crit" id="cc-${cat.id+'_p2'}-${c.key}"><div class="card-crit-row"><span class="card-crit-lbl">${c.label}</span><button class="card-crit-btn${st.mark==='○'?' sel-o':''}" onclick="cardCritMark('${cat.id+'_p2'}','${c.key}','○')">○</button><button class="card-crit-btn${st.mark==='×'?' sel-x':''}" onclick="cardCritMark('${cat.id+'_p2'}','${c.key}','×')">×</button></div><div class="card-sub-items${st.mark==='×'?' show':''}" id="cc-sub-${cat.id+'_p2'}-${c.key}">${subHtml}</div></div>`;}).join('')}
+          ${getEvalCriteria(cat.id).map(c=>{const st=evalState[cat.id+'_p2']?.[c.key]||{mark:'',items:[]};const subHtml=st.mark==='×'?cardRenderSubItems(cat.id+'_p2',c.key):'';return `<div class="card-crit" id="cc-${cat.id+'_p2'}-${c.key}"><div class="card-crit-row"><span class="card-crit-lbl">${c.label}</span><button class="card-crit-btn${st.mark==='○'?' sel-o':''}" onclick="cardCritMark('${cat.id+'_p2'}','${c.key}','○')">○</button><button class="card-crit-btn${st.mark==='×'?' sel-x':''}" onclick="cardCritMark('${cat.id+'_p2'}','${c.key}','×')">×</button></div><div class="card-sub-items${st.mark==='×'?' show':''}" id="cc-sub-${cat.id+'_p2'}-${c.key}">${subHtml}</div></div>`;}).join('')}
         </div>
         <div id="sp3-eval-${cat.id}" style="margin-top:7px;padding:6px 8px;background:#edf9ed;border-radius:6px;border:1px solid #b8e0b8;display:${thirdPhotos[cat.id]?'block':'none'}">
           <div style="font-size:10px;font-weight:700;color:#1a7a40;margin-bottom:4px">3次写真 評価<small style="font-weight:400;color:var(--muted);font-size:9px">（3차사진）</small></div>
-          ${EVAL_CRITERIA.map(c=>{const st=evalState[cat.id+'_p3']?.[c.key]||{mark:'',items:[]};const subHtml=st.mark==='×'?cardRenderSubItems(cat.id+'_p3',c.key):'';return `<div class="card-crit" id="cc-${cat.id+'_p3'}-${c.key}"><div class="card-crit-row"><span class="card-crit-lbl">${c.label}</span><button class="card-crit-btn${st.mark==='○'?' sel-o':''}" onclick="cardCritMark('${cat.id+'_p3'}','${c.key}','○')">○</button><button class="card-crit-btn${st.mark==='×'?' sel-x':''}" onclick="cardCritMark('${cat.id+'_p3'}','${c.key}','×')">×</button></div><div class="card-sub-items${st.mark==='×'?' show':''}" id="cc-sub-${cat.id+'_p3'}-${c.key}">${subHtml}</div></div>`;}).join('')}
+          ${getEvalCriteria(cat.id).map(c=>{const st=evalState[cat.id+'_p3']?.[c.key]||{mark:'',items:[]};const subHtml=st.mark==='×'?cardRenderSubItems(cat.id+'_p3',c.key):'';return `<div class="card-crit" id="cc-${cat.id+'_p3'}-${c.key}"><div class="card-crit-row"><span class="card-crit-lbl">${c.label}</span><button class="card-crit-btn${st.mark==='○'?' sel-o':''}" onclick="cardCritMark('${cat.id+'_p3'}','${c.key}','○')">○</button><button class="card-crit-btn${st.mark==='×'?' sel-x':''}" onclick="cardCritMark('${cat.id+'_p3'}','${c.key}','×')">×</button></div><div class="card-sub-items${st.mark==='×'?' show':''}" id="cc-sub-${cat.id+'_p3'}-${c.key}">${subHtml}</div></div>`;}).join('')}
         </div>
       </div>
     </div>`;
@@ -1547,7 +1732,7 @@ function renderSlide() {
   const ev1 = evalState[cat.id] || {};
   const c1El = document.getElementById('ss-p1-comment');
   if (c1El) c1El.value = ev1.comment_ko || '';
-  EVAL_CRITERIA.forEach(c => {
+  getEvalCriteria(cat.id).forEach(c => {
     ssUpdateCritUI(cat.id, 'p1', c.key);
     ssRenderSubItems('', c.key);
   });
@@ -1559,7 +1744,7 @@ function renderSlide() {
     const ev2 = evalState[cat.id+'_p2'] || {};
     const c2El = document.getElementById('ss-p2-comment');
     if (c2El) c2El.value = ev2.comment_ko || '';
-    EVAL_CRITERIA.forEach(c => {
+    getEvalCriteria(cat.id).forEach(c => {
       ssUpdateCritUI(cat.id+'_p2', 'p2', c.key);
       ssRenderSubItems('_p2', c.key);
     });
@@ -1572,7 +1757,7 @@ function renderSlide() {
     const ev3 = evalState[cat.id+'_p3'] || {};
     const c3El = document.getElementById('ss-p3-comment');
     if (c3El) c3El.value = ev3.comment_ko || '';
-    EVAL_CRITERIA.forEach(c => {
+    getEvalCriteria(cat.id).forEach(c => {
       ssUpdateCritUI(cat.id+'_p3', 'p3', c.key);
       ssRenderSubItems('_p3', c.key);
     });
@@ -1658,7 +1843,7 @@ function saveCurrentSsDrawing() {
 
 function ssRenderSubItems(pSuffix, critKey) {
   const cat = CATS[slideIdx];
-  const crit = EVAL_CRITERIA.find(c => c.key === critKey);
+  const crit = getEvalCriteria(cat.id).find(c => c.key === critKey);
   const pKey = pSuffix === '' ? 'p1' : pSuffix.replace('_','');
   const el = document.getElementById(`ss-sub-${pKey}-${critKey}`);
   if (!el || !cat || !crit) return;
@@ -1745,7 +1930,7 @@ function cardUpdateCritUI(catId, critKey) {
 }
 
 function cardRenderSubItems(catId, critKey) {
-  const crit = EVAL_CRITERIA.find(c => c.key === critKey);
+  const crit = getEvalCriteria(catId).find(c => c.key === critKey);
   if (!crit) return '';
   const items = evalState[catId]?.[critKey]?.items || [];
   return crit.ko.map((ko, i) =>
@@ -1916,6 +2101,12 @@ function choiceGallery() {
   inp.value = '';
   inp.click();
 }
+function choiceFile() {
+  closeChoiceSheet();
+  const inp2 = document.getElementById('native-file-input-all');
+  inp2.value = '';
+  inp2.click();
+}
 
 // Custom camera overlay
 function openCameraOverlay(catId, mode) {
@@ -1943,10 +2134,11 @@ async function startCamera() {
   }
 }
 
-function closeCameraOverlay() {
+function _doCameraClose() {
   if (camStream) { camStream.getTracks().forEach(t => t.stop()); camStream = null; }
   document.getElementById('cam-overlay').style.display = 'none';
 }
+function closeCameraOverlay() { _doCameraClose(); }
 
 function setCameraZoom(z) {
   camZoomLevel = z;
@@ -2167,16 +2359,16 @@ function _onLockConfirmed(svg) {
   }
 }
 
-// Reset angle guide when camera closes
-const _origClose = closeCameraOverlay;
-function closeCameraOverlay() {
+// Reset angle guide when camera closes (angle guide cleanup integrated)
+const _origCloseCamera = _doCameraClose;
+function _doCameraClose() {
+  if (camStream) { camStream.getTracks().forEach(t => t.stop()); camStream = null; }
+  document.getElementById('cam-overlay').style.display = 'none';
   _clearLockTimer();
   _angleModeIdx = 0;
-  _applyAngleGuide();
-  // Reset button style
+  try { _applyAngleGuide(); } catch(_) {}
   const btn = document.getElementById('cam-angle-btn');
   if (btn) { btn.style.background = ''; btn.style.borderColor = ''; btn.style.color = ''; }
-  _origClose();
 }
 
 
@@ -2852,7 +3044,7 @@ async function mpLoadDetail(idx) {
     // Build criteria HTML
     let critHtml = '';
     if (ev._criteria) {
-      EVAL_CRITERIA.forEach(c => {
+      getEvalCriteria(cat.id).forEach(c => {
         const st = ev._criteria[c.key] || {mark:'',items:[]};
         if (!st.mark) return;
         const itemsHtml = (st.items||[]).map(i => `<li>${c.ja[i]}（${c.ko[i]}）</li>`).join('');
@@ -2901,7 +3093,7 @@ async function mpLoadDetail(idx) {
         ${(() => {
           const ev2 = mpEvals[cat.id+'_p2'] || {};
           const m2 = ev2.mark || '';
-          const crit2Html = ev2._criteria ? EVAL_CRITERIA.map(c => {
+          const crit2Html = ev2._criteria ? getEvalCriteria(cat.id).map(c => {
             const st = ev2._criteria[c.key]||{mark:'',items:[]};
             if (!st.mark) return '';
             const itemsHtml = (st.items||[]).map(i=>`<li>${c.ja[i]}（${c.ko[i]}）</li>`).join('');
@@ -2915,7 +3107,7 @@ async function mpLoadDetail(idx) {
         ${(() => {
           const ev3 = mpEvals[cat.id+'_p3'] || {};
           const m3 = ev3.mark || '';
-          const crit3Html = ev3._criteria ? EVAL_CRITERIA.map(c => {
+          const crit3Html = ev3._criteria ? getEvalCriteria(cat.id).map(c => {
             const st = ev3._criteria[c.key]||{mark:'',items:[]};
             if (!st.mark) return '';
             const itemsHtml = (st.items||[]).map(i=>`<li>${c.ja[i]}（${c.ko[i]}）</li>`).join('');
