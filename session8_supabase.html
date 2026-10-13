@@ -50,6 +50,14 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
 .upload-btn:hover{background:#1a6bbf}
 .upload-btn.done{background:var(--success)}
 .upload-btn input[type=file]{display:none}
+/* Two-button card row */
+.upload-btn-row{display:flex;gap:5px;margin-top:6px}
+.upload-btn-attach,.upload-btn-shoot{flex:1;padding:7px 4px;border:none;border-radius:6px;font-size:11px;font-family:'Noto Sans JP',sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:3px;transition:background .2s}
+.upload-btn-attach{background:var(--bg);color:var(--text);border:1px solid var(--border)}
+.upload-btn-attach:hover{background:#dde5ef}
+.upload-btn-shoot{background:var(--accent);color:#fff}
+.upload-btn-shoot:hover{background:#1a6bbf}
+.upload-btn-shoot.done{background:var(--success)}
 
 /* Submit section */
 .submit-sec{background:var(--card);border-radius:12px;border:1px solid var(--border);padding:14px;margin-bottom:14px}
@@ -388,6 +396,11 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
 #cam-video {
   width:100%; height:100%; object-fit:cover; display:block;
 }
+@media (orientation:landscape) {
+  #cam-video { object-fit:contain; }
+  .cam-top-bar { padding:6px 12px; }
+  .cam-bottom-bar { padding:8px 20px 12px; }
+}
 .cam-guide-wrap {
   position:absolute; inset:0; pointer-events:none;
 }
@@ -397,7 +410,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
   border-bottom:2px solid rgba(80,160,255,.85);
 }
 .cam-zone-top-label {
-  position:absolute; left:50%; top:calc(8% + 4px); transform:translateX(-50%);
+  position:absolute; left:50%; top:4%; transform:translate(-50%, -50%);
   color:#fff; font-size:10px; font-weight:600; font-family:'Noto Sans JP',sans-serif;
   text-shadow:0 1px 3px rgba(0,0,0,.85); white-space:nowrap; pointer-events:none;
   background:rgba(0,0,40,.35); padding:2px 8px; border-radius:4px;
@@ -408,7 +421,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
   border-top:2px solid rgba(80,160,255,.85);
 }
 .cam-zone-bottom-label {
-  position:absolute; left:50%; bottom:calc(8% + 4px); transform:translateX(-50%);
+  position:absolute; left:50%; bottom:4%; transform:translate(-50%, 50%);
   color:#fff; font-size:10px; font-weight:600; font-family:'Noto Sans JP',sans-serif;
   text-shadow:0 1px 3px rgba(0,0,0,.85); white-space:nowrap; pointer-events:none;
   background:rgba(0,0,40,.35); padding:2px 8px; border-radius:4px;
@@ -416,14 +429,6 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
 .cam-zone-label-sub {
   font-size:8.5px; opacity:.8; margin-left:4px;
 }
-/* 45° angle guide toggle button */
-.cam-angle-btn {
-  padding:7px 11px; background:rgba(255,255,255,.15);
-  border:1px solid rgba(255,255,255,.35); border-radius:8px;
-  color:#fff; font-size:12px; cursor:pointer; font-family:'Noto Sans JP',sans-serif;
-  transition:all .2s; white-space:nowrap;
-}
-.cam-angle-btn.active { background:rgba(255,170,0,.75); border-color:rgba(255,200,0,.9); }
 .cam-crosshair {
   position:absolute; inset:0; transition:opacity .2s;
 }
@@ -519,7 +524,6 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
   <div class="cam-top-bar">
     <button class="cam-cancel-btn" onclick="closeCameraOverlay()">✕ キャンセル</button>
     <div style="display:flex;gap:8px;align-items:center;">
-      <button class="cam-angle-btn" id="cam-angle-btn" onclick="cycleAngleMode()">45°ガイド</button>
       <button class="cam-cross-btn" id="cam-cross-btn" onclick="toggleCrosshair()" title="十字線のオン/オフ">⊕</button>
     </div>
   </div>
@@ -532,10 +536,6 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
       <div class="cam-zone-bottom"></div>
       <div class="cam-zone-bottom-label">脇の線まで <span class="cam-zone-label-sub">겨드랑이선까지</span></div>
 
-      <!-- 45° angle guide SVG (hidden by default) -->
-      <svg id="cam-angle-guide" viewBox="0 0 300 480" preserveAspectRatio="xMidYMid meet"
-           style="position:absolute;inset:0;width:100%;height:100%;overflow:visible;display:none">
-      </svg>
       <div class="cam-crosshair" id="cam-crosshair">
         <div class="cam-crosshair-v"></div>
         <div class="cam-crosshair-h"></div>
@@ -552,18 +552,8 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
   </div>
 </div>
 
-<!-- Upload Choice Sheet -->
-<div id="upload-choice-ov" style="display:none;align-items:flex-end;">
-  <div class="upload-choice-box">
-    <div class="upload-choice-title">写真の選択方法 / 사진 선택 방법</div>
-    <div class="upload-choice-btns">
-      <button class="uc-btn uc-btn-gal" onclick="choiceGallery()">🖼 사진첨부（사진 앨범에서 선택）</button>
-      <button class="uc-btn uc-btn-file" onclick="choiceFile()">📎 파일첨부（ファイルを添付）</button>
-      <button class="uc-btn uc-btn-cam" onclick="choiceCamera()">📷 촬영（カスタムカメラ）</button>
-      <button class="uc-btn uc-btn-cancel" onclick="closeChoiceSheet()">キャンセル</button>
-    </div>
-  </div>
-</div>
+<!-- Upload Choice Sheet (removed – direct 2-button layout on cards) -->
+<div id="upload-choice-ov" style="display:none"></div>
 
 <!-- Native file input for gallery pick -->
 <input type="file" id="native-file-input" accept="image/*" style="position:absolute;left:-9999px;top:-9999px;opacity:0;" onchange="nativeFileSelected(this)">
@@ -839,23 +829,23 @@ const EVAL_CRITERIA_BY_CAT = {
   smile_front_half: [
     {
       key:'setup', label:'SETUP',
-      ko:['촬영자가 환자 정면에 위치하지 않음','환자의 몸이 정면에 위치하지 않음','환자의 고개가 정면에 위치하지 않음','환자의 시선이 카메라 정면을 향하지 않음','치아가 보이게 미소짓지 않음'],
-      ja:['撮影者が患者の正面に位置していない','患者の体が正面を向いていない','患者の頭が正面を向いていない','患者の視線がカメラ正面を向いていない','歯が見えるように笑っていない']
+      ko:['촬영자가 환자 정면에 위치하지 않음','환자의 몸이 정면을 향하지 않음','환자의 고개가 정면을 향하지 않음','평소 교합대로 물지 않음','치아가 보이게 미소 짓지 않음'],
+      ja:['撮影者が患者の正面に位置していない','患者の体が正面を向いていない','患者の頭が正面を向いていない','普段の咬合で噛んでいない','歯が見えるように笑っていない']
     },
     {
       key:'angle', label:'ANGLE',
-      ko:['환자가 좌측으로 치우침','환자가 우측으로 치우침','카메라가 위로 기울어짐','카메라가 아래로 기울어짐'],
-      ja:['患者が左側に偏っている','患者が右側に偏っている','カメラが上に傾いている','カメラが下に傾いている']
+      ko:['사진에서 환자가 좌측으로 치우침','사진에서 환자가 우측으로 치우침','카메라가 위로 기울어짐','카메라가 아래로 기울어짐'],
+      ja:['写真で患者が左側に偏っている','写真で患者が右側に偏っている','カメラが上に傾いている','カメラが下に傾いている']
     },
     {
       key:'frame', label:'FRAME',
-      ko:['콧망울이 잘림','턱끝이 잘림','눈밑 광대뼈까지 너무 넓게 촬영됨','목 아래까지 너무 넓게 촬영됨'],
-      ja:['小鼻が切れている','顎先が切れている','目の下の頬骨まで広く撮影されている','首の下まで広く撮影されている']
+      ko:['콧망울이 잘림','턱끝이 잘림','눈밑·광대까지 촬영됨','목까지 촬영됨'],
+      ja:['小鼻が切れている','顎先が切れている','目の下・頬骨まで撮影されている','首まで撮影されている']
     },
     {
       key:'quality', label:'QUALITY',
-      ko:['초점이 맞지 않음','밝기가 맞지 않음','불필요한 그림자가 있음'],
-      ja:['ピントが合っていない','明るさが適切でない','不要な影が入っている']
+      ko:['초점이 맞지 않음','사진이 밝아 진단이 어려움','사진이 어두워 진단이 어려움'],
+      ja:['ピントが合っていない','明るすぎて診断が困難','暗すぎて診断が困難']
     }
   ],
 
@@ -863,23 +853,23 @@ const EVAL_CRITERIA_BY_CAT = {
   smile_left_half: [
     {
       key:'setup', label:'SETUP',
-      ko:['촬영자가 환자 좌측에 위치하지 않음','환자의 몸이 우측 45° 방향을 향하지 않음','환자의 고개가 우측 45° 방향을 향하지 않음','환자의 시선이 카메라를 향하지 않음','치아가 보이게 미소짓지 않음'],
-      ja:['撮影者が患者の左側に位置していない','患者の体が右斜め45°を向いていない','患者の頭が右斜め45°を向いていない','患者の視線がカメラを向いていない','歯が見えるように笑っていない']
+      ko:['촬영자가 환자 정면에 위치하지 않음','환자의 몸이 우측 45°를 향하지 않음','환자의 고개가 우측 45°를 향하지 않음','평소 교합대로 물지 않음','치아가 보이게 미소 짓지 않음'],
+      ja:['撮影者が患者の正面に位置していない','患者の体が右斜め45°を向いていない','患者の頭が右斜め45°を向いていない','普段の咬合で噛んでいない','歯が見えるように笑っていない']
     },
     {
       key:'angle', label:'ANGLE',
-      ko:['환자가 좌측으로 치우침','환자가 우측으로 치우침','카메라가 위로 기울어짐','카메라가 아래로 기울어짐'],
-      ja:['患者が左側に偏っている','患者が右側に偏っている','カメラが上に傾いている','カメラが下に傾いている']
+      ko:['사진에서 환자가 좌측으로 치우침','사진에서 환자가 우측으로 치우침','카메라가 위로 기울어짐','카메라가 아래로 기울어짐'],
+      ja:['写真で患者が左側に偏っている','写真で患者が右側に偏っている','カメラが上に傾いている','カメラが下に傾いている']
     },
     {
       key:'frame', label:'FRAME',
-      ko:['콧망울이 잘림','턱끝이 잘림','눈밑 광대뼈까지 너무 넓게 촬영됨','목 아래까지 너무 넓게 촬영됨'],
-      ja:['小鼻が切れている','顎先が切れている','目の下の頬骨まで広く撮影されている','首の下まで広く撮影されている']
+      ko:['콧망울이 잘림','턱끝이 잘림','눈밑·광대까지 촬영됨','목까지 촬영됨'],
+      ja:['小鼻が切れている','顎先が切れている','目の下・頬骨まで撮影されている','首まで撮影されている']
     },
     {
       key:'quality', label:'QUALITY',
-      ko:['초점이 맞지 않음','밝기가 맞지 않음','불필요한 그림자가 있음'],
-      ja:['ピントが合っていない','明るさが適切でない','不要な影が入っている']
+      ko:['초점이 맞지 않음','사진이 밝아 진단이 어려움','사진이 어두워 진단이 어려움'],
+      ja:['ピントが合っていない','明るすぎて診断が困難','暗すぎて診断が困難']
     }
   ],
 
@@ -887,23 +877,23 @@ const EVAL_CRITERIA_BY_CAT = {
   smile_right_half: [
     {
       key:'setup', label:'SETUP',
-      ko:['촬영자가 환자 우측에 위치하지 않음','환자의 몸이 좌측 45° 방향을 향하지 않음','환자의 고개가 좌측 45° 방향을 향하지 않음','환자의 시선이 카메라를 향하지 않음','치아가 보이게 미소짓지 않음'],
-      ja:['撮影者が患者の右側に位置していない','患者の体が左斜め45°を向いていない','患者の頭が左斜め45°を向いていない','患者の視線がカメラを向いていない','歯が見えるように笑っていない']
+      ko:['촬영자가 환자 정면에 위치하지 않음','환자의 몸이 좌측 45°를 향하지 않음','환자의 고개가 좌측 45°를 향하지 않음','평소 교합대로 물지 않음','치아가 보이게 미소 짓지 않음'],
+      ja:['撮影者が患者の正面に位置していない','患者の体が左斜め45°を向いていない','患者の頭が左斜め45°を向いていない','普段の咬合で噛んでいない','歯が見えるように笑っていない']
     },
     {
       key:'angle', label:'ANGLE',
-      ko:['환자가 좌측으로 치우침','환자가 우측으로 치우침','카메라가 위로 기울어짐','카메라가 아래로 기울어짐'],
-      ja:['患者が左側に偏っている','患者が右側に偏っている','カメラが上に傾いている','カメラが下に傾いている']
+      ko:['사진에서 환자가 좌측으로 치우침','사진에서 환자가 우측으로 치우침','카메라가 위로 기울어짐','카메라가 아래로 기울어짐'],
+      ja:['写真で患者が左側に偏っている','写真で患者が右側に偏っている','カメラが上に傾いている','カメラが下に傾いている']
     },
     {
       key:'frame', label:'FRAME',
-      ko:['콧망울이 잘림','턱끝이 잘림','눈밑 광대뼈까지 너무 넓게 촬영됨','목 아래까지 너무 넓게 촬영됨'],
-      ja:['小鼻が切れている','顎先が切れている','目の下の頬骨まで広く撮影されている','首の下まで広く撮影されている']
+      ko:['콧망울이 잘림','턱끝이 잘림','눈밑·광대까지 촬영됨','목까지 촬영됨'],
+      ja:['小鼻が切れている','顎先が切れている','目の下・頬骨まで撮影されている','首まで撮影されている']
     },
     {
       key:'quality', label:'QUALITY',
-      ko:['초점이 맞지 않음','밝기가 맞지 않음','불필요한 그림자가 있음'],
-      ja:['ピントが合っていない','明るさが適切でない','不要な影が入っている']
+      ko:['초점이 맞지 않음','사진이 밝아 진단이 어려움','사진이 어두워 진단이 어려움'],
+      ja:['ピントが合っていない','明るすぎて診断が困難','暗すぎて診断が困難']
     }
   ],
 
@@ -935,23 +925,23 @@ const EVAL_CRITERIA_BY_CAT = {
   opener_face: [
     {
       key:'setup', label:'SETUP',
-      ko:['촬영자가 환자 정면에 위치하지 않음','환자의 몸이 정면에 위치하지 않음','환자의 고개가 정면에 위치하지 않음','환자의 시선이 카메라 정면을 향하지 않음','개구기 장착 방법이 올바르지 않음','프렙된 치아가 개구기에 의해 가려짐'],
-      ja:['撮影者が患者の正面に位置していない','患者の体が正面を向いていない','患者の頭が正面を向いていない','患者の視線がカメラ正面を向いていない','開口器の装着方法が正しくない','プレップした歯が開口器で隠れている']
+      ko:['프렙 된 치아가 가려짐','평소 교합대로 물지 않음','촬영자가 환자 정면에 위치하지 않음','환자의 몸이 정면을 향하지 않음','환자의 고개가 정면을 향하지 않음','환자의 시선이 카메라 정면을 향하지 않음'],
+      ja:['プレップした歯が隠れている','普段の咬合で噛んでいない','撮影者が患者の正面に位置していない','患者の体が正面を向いていない','患者の頭が正面を向いていない','患者の視線がカメラ正面を向いていない']
     },
     {
       key:'angle', label:'ANGLE',
-      ko:['환자가 좌측으로 치우침','환자가 우측으로 치우침','카메라가 위로 기울어짐','카메라가 아래로 기울어짐'],
-      ja:['患者が左側に偏っている','患者が右側に偏っている','カメラが上に傾いている','カメラが下に傾いている']
+      ko:['사진에서 환자가 좌측으로 치우침','사진에서 환자가 우측으로 치우침','카메라가 위로 기울어짐','카메라가 아래로 기울어짐'],
+      ja:['写真で患者が左側に偏っている','写真で患者が右側に偏っている','カメラが上に傾いている','カメ라が下に傾いている']
     },
     {
       key:'frame', label:'FRAME',
-      ko:['머리가 잘림','겨드랑이선이 잘림','겨드랑이선 아래까지 너무 넓게 촬영됨'],
-      ja:['頭が切れている','脇のラインが切れている','脇のライン以下まで広く撮影されている']
+      ko:['머리가 잘림','겨드랑이선이 잘림','겨드랑이선 아래까지 촬영됨'],
+      ja:['頭が切れている','脇のラインが切れている','脇のライン以下まで撮影されている']
     },
     {
       key:'quality', label:'QUALITY',
-      ko:['초점이 맞지 않음','밝기가 맞지 않음','불필요한 그림자가 있음'],
-      ja:['ピントが合っていない','明るさが適切でない','不要な影が入っている']
+      ko:['초점이 맞지 않음','사진이 밝아 진단이 어려움','사진이 어두워 진단이 어려움'],
+      ja:['ピントが合っていない','明るすぎて診断が困難','暗すぎて診断が困難']
     }
   ]
 };
@@ -1190,9 +1180,10 @@ async function renderParticipant() {
           <div class="photo-frame" id="mf-${cat.id}">
             ${m ? `<img src="${m}" alt="my photo">` : `<div class="frame-ph"><span class="icon">📷</span><span>写真を選択</span></div>`}
           </div>
-          <button class="upload-btn${m?' done':''}" onclick="handleUploadClick('${cat.id}')">
-            ${m ? '✓ 変更する' : '📷 写真を選択'}
-          </button>
+          <div class="upload-btn-row">
+            <button class="upload-btn-attach" onclick="directUpload('${cat.id}','main')">📎 첨부</button>
+            <button class="upload-btn-shoot${m?' done':''}" onclick="directCamera('${cat.id}','main')">📷 촬영</button>
+          </div>
           <input type="file" id="fi-${cat.id}" accept="image/*" style="display:none" onchange="handleMyPhoto('${cat.id}',this)">
         </div>
       </div>
@@ -2074,35 +2065,36 @@ let camStream   = null;
 let camZoomLevel = 2;
 let crosshairVisible = true;
 
-// Entry point: show choice sheet (camera OR gallery)
-function handleUploadClick(catId)  { showChoiceSheet(catId, 'main'); }
-function openSecondCameraFn(catId) { showChoiceSheet(catId, 'second'); }
-function openThirdCameraFn(catId)  { showChoiceSheet(catId, 'third'); }
-function mpOpenCamera(catId)       { showChoiceSheet(catId, 'mypage'); }
-function mpOpenCamera3(catId)      { showChoiceSheet(catId, 'mypage3'); }
-
-function showChoiceSheet(catId, mode) {
+// Direct upload/camera – bypasses choice sheet
+function directUpload(catId, mode) {
   choiceCatId = catId;
   choiceMode  = mode || 'main';
-  const ov = document.getElementById('upload-choice-ov');
-  ov.style.display = 'flex';
+  const inp = document.getElementById('native-file-input-all');
+  inp.value = '';
+  inp.click();
 }
-function closeChoiceSheet() {
-  document.getElementById('upload-choice-ov').style.display = 'none';
+function directCamera(catId, mode) {
+  choiceCatId = catId;
+  choiceMode  = mode || 'main';
+  openCameraOverlay(catId, mode);
 }
-function choiceCamera() {
-  closeChoiceSheet();
-  openCameraOverlay(choiceCatId, choiceMode);
-}
+// Legacy shims kept for mypage / second / third buttons
+function handleUploadClick(catId)  { directUpload(catId, 'main'); }
+function openSecondCameraFn(catId) { openCameraOverlay(catId, 'second'); }
+function openThirdCameraFn(catId)  { openCameraOverlay(catId, 'third'); }
+function mpOpenCamera(catId)       { openCameraOverlay(catId, 'mypage'); }
+function mpOpenCamera3(catId)      { openCameraOverlay(catId, 'mypage3'); }
+
+function showChoiceSheet(catId, mode) { /* no-op */ }
+function closeChoiceSheet() { document.getElementById('upload-choice-ov').style.display = 'none'; }
+function choiceCamera() { openCameraOverlay(choiceCatId, choiceMode); }
 function choiceGallery() {
-  closeChoiceSheet();
   // Trigger native file picker (album only, no camera)
   const inp = document.getElementById('native-file-input');
   inp.value = '';
   inp.click();
 }
 function choiceFile() {
-  closeChoiceSheet();
   const inp2 = document.getElementById('native-file-input-all');
   inp2.value = '';
   inp2.click();
@@ -2276,36 +2268,10 @@ const _ANGLE_SVG = {
     </g>`
 };
 
-const _angleModes = ['none', 'right45', 'left45'];
-let _angleModeIdx = 0;
 let _lockRaf     = null;
 let _lockStart   = null;
-const _LOCK_MS   = 3000; // 3 seconds to fill the ring
-
-function cycleAngleMode() {
-  _angleModeIdx = (_angleModeIdx + 1) % _angleModes.length;
-  _applyAngleGuide();
-}
-
-function _applyAngleGuide() {
-  const mode = _angleModes[_angleModeIdx];
-  const svg  = document.getElementById('cam-angle-guide');
-  const btn  = document.getElementById('cam-angle-btn');
-  _clearLockTimer();
-
-  if (_ANGLE_SVG[mode]) {
-    svg.innerHTML = _ANGLE_SVG[mode];
-    svg.style.display = 'block';
-    btn.classList.add('active');
-    btn.textContent = mode === 'right45' ? '右45°中' : '左45°中';
-    _startLockTimer(svg);
-  } else {
-    svg.innerHTML = '';
-    svg.style.display = 'none';
-    btn.classList.remove('active');
-    btn.textContent = '45°ガイド';
-  }
-}
+const _LOCK_MS   = 3000;
+function _applyAngleGuide() { /* 45° guide removed */ }
 
 function _startLockTimer(svg) {
   _lockStart = performance.now();
@@ -2350,25 +2316,12 @@ function _onLockConfirmed(svg) {
   svg.querySelectorAll('.ag-label').forEach(function(el) {
     el.setAttribute('fill', 'rgba(255,220,0,1)');
   });
-  // Update button to show confirmed state
-  const btn = document.getElementById('cam-angle-btn');
-  if (btn) {
-    btn.style.background = 'rgba(255,200,0,.85)';
-    btn.style.borderColor = 'rgba(255,230,0,.95)';
-    btn.style.color = '#000';
-  }
 }
 
-// Reset angle guide when camera closes (angle guide cleanup integrated)
-const _origCloseCamera = _doCameraClose;
 function _doCameraClose() {
   if (camStream) { camStream.getTracks().forEach(t => t.stop()); camStream = null; }
   document.getElementById('cam-overlay').style.display = 'none';
   _clearLockTimer();
-  _angleModeIdx = 0;
-  try { _applyAngleGuide(); } catch(_) {}
-  const btn = document.getElementById('cam-angle-btn');
-  if (btn) { btn.style.background = ''; btn.style.borderColor = ''; btn.style.color = ''; }
 }
 
 
