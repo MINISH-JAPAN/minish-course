@@ -40,13 +40,21 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
 .photo-slot+.photo-slot{border-left:none}
 .slot-label{font-size:10px;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px;text-align:center}
 .photo-frame{width:100%;aspect-ratio:4/3;background:var(--bg);border-radius:6px;overflow:hidden;display:flex;align-items:center;justify-content:center;border:1px dashed var(--border);position:relative}
-.photo-frame img{width:100%;height:100%;object-fit:contain}
+.photo-frame img{width:100%;height:100%;object-fit:cover}
 .frame-ph{display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--muted);font-size:10px;text-align:center;padding:6px}
 .frame-ph .icon{font-size:22px}
 .upload-btn{width:100%;margin-top:6px;padding:7px;background:var(--accent);color:#fff;border:none;border-radius:6px;font-size:11px;font-family:'Noto Sans JP',sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;transition:background .2s}
 .upload-btn:hover{background:#167a6c}
 .upload-btn.done{background:var(--success)}
 .upload-btn input[type=file]{display:none}
+/* Two-button card row */
+.upload-btn-row{display:flex;gap:5px;margin-top:6px}
+.upload-btn-attach,.upload-btn-shoot{flex:1;padding:7px 4px;border:none;border-radius:6px;font-size:11px;font-family:'Noto Sans JP',sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:3px;transition:background .2s}
+.upload-btn-attach{background:var(--bg);color:var(--text);border:1px solid var(--border)}
+.upload-btn-attach:hover{background:#dde5ef}
+.upload-btn-shoot{background:var(--accent);color:#fff}
+.upload-btn-shoot:hover{background:#1a6bbf}
+.upload-btn-shoot.done{background:var(--success)}
 
 .submit-sec{background:var(--card);border-radius:12px;border:1px solid var(--border);padding:14px;margin-bottom:14px}
 .field-label{font-size:13px;font-weight:700;color:var(--primary);margin-bottom:8px}
@@ -131,18 +139,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
 .ss-dot{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.25);transition:background .2s;cursor:pointer}
 .ss-dot.active{background:var(--accent)}
 
-/* ── Camera Overlay ─────────────────────────────────────── */
-.cam-overlay{position:fixed;inset:0;background:#000;z-index:450}
-.cam-video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0}
-.cam-sample-ov{position:absolute;inset:0;pointer-events:none;z-index:1;overflow:hidden}
-.cam-sample-ov img{width:100%;height:100%;object-fit:cover}
-.cam-grid{position:absolute;inset:0;z-index:2;pointer-events:none;background-image:linear-gradient(rgba(255,255,255,.22) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.22) 1px,transparent 1px);background-size:33.333% 33.333%}
-.cam-guide{position:absolute;top:0;left:0;right:0;background:linear-gradient(to bottom,rgba(0,0,0,.48),transparent);color:#fff;font-size:13px;text-align:center;padding:14px 16px 40px;line-height:1.7;z-index:2;font-family:'Noto Sans JP',sans-serif}
-@media(orientation:landscape){.cam-guide{top:0;bottom:68px;right:auto;width:auto;background:linear-gradient(to right,rgba(0,0,0,.45),transparent);padding:16px 28px 16px 14px;display:flex;flex-direction:column;justify-content:center;align-items:center;writing-mode:vertical-rl;transform:none;font-size:12px;text-align:center}}
-.cam-footer{position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,.65);padding:14px 24px 28px;display:flex;align-items:center;justify-content:space-between;z-index:2;gap:12px}
-.cam-zoom-btns{display:flex;gap:6px;align-items:center}
-.cam-zoom-btn{padding:6px 12px;background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.4);color:#fff;border-radius:6px;font-size:13px;font-family:'Noto Sans JP',sans-serif;cursor:pointer;font-weight:600}
-.cam-zoom-btn.active{background:rgba(255,221,0,.35);border-color:#ffdd00;color:#ffdd00}
+
 /* Tap-to-focus ring */
 .cam-focus-ring{position:absolute;width:68px;height:68px;border:2px solid rgba(255,255,255,.9);border-radius:5px;pointer-events:none;z-index:20;transform:translate(-50%,-50%) scale(1.4);opacity:0;transition:transform .18s ease,opacity .18s ease}
 .cam-focus-ring.active{opacity:1;transform:translate(-50%,-50%) scale(1)}
@@ -323,6 +320,143 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
 .sp2-frame img{width:100%;height:100%;object-fit:cover}
 .sp2-shoot-btn{padding:5px 10px;background:var(--accent);color:#fff;border:none;border-radius:5px;font-size:11px;font-family:'Noto Sans JP',sans-serif;cursor:pointer}
 .sp2-shoot-btn:hover{background:#177a6b}
+
+/* ── CUSTOM CAMERA OVERLAY ──────────────────────────────── */
+#cam-overlay {
+  display:none; position:fixed; inset:0; background:#000;
+  z-index:9999; flex-direction:column; align-items:center;
+  justify-content:space-between; overflow:hidden;
+}
+.cam-top-bar {
+  width:100%; display:flex; justify-content:space-between;
+  align-items:center; padding:12px 16px; flex-shrink:0;
+  background:rgba(0,0,0,.55);
+}
+.cam-cancel-btn {
+  padding:8px 16px; background:rgba(255,255,255,.15);
+  border:1px solid rgba(255,255,255,.35); border-radius:8px;
+  color:#fff; font-size:14px; cursor:pointer; font-family:'Noto Sans JP',sans-serif;
+}
+.cam-cross-btn {
+  padding:8px 14px; background:rgba(255,255,255,.15);
+  border:1px solid rgba(255,255,255,.35); border-radius:8px;
+  color:#fff; font-size:20px; cursor:pointer; transition:opacity .2s;
+}
+.cam-video-wrap {
+  position:relative; width:100%; flex:1;
+  display:flex; align-items:center; justify-content:center; overflow:hidden;
+}
+#cam-video {
+  width:100%; height:100%; object-fit:cover; display:block;
+}
+/* 4:3 landscape viewfinder frame */
+.cam-video-frame {
+  position:relative;
+  aspect-ratio: 4/3;
+  width:100%; max-height:100%;
+  overflow:hidden; flex-shrink:0;
+}
+@media (orientation:landscape) {
+  #cam-video { object-fit:cover; }
+  .cam-video-wrap { position:absolute; inset:0; }
+  .cam-video-frame {
+    /* In landscape: fill screen */
+    height:100%; width:100%; aspect-ratio:unset;
+    max-height:none;
+  }
+  .cam-top-bar {
+    position:absolute; top:0; left:0; right:0; z-index:10;
+    padding:6px 16px; background:rgba(0,0,0,.55);
+  }
+  .cam-bottom-bar {
+    position:absolute; bottom:0; left:0; right:0; z-index:10;
+    padding:8px 20px 16px; background:rgba(0,0,0,.55);
+  }
+}
+.cam-guide-wrap {
+  position:absolute; inset:0; pointer-events:none;
+}
+.cam-zone-top {
+  position:absolute; top:0; left:0; right:0; height:8%;
+  background:rgba(30,100,255,.28);
+  border-bottom:2px solid rgba(80,160,255,.85);
+}
+.cam-zone-top-label {
+  position:absolute; left:50%; top:4%; transform:translate(-50%, -50%);
+  color:#fff; font-size:10px; font-weight:600; font-family:'Noto Sans JP',sans-serif;
+  text-shadow:0 1px 3px rgba(0,0,0,.85); white-space:nowrap; pointer-events:none;
+  background:rgba(0,0,40,.35); padding:2px 8px; border-radius:4px;
+}
+.cam-zone-bottom {
+  position:absolute; bottom:0; left:0; right:0; height:8%;
+  background:rgba(30,100,255,.25);
+  border-top:2px solid rgba(80,160,255,.85);
+}
+.cam-zone-bottom-label {
+  position:absolute; left:50%; bottom:4%; transform:translate(-50%, 50%);
+  color:#fff; font-size:10px; font-weight:600; font-family:'Noto Sans JP',sans-serif;
+  text-shadow:0 1px 3px rgba(0,0,0,.85); white-space:nowrap; pointer-events:none;
+  background:rgba(0,0,40,.35); padding:2px 8px; border-radius:4px;
+}
+.cam-zone-label-sub {
+  font-size:8.5px; opacity:.8; margin-left:4px;
+}
+.cam-crosshair {
+  position:absolute; top:8%; bottom:8%; left:0; right:0; transition:opacity .2s;
+}
+.cam-crosshair-v {
+  position:absolute; left:50%; top:0; bottom:0; width:0;
+  border-left:3px dashed rgba(255,255,255,.95);
+  transform:translateX(-50%);
+}
+.cam-crosshair-h {
+  position:absolute; top:50%; left:0; right:0; height:0;
+  border-top:3px dashed rgba(255,255,255,.95);
+  transform:translateY(-50%);
+}
+.cam-bottom-bar {
+  width:100%; display:flex; align-items:center; justify-content:space-around;
+  padding:16px 20px 30px; flex-shrink:0; background:rgba(0,0,0,.55);
+  gap:10px;
+}
+.cam-zoom-group { display:flex; gap:8px; }
+.cam-zoom-btn {
+  padding:5px 10px; border:1.5px solid rgba(255,255,255,.45);
+  border-radius:6px; color:#fff; font-size:13px; font-weight:600;
+  cursor:pointer; font-family:'Noto Sans JP',sans-serif; transition:all .2s;
+  background:rgba(255,255,255,.15); min-width:36px;
+}
+.cam-zoom-btn.active { background:var(--accent); border-color:var(--accent); }
+.cam-shutter {
+  width:68px; height:68px; border-radius:50%; background:#fff;
+  border:5px solid rgba(255,255,255,.45); cursor:pointer;
+  flex-shrink:0; transition:transform .12s;
+}
+.cam-shutter:active { transform:scale(.88); }
+
+/* ── UPLOAD CHOICE SHEET ─────────────────────────────────── */
+#upload-choice-ov {
+  display:none; position:fixed; inset:0; background:rgba(0,0,0,.5);
+  z-index:8000; align-items:flex-end; justify-content:center;
+}
+.upload-choice-box {
+  width:100%; max-width:600px; background:#fff; border-radius:18px 18px 0 0;
+  padding:20px 20px 36px;
+}
+.upload-choice-title {
+  font-size:13px; color:var(--muted); text-align:center; margin-bottom:16px;
+}
+.upload-choice-btns { display:flex; flex-direction:column; gap:10px; }
+.uc-btn {
+  width:100%; padding:14px; border-radius:10px; border:none;
+  font-size:15px; font-family:'Noto Sans JP',sans-serif;
+  cursor:pointer; font-weight:500; transition:background .15s;
+}
+.uc-btn-cam  { background:var(--accent); color:#fff; }
+.uc-btn-gal  { background:var(--bg); color:var(--text); border:1px solid var(--border); }
+.uc-btn-cancel { background:none; color:var(--muted); font-size:14px; margin-top:4px; }
+.uc-btn-file  { background:var(--bg); color:var(--text); border:1px solid var(--border); }
+
 </style>
 </head>
 <body>
@@ -352,39 +486,52 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
   </div>
 </div>
 
-<!-- Camera overlay -->
-<div id="cam-overlay" class="cam-overlay" style="display:none" onclick="tapToFocus(event)" ontouchstart="tapToFocus(event)">
-  <video id="cam-video" class="cam-video" autoplay playsinline muted></video>
-  <div id="cam-focus-ring" class="cam-focus-ring"></div>
-  <div class="cam-crop-frame">
-    <div class="cam-grid"></div>
-    <div class="cam-level-line" id="cam-level-line"></div>
-  </div>
-  <div class="cam-guide">
-    <div>グリッドに合わせ、中央の白線が黄色になるよう撮影してください</div>
-  </div>
-  <div class="cam-footer">
-    <button class="cam-cancel" onclick="closeCameraOverlay()">✕ キャンセル</button>
-    <button class="cam-shutter" onclick="capturePhoto()"></button>
-    <div class="cam-zoom-btns">
-      <button class="cam-zoom-btn active" data-zoom="1" onclick="setZoom(1)">1×</button>
-      <button class="cam-zoom-btn" data-zoom="2" onclick="setZoom(2)">2×</button>
-      <button class="cam-zoom-btn" data-zoom="3" onclick="setZoom(3)">3×</button>
-      <button class="cam-zoom-btn" data-zoom="4" onclick="setZoom(4)">4×</button>
+<!-- Native file input -->
+<!-- native-file-input moved to camera section -->
+
+
+<!-- Custom Camera Overlay -->
+<div id="cam-overlay" style="display:none;flex-direction:column;">
+  <div class="cam-top-bar">
+    <button class="cam-cancel-btn" onclick="closeCameraOverlay()">✕ キャンセル</button>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <button class="cam-cross-btn" id="cam-cross-btn" onclick="toggleCrosshair()" title="十字線のオン/オフ">⊕</button>
     </div>
+  </div>
+  <div class="cam-video-wrap">
+    <div class="cam-video-frame">
+    <video id="cam-video" autoplay playsinline muted></video>
+    <div class="cam-guide-wrap">
+      <div class="cam-zone-top"></div>
+      <!-- zone labels float outside the zone lines -->
+      <div class="cam-zone-top-label">頭部上の余白 <span class="cam-zone-label-sub">머리 위 여백</span></div>
+      <div class="cam-zone-bottom"></div>
+      <div class="cam-zone-bottom-label">脇の線まで <span class="cam-zone-label-sub">겨드랑이선까지</span></div>
+
+      <div class="cam-crosshair" id="cam-crosshair">
+        <div class="cam-crosshair-v"></div>
+        <div class="cam-crosshair-h"></div>
+      </div>
+    </div>
+    </div>
+  </div>
+  <div class="cam-bottom-bar">
+    <div class="cam-zoom-group">
+      <button class="cam-zoom-btn active" id="cam-zoom1" onclick="setCameraZoom(1)">1x</button>
+      <button class="cam-zoom-btn" id="cam-zoom2" onclick="setCameraZoom(2)">2x</button>
+      <button class="cam-zoom-btn" id="cam-zoom3" onclick="setCameraZoom(3)">3x</button>
+    </div>
+    <button class="cam-shutter" onclick="shootCamera()" title="撮影"></button>
+    <div style="width:88px"></div>
   </div>
 </div>
 
-<!-- Upload choice sheet -->
-<div id="upload-choice-sheet" onclick="closeChoiceSheet()" style="display:none;position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.5)">
-  <div onclick="event.stopPropagation()" style="position:absolute;bottom:0;left:0;right:0;background:#fff;border-radius:16px 16px 0 0;padding:18px 16px 44px">
-    <div style="text-align:center;font-size:13px;font-weight:600;color:#333;margin-bottom:16px">写真を追加</div>
-    <button onclick="choiceSheetCamera()" style="width:100%;padding:14px;background:var(--accent);color:#fff;border:none;border-radius:10px;font-size:14px;font-family:'Noto Sans JP',sans-serif;cursor:pointer;margin-bottom:10px;display:flex;align-items:center;justify-content:center;gap:8px">📷 カメラで撮影</button>
-    <button onclick="choiceSheetFile()" style="width:100%;padding:14px;background:#f1f5f9;color:#333;border:1px solid #dde4ed;border-radius:10px;font-size:14px;font-family:'Noto Sans JP',sans-serif;cursor:pointer;margin-bottom:10px;display:flex;align-items:center;justify-content:center;gap:8px">📁 ファイルから選択</button>
-    <input type="file" id="choice-file-input" accept="image/*" style="display:none" onchange="choiceSheetFileSelected(this)">
-    <button onclick="closeChoiceSheet()" style="width:100%;padding:11px;background:transparent;color:#999;border:none;font-size:13px;font-family:'Noto Sans JP',sans-serif;cursor:pointer">キャンセル</button>
-  </div>
-</div>
+<!-- Upload Choice Sheet (removed – direct 2-button layout on cards) -->
+<div id="upload-choice-ov" style="display:none"></div>
+
+<!-- Native file input for gallery pick -->
+<input type="file" id="native-file-input" accept="image/*" style="position:absolute;left:-9999px;top:-9999px;opacity:0;" onchange="nativeFileSelected(this)">
+<input type="file" id="native-file-input-all" accept="*/*" style="position:absolute;left:-9999px;top:-9999px;opacity:0;" onchange="nativeFileSelected(this)">
 
 <!-- Slideshow overlay -->
 <div id="ss-overlay" class="ss-overlay" style="display:none"
@@ -823,10 +970,11 @@ async function renderParticipant() {
           <div class="photo-frame">
             ${m ? `<img src="${m}" alt="my photo">` : `<div class="frame-ph"><span class="icon">📷</span><span>写真を選択</span></div>`}
           </div>
-          <button class="upload-btn${m?' done':''}" onclick="handleUploadClick('${cat.id}')">
-            ${m ? '✓ 変更する' : '📷 写真を選択'}
-          </button>
-          <input type="file" id="fi-${cat.id}" accept="image/*" capture="environment" style="display:none" onchange="handleMyPhoto('${cat.id}',this)">
+          <div class="upload-btn-row">
+            <button class="upload-btn-attach" onclick="directUpload('${cat.id}','main')">📎 添付<span style="font-size:8px;opacity:.75;margin-left:1px">첨부</span></button>
+            <button class="upload-btn-shoot${m?' done':''}" onclick="directCamera('${cat.id}','main')">📷 撮影<span style="font-size:8px;opacity:.75;margin-left:1px">촬영</span></button>
+          </div>
+          <input type="file" id="fi-${cat.id}" accept="image/*" style="display:none" onchange="handleMyPhoto('${cat.id}',this)">
         </div>
       </div>
     </div>`;
@@ -1597,8 +1745,7 @@ async function ssSaveEval() {
   return await saveAllEvaluations();
 }
 
-// ── CAMERA OVERLAY ───────────────────────────────────────────
-let camStream = null;
+// ── CAMERA OVERLAY (vars moved to camera section below) ──────
 let camCatId  = null;
 let currentZoom = 1;
 let nativeZoomSupported = false;
@@ -1606,82 +1753,7 @@ let macroGuardId = null;
 
 // ── TAP-TO-FOCUS ─────────────────────────────────────────────
 let focusRingTimer = null;
-async function tapToFocus(e) {
-  if (!camStream) return;
-  if (e.target.closest('button') || e.target.closest('.cam-zoom-btns')) return;
-  const overlay = document.getElementById('cam-overlay');
-  const rect = overlay.getBoundingClientRect();
-  const src = e.touches ? e.touches[0] : e;
-  const tx = src.clientX - rect.left;
-  const ty = src.clientY - rect.top;
-  const ring = document.getElementById('cam-focus-ring');
-  if (!ring) return;
-  ring.classList.remove('active','locked');
-  ring.style.left = tx + 'px';
-  ring.style.top  = ty + 'px';
-  void ring.offsetWidth;
-  ring.classList.add('active');
-  clearTimeout(focusRingTimer);
-  const track = camStream.getVideoTracks()[0];
-  if (track) {
-    const caps = track.getCapabilities ? track.getCapabilities() : {};
-    if (caps.pointOfInterest || caps.focusMode) {
-      const x = Math.min(Math.max(tx / rect.width, 0), 1);
-      const y = Math.min(Math.max(ty / rect.height, 0), 1);
-      try {
-        await track.applyConstraints({ advanced: [{ pointOfInterest: { x, y }, focusMode: 'manual' }] });
-        focusRingTimer = setTimeout(() => { ring.classList.add('locked'); }, 350);
-        focusRingTimer = setTimeout(() => { ring.classList.remove('active','locked'); }, 2200);
-        return;
-      } catch(_) {}
-    }
-  }
-  ring.classList.add('locked');
-  focusRingTimer = setTimeout(() => { ring.classList.remove('active','locked'); }, 1400);
-}
 
-async function setZoom(level) {
-  currentZoom = level;
-  document.querySelectorAll('.cam-zoom-btn').forEach(b => {
-    b.classList.toggle('active', parseFloat(b.dataset.zoom) === level);
-  });
-  const vid = document.getElementById('cam-video');
-  if (!vid || !camStream) return;
-  const track = camStream.getVideoTracks()[0];
-  if (track) {
-    const caps = track.getCapabilities ? track.getCapabilities() : {};
-    if (caps && caps.zoom) {
-      nativeZoomSupported = true;
-      const z = Math.min(Math.max(level, caps.zoom.min), caps.zoom.max);
-      try {
-        await track.applyConstraints({ advanced: [{ zoom: z }] });
-        vid.style.transform = '';
-        vid.style.transformOrigin = '';
-        return;
-      } catch(e) { nativeZoomSupported = false; }
-    }
-  }
-  nativeZoomSupported = false;
-  if (level > 1) {
-    vid.style.transform = `scale(${level})`;
-    vid.style.transformOrigin = 'center center';
-  } else {
-    vid.style.transform = '';
-    vid.style.transformOrigin = '';
-  }
-}
-
-function handleUploadClick(catId, mode) {
-  choiceCatId = catId;
-  choiceMode  = mode || 'main';
-  document.getElementById('choice-file-input').click();
-}
-
-function openSecondCamera(catId) {
-  choiceCatId = catId;
-  choiceMode  = 'second';
-  document.getElementById('choice-file-input').click();
-}
 
 async function handleSecondPhoto(catId, input) {
   if (!input.files[0]) return;
@@ -1698,11 +1770,6 @@ async function handleSecondPhoto(catId, input) {
   } catch(e) { toast('画像の読み込みに失敗しました'); }
 }
 
-function openThirdCamera(catId) {
-  choiceCatId = catId;
-  choiceMode  = 'third';
-  document.getElementById('choice-file-input').click();
-}
 
 async function handleThirdPhoto(catId, input) {
   if (!input.files[0]) return;
@@ -1717,143 +1784,231 @@ async function handleThirdPhoto(catId, input) {
   } catch(e) { toast('画像の読み込みに失敗しました'); }
 }
 
-async function openCameraOverlay(catId, sampleUrl) {
-  camCatId = catId;
+
+
+
+
+
+// ── UPLOAD CHOICE + CUSTOM CAMERA ─────────────────────────
+let choiceCatId = null;
+let choiceMode  = 'main';
+let camStream   = null;
+let camZoomLevel = 1;
+let crosshairVisible = true;
+
+// Direct upload/camera – bypasses choice sheet
+function directUpload(catId, mode) {
+  choiceCatId = catId;
+  choiceMode  = mode || 'main';
+  const inp = document.getElementById('native-file-input-all');
+  inp.value = '';
+  inp.click();
+}
+function directCamera(catId, mode) {
+  choiceCatId = catId;
+  choiceMode  = mode || 'main';
+  openCameraOverlay(catId, mode);
+}
+// Legacy shims
+function handleUploadClick(catId)  { directUpload(catId, 'main'); }
+function openSecondCameraFn(catId) { openCameraOverlay(catId, 'second'); }
+function openThirdCameraFn(catId)  { openCameraOverlay(catId, 'third'); }
+
+function showChoiceSheet(catId, mode) { /* no-op */ }
+function closeChoiceSheet() { document.getElementById('upload-choice-ov').style.display = 'none'; }
+function choiceCamera() { openCameraOverlay(choiceCatId, choiceMode); }
+function choiceGallery() {
+  const inp = document.getElementById('native-file-input');
+  inp.value = '';
+  inp.click();
+}
+function choiceFile() {
+  const inp2 = document.getElementById('native-file-input-all');
+  inp2.value = '';
+  inp2.click();
+}
+
+// Custom camera overlay
+function openCameraOverlay(catId, mode) {
+  choiceCatId = catId;
+  choiceMode  = mode || 'main';
   const ov = document.getElementById('cam-overlay');
-  ov.style.display = 'block';
+  ov.style.display = 'flex';
+  startCamera();
+}
 
-  // iOS 13+: must request DeviceOrientation permission inside user gesture
-  if (typeof DeviceOrientationEvent !== 'undefined' &&
-      typeof DeviceOrientationEvent.requestPermission === 'function') {
-    try {
-      const perm = await DeviceOrientationEvent.requestPermission();
-      if (perm === 'granted') startLevelIndicator();
-    } catch(e) { startLevelIndicator(); }
-  } else {
-    startLevelIndicator();
-  }
-
-  // ── Fullscreen: hide browser chrome on mobile ──
+async function startCamera() {
   try {
-    const de = document.documentElement;
-    if (de.requestFullscreen)              await de.requestFullscreen();
-    else if (de.webkitRequestFullscreen)   de.webkitRequestFullscreen();
-  } catch(e) { /* not supported – overlay still covers viewport */ }
-
-  try {
-    camStream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: { ideal: 'environment' } }
+    if (camStream) { camStream.getTracks().forEach(t => t.stop()); camStream = null; }
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode:'environment', width:{ideal:1920}, height:{ideal:1440}, aspectRatio:{ideal:4/3} }
     });
-    const vid = document.getElementById('cam-video');
-    vid.srcObject = camStream;
-    vid.addEventListener('loadedmetadata', () => {
-      vid.play().catch(() => {});
-      setZoom(1);
-    }, { once: true });
-    vid.play().catch(() => {});
-    // ── Macro prevention: enforce zoom≥1 to block ultra-wide/macro lens ──
-    const track = camStream.getVideoTracks()[0];
-    if (track) {
-      const caps = track.getCapabilities ? track.getCapabilities() : {};
-      if (caps.zoom) {
-        try { await track.applyConstraints({ advanced: [{ zoom: Math.max(1, caps.zoom.min || 0) }] }); } catch(_) {}
-      }
-    }
-    // Guard interval: if iOS auto-switches to macro (<1×), correct it
-    macroGuardId = setInterval(async () => {
-      if (!camStream) return;
-      const t = camStream.getVideoTracks()[0];
-      if (!t) return;
-      const settings = t.getSettings ? t.getSettings() : {};
-      if (settings.zoom !== undefined && settings.zoom < 0.99) {
-        try { await t.applyConstraints({ advanced: [{ zoom: 1 }] }); } catch(_) {}
-      }
-    }, 600);
+    camStream = stream;
+    const v = document.getElementById('cam-video');
+    v.srcObject = stream;
+    await v.play();
+    setTimeout(() => applyCamZoom(camZoomLevel), 600);
   } catch(e) {
+    toast('カメラを開けませんでした');
     closeCameraOverlay();
-    toast('カメラにアクセスできません。ファイルを選択してください。');
-    setTimeout(() => document.getElementById(`fi-${catId}`).click(), 300);
   }
 }
 
-function closeCameraOverlay() {
-  stopLevelIndicator();
-  if (macroGuardId) { clearInterval(macroGuardId); macroGuardId = null; }
-  // ── Exit fullscreen if active ──
-  try {
-    if (document.fullscreenElement || document.webkitFullscreenElement) {
-      (document.exitFullscreen || document.webkitExitFullscreen).call(document);
-    }
-  } catch(e) {}
+function _doCameraClose() {
   if (camStream) { camStream.getTracks().forEach(t => t.stop()); camStream = null; }
-  const v = document.getElementById('cam-video');
-  if (v) { v.srcObject = null; v.style.transform = ''; v.style.transformOrigin = ''; }
   document.getElementById('cam-overlay').style.display = 'none';
-  currentZoom = 1;
-  nativeZoomSupported = false;
-  camCatId = null;
-  camMode = 'main';
+}
+function closeCameraOverlay() { _doCameraClose(); }
+
+function setCameraZoom(z) {
+  camZoomLevel = z;
+  applyCamZoom(z);
+  document.getElementById('cam-zoom1').classList.toggle('active', z === 1);
+  document.getElementById('cam-zoom2').classList.toggle('active', z === 2);
+  document.getElementById('cam-zoom3').classList.toggle('active', z === 3);
 }
 
-// Close overlay if user exits fullscreen externally (e.g. swipe/home)
-document.addEventListener('fullscreenchange', () => {
-  if (!document.fullscreenElement) {
-    const ov = document.getElementById('cam-overlay');
-    if (ov && ov.style.display !== 'none') closeCameraOverlay();
+function applyCamZoom(z) {
+  if (!camStream) return;
+  const track = camStream.getVideoTracks()[0];
+  if (!track) return;
+  const caps = track.getCapabilities ? track.getCapabilities() : {};
+  if (caps.zoom) {
+    const cz = Math.min(caps.zoom.max || 10, Math.max(caps.zoom.min || 1, z));
+    track.applyConstraints({ advanced: [{ zoom: cz }] }).catch(() => {
+      const v = document.getElementById('cam-video');
+      v.style.transform = `scale(${z})`;
+      v.style.transformOrigin = 'center center';
+    });
+  } else {
+    const v = document.getElementById('cam-video');
+    v.style.transform = `scale(${z})`;
+    v.style.transformOrigin = 'center center';
   }
-});
-document.addEventListener('webkitfullscreenchange', () => {
-  if (!document.webkitFullscreenElement) {
-    const ov = document.getElementById('cam-overlay');
-    if (ov && ov.style.display !== 'none') closeCameraOverlay();
-  }
-});
+}
 
-async function capturePhoto() {
-  const video = document.getElementById('cam-video');
-  if (!video || !video.videoWidth) { toast('カメラの準備中です...'); return; }
-  const vw = video.videoWidth, vh = video.videoHeight;
-  // 4:3 crop area
-  const cropAR = 4 / 3;
-  let cx, cy, cw, ch;
-  const vAR = vw / vh;
-  if (vAR > cropAR) { ch = vh; cw = Math.round(vh * cropAR); cx = Math.round((vw - cw) / 2); cy = 0; }
-  else              { cw = vw; ch = Math.round(vw / cropAR); cx = 0; cy = Math.round((vh - ch) / 2); }
-  // For CSS zoom fallback: crop the zoomed-in portion
-  let drawCX = cx, drawCY = cy, drawCW = cw, drawCH = ch;
-  if (!nativeZoomSupported && currentZoom > 1) {
-    drawCW = cw / currentZoom;
-    drawCH = ch / currentZoom;
-    drawCX = cx + (cw - drawCW) / 2;
-    drawCY = cy + (ch - drawCH) / 2;
+function toggleCrosshair() {
+  crosshairVisible = !crosshairVisible;
+  document.getElementById('cam-crosshair').style.opacity = crosshairVisible ? '1' : '0';
+  document.getElementById('cam-cross-btn').style.opacity = crosshairVisible ? '1' : '0.35';
+}
+
+// ── 45° ANGLE GUIDE ───────────────────────────────────────────
+// viewBox 400×300 (4:3). Landmarks calibrated to reference photo.
+// Front: face centre (200,115), hair top y≈24, chin y≈205
+// At 45° right oblique (右斜め): nose tip shifts LEFT  (~168,140)
+// At 45° left  oblique (左斜め): nose tip shifts RIGHT (~232,140)
+
+const _ANGLE_SVG = {
+  none: null,
+
+  // 右斜め45° — camera sees patient's RIGHT side more
+  // Nose tip points toward camera's LEFT
+  right45: `
+    <g opacity="0.9">
+      <!-- face oval, slightly left-shifted -->
+      <ellipse cx="192" cy="115" rx="66" ry="90"
+        fill="none" stroke="rgba(255,210,0,.8)" stroke-width="2.5" stroke-dasharray="10,5"/>
+      <!-- near right eye (fully visible, closer to camera) -->
+      <ellipse cx="214" cy="90" rx="19" ry="11"
+        fill="rgba(255,210,0,.12)" stroke="rgba(255,210,0,.85)" stroke-width="2"/>
+      <!-- far left eye (partially hidden behind nose bridge) -->
+      <ellipse cx="174" cy="93" rx="12" ry="9"
+        fill="rgba(255,210,0,.06)" stroke="rgba(255,210,0,.45)" stroke-width="1.5" stroke-dasharray="5,4"/>
+      <!-- nose tip target circle -->
+      <circle cx="168" cy="138" r="16"
+        fill="rgba(255,200,0,.2)" stroke="rgba(255,210,0,1)" stroke-width="3"/>
+      <circle cx="168" cy="138" r="5.5" fill="white" opacity="0.95"/>
+      <!-- right ear guide (near side, visible) -->
+      <path d="M258,88 Q270,112 258,136"
+        fill="none" stroke="rgba(255,210,0,.55)" stroke-width="2" stroke-dasharray="6,4"/>
+      <!-- hint label -->
+      <rect x="60" y="256" width="280" height="30" rx="6" fill="rgba(0,0,0,.5)"/>
+      <text x="200" y="276" text-anchor="middle"
+        fill="white" font-size="13.5" font-family="'Noto Sans JP',sans-serif">
+        右斜め45° ● に鼻先を合わせてください
+      </text>
+    </g>`,
+
+  // 左斜め45° — camera sees patient's LEFT side more
+  // Nose tip points toward camera's RIGHT
+  left45: `
+    <g opacity="0.9">
+      <ellipse cx="208" cy="115" rx="66" ry="90"
+        fill="none" stroke="rgba(255,210,0,.8)" stroke-width="2.5" stroke-dasharray="10,5"/>
+      <!-- near left eye (fully visible) -->
+      <ellipse cx="186" cy="90" rx="19" ry="11"
+        fill="rgba(255,210,0,.12)" stroke="rgba(255,210,0,.85)" stroke-width="2"/>
+      <!-- far right eye (partially hidden) -->
+      <ellipse cx="226" cy="93" rx="12" ry="9"
+        fill="rgba(255,210,0,.06)" stroke="rgba(255,210,0,.45)" stroke-width="1.5" stroke-dasharray="5,4"/>
+      <!-- nose tip target -->
+      <circle cx="232" cy="138" r="16"
+        fill="rgba(255,200,0,.2)" stroke="rgba(255,210,0,1)" stroke-width="3"/>
+      <circle cx="232" cy="138" r="5.5" fill="white" opacity="0.95"/>
+      <!-- left ear guide (near side) -->
+      <path d="M142,88 Q130,112 142,136"
+        fill="none" stroke="rgba(255,210,0,.55)" stroke-width="2" stroke-dasharray="6,4"/>
+      <rect x="60" y="256" width="280" height="30" rx="6" fill="rgba(0,0,0,.5)"/>
+      <text x="200" y="276" text-anchor="middle"
+        fill="white" font-size="13.5" font-family="'Noto Sans JP',sans-serif">
+        左斜め45° ● に鼻先を合わせてください
+      </text>
+    </g>`
+};
+
+function _applyAngleGuide() { /* 45° guide removed */ }
+
+// (45° angle guide removed – original _doCameraClose retained above)
+
+
+async function shootCamera() {
+  const v = document.getElementById('cam-video');
+  if (!v.videoWidth) { toast('カメラ準備中...'); return; }
+  // Hard-crop to 4:3 from center of video
+  const targetAR = 4 / 3;  // landscape 4:3
+  const videoAR = v.videoWidth / v.videoHeight;
+  let sx = 0, sy = 0, sw = v.videoWidth, sh = v.videoHeight;
+  if (videoAR > targetAR) {
+    sw = Math.round(v.videoHeight * targetAR);
+    sx = Math.round((v.videoWidth - sw) / 2);
+  } else if (videoAR < targetAR) {
+    sh = Math.round(v.videoWidth / targetAR);
+    sy = Math.round((v.videoHeight - sh) / 2);
   }
-  const outW = Math.min(drawCW, 900);
-  const outH = Math.round(drawCH * outW / drawCW);
-  const out = document.createElement('canvas');
-  out.width = outW; out.height = outH;
-  const outCtx = out.getContext('2d');
-  // Auto-flip for specific categories
-  if (camCatId === 'oral_upper_occ') {
-    // 上顎咬合面: horizontal (left-right) flip
-    outCtx.translate(outW, 0);
-    outCtx.scale(-1, 1);
-  } else if (camCatId === 'oral_lower_occ') {
-    // 下顎咬合面: vertical (up-down) flip
-    outCtx.translate(0, outH);
-    outCtx.scale(1, -1);
-  }
-  outCtx.drawImage(video, drawCX, drawCY, drawCW, drawCH, 0, 0, outW, outH);
-  const dataUrl = out.toDataURL('image/jpeg', 0.68);
-  const cid = camCatId;
-  const mode = camMode;
+  const canvas = document.createElement('canvas');
+  canvas.width = sw; canvas.height = sh;
+  canvas.getContext('2d').drawImage(v, sx, sy, sw, sh, 0, 0, sw, sh);
+  const raw = canvas.toDataURL('image/jpeg', 0.92);
+  const cid = choiceCatId, mode = choiceMode;
   closeCameraOverlay();
+  toast('処理中...');
+  try {
+    const dataUrl = await compressDataUrl(raw);
+    await routePhoto(cid, mode, dataUrl);
+  } catch(e) { toast('エラーが発生しました'); }
+}
 
+// Gallery file selected via native input
+async function nativeFileSelected(input) {
+  if (!input.files || !input.files[0]) return;
+  const file = input.files[0];
+  const cid = choiceCatId, mode = choiceMode;
+  input.value = '';
+  toast('処理中...');
+  try {
+    const dataUrl = await compress(file);
+    await routePhoto(cid, mode, dataUrl);
+  } catch(e) { toast('エラーが発生しました'); }
+}
+
+// Shared routing logic
+async function routePhoto(cid, mode, dataUrl) {
   if (mode === 'mypage') {
     await mpSavePhoto2(cid, dataUrl);
-    return;
-  }
-
-  if (mode === 'second') {
+  } else if (mode === 'mypage3') {
+    await mpSavePhoto3(cid, dataUrl);
+  } else if (mode === 'second') {
     secondPhotos[cid] = dataUrl;
     const frame = document.getElementById(`sp2-frame-${cid}`);
     if (frame) frame.innerHTML = `<img src="${dataUrl}">`;
@@ -1861,99 +2016,44 @@ async function capturePhoto() {
     if (ev2) ev2.style.display = 'block';
     const sp3btn = document.getElementById(`sp3-btn-${cid}`);
     if (sp3btn) { sp3btn.disabled = false; sp3btn.style.opacity = ''; sp3btn.style.cursor = ''; }
-    toast('✅ 2枚目を撮影しました');
-    return;
-  }
-
-  if (mode === 'mypage3') {
-    await mpSavePhoto3(cid, dataUrl);
-    return;
-  }
-
-  if (mode === 'third') {
+    toast('✅ 2枚目を登録しました');
+  } else if (mode === 'third') {
     thirdPhotos[cid] = dataUrl;
     const frame = document.getElementById(`sp3-frame-${cid}`);
     if (frame) frame.innerHTML = `<img src="${dataUrl}">`;
     const ev3 = document.getElementById(`sp3-eval-${cid}`);
     if (ev3) ev3.style.display = 'block';
-    toast('✅ 3枚目を撮影しました');
-    return;
+    toast('✅ 3枚目を登録しました');
+  } else {
+    const savedName = document.getElementById('p-name')?.value || '';
+    myPhotos[cid] = dataUrl;
+    await renderParticipant();
+    const nameEl = document.getElementById('p-name');
+    if (nameEl && savedName) nameEl.value = savedName;
+    toast('✅ 写真を登録しました');
   }
-
-  const savedName = document.getElementById('p-name')?.value || '';
-  myPhotos[cid] = dataUrl;
-  await renderParticipant();
-  const nameEl = document.getElementById('p-name');
-  if (nameEl && savedName) nameEl.value = savedName;
-  toast('✅ 写真を撮影しました');
 }
 
-// ── UPLOAD CHOICE SHEET ──────────────────────────────────────
-let choiceCatId = null;
-let choiceMode  = 'main';
-
-function showUploadChoice(catId, mode) {
-  choiceCatId = catId;
-  choiceMode  = mode || 'main';
-  document.getElementById('upload-choice-sheet').style.display = 'block';
-}
-function closeChoiceSheet() {
-  document.getElementById('upload-choice-sheet').style.display = 'none';
-}
-function choiceSheetCamera() {
-  closeChoiceSheet();
-  camMode = choiceMode;
-  const sampleUrl = samples[choiceCatId] || '';
-  openCameraOverlay(choiceCatId, sampleUrl);
-}
-function choiceSheetFile() {
-  document.getElementById('choice-file-input').click();
-}
-async function choiceSheetFileSelected(input) {
-  if (!input.files || !input.files[0]) return;
-  const file = input.files[0];
-  const cid  = choiceCatId;
-  const mode = choiceMode;
-  closeChoiceSheet();
-  input.value = '';
-  toast('処理中...');
-  try {
-    const dataUrl = await compress(file);
-    if (mode === 'mypage') {
-      await mpSavePhoto2(cid, dataUrl);
-    } else if (mode === 'mypage3') {
-      await mpSavePhoto3(cid, dataUrl);
-    } else if (mode === 'second') {
-      secondPhotos[cid] = dataUrl;
-      const frame = document.getElementById(`sp2-frame-${cid}`);
-      if (frame) frame.innerHTML = `<img src="${dataUrl}">`;
-      const ev2 = document.getElementById(`sp2-eval-${cid}`);
-      if (ev2) ev2.style.display = 'block';
-      const sp3btn = document.getElementById(`sp3-btn-${cid}`);
-      if (sp3btn) { sp3btn.disabled = false; sp3btn.style.opacity = ''; sp3btn.style.cursor = ''; }
-      toast('✅ 2枚目を登録しました');
-    } else if (mode === 'third') {
-      thirdPhotos[cid] = dataUrl;
-      const frame = document.getElementById(`sp3-frame-${cid}`);
-      if (frame) frame.innerHTML = `<img src="${dataUrl}">`;
-      const ev3 = document.getElementById(`sp3-eval-${cid}`);
-      if (ev3) ev3.style.display = 'block';
-      toast('✅ 3枚目を登録しました');
-    } else {
-      const savedName = document.getElementById('p-name')?.value || '';
-      myPhotos[cid] = dataUrl;
-      await renderParticipant();
-      const nameEl = document.getElementById('p-name');
-      if (nameEl && savedName) nameEl.value = savedName;
-      toast('✅ 写真を登録しました');
-    }
-  } catch(e) { toast('エラーが発生しました'); }
+async function compressDataUrl(dataUrl) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      const MAX = 1200;
+      let w = img.width, h = img.height;
+      if (w > MAX || h > MAX) {
+        if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
+        else { w = Math.round(w * MAX / h); h = MAX; }
+      }
+      const c = document.createElement('canvas');
+      c.width = w; c.height = h;
+      c.getContext('2d').drawImage(img, 0, 0, w, h);
+      resolve(c.toDataURL('image/jpeg', 0.85));
+    };
+    img.onerror = reject;
+    img.src = dataUrl;
+  });
 }
 
-function setCamAlpha(val) {
-  const img = document.getElementById('cam-sample-ov')?.querySelector('img');
-  if (img) img.style.opacity = val / 100;
-}
 
 // ── EVALUATION STATE & TRANSLATION ──────────────────────────
 const DEEPL_API_KEY = '2e3d4519-10dc-4fbc-be60-da1348d590a6';
@@ -2107,34 +2207,7 @@ function getScreenTilt(e) {
   return gamma;
 }
 
-function startLevelIndicator() {
-  const line = document.getElementById('cam-level-line');
-  if (!line) return;
-  line.style.display = '';
-  let smoothed = 0;
-  let rafId = null;
-  function applyTilt() {
-    rafId = null;
-    const lv  = Math.abs(smoothed) < 2;
-    const col = lv ? '#ffdd00' : '#ffffff';
-    line.style.transform = `translateY(-50%) rotate(${-smoothed}deg)`;
-    line.style.background = col;
-    line.style.boxShadow  = lv
-      ? `0 0 10px #ffdd0099,0 0 3px #ffdd00`
-      : `0 0 6px rgba(255,255,255,.5),0 0 2px #fff`;
-  }
-  function onOrientation(e) {
-    const raw = getScreenTilt(e);
-    smoothed = 0.12 * raw + 0.88 * smoothed;
-    if (!rafId) rafId = requestAnimationFrame(applyTilt);
-  }
-  levelHandler = onOrientation;
-  window.addEventListener('deviceorientation', levelHandler);
-}
 
-function stopLevelIndicator() {
-  if (levelHandler) { window.removeEventListener('deviceorientation', levelHandler); levelHandler = null; }
-}
 
 // ── MY PAGE ──────────────────────────────────────────────────
 function renderMyPage() {
@@ -2451,9 +2524,7 @@ async function mpTransCard(catId, btn) {
 async function mpOpenCamera(catId) {
   mpCurrentCatId = catId;
   await loadSamples();
-  choiceCatId = catId;
-  choiceMode  = 'mypage';
-  document.getElementById('choice-file-input').click();
+  openCameraOverlay(catId, 'mypage');
 }
 
 async function mpSavePhoto2(catId, dataUrl) {
@@ -2488,9 +2559,7 @@ async function mpSavePhoto2(catId, dataUrl) {
 async function mpOpenCamera3(catId) {
   mpCurrentCatId = catId;
   await loadSamples();
-  choiceCatId = catId;
-  choiceMode  = 'mypage3';
-  document.getElementById('choice-file-input').click();
+  openCameraOverlay(catId, 'mypage3');
 }
 
 async function mpSavePhoto3(catId, dataUrl) {
