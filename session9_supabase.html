@@ -426,13 +426,17 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
   position:absolute; top:0; bottom:0; left:0; right:0; transition:opacity .2s;
 }
 .cam-crosshair-v {
-  position:absolute; left:50%; top:0; bottom:0; width:0;
-  border-left:3px dashed rgba(255,255,255,.95);
-  transform:translateX(-50%);
+  position:absolute; top:0; bottom:0;
+  width:1.5px; left:calc(50% - 0.75px);
+  background:repeating-linear-gradient(
+    to bottom,
+    rgba(255,255,255,.95) 0px, rgba(255,255,255,.95) 5px,
+    transparent 5px, transparent 9px
+  );
 }
 .cam-crosshair-h {
   position:absolute; top:50%; left:0; right:0; height:0;
-  border-top:3px dashed rgba(255,255,255,.95);
+  border-top:1.5px dashed rgba(255,255,255,.95);
   transform:translateY(-50%);
 }
 .cam-bottom-bar {
@@ -743,28 +747,138 @@ const CATS = [
 ];
 const TOTAL = 9;
 
-const EVAL_CRITERIA = [
-  {
-    key:'setup', label:'SETUP',
-    ko:['촬영자가 환자 정면에 위치하지 않음','환자의 몸이 정면에 위치하지 않음','환자의 고개가 정면에 위치하지 않음','환자의 시선이 카메라 정면을 향하지 않음','평소 교합대로 물지 않음'],
-    ja:['撮影者が患者の正面に位置していない','患者の体が正面を向いていない','患者の頭が正面を向いていない','患者の視線がカメラ正面を向いていない','普段の咬合で噛んでいない']
-  },
-  {
-    key:'angle', label:'ANGLE',
-    ko:['환자가 좌측으로 치우침','환자가 우측으로 치우침','카메라가 위로 기울어짐','카메라가 아래로 기울어짐'],
-    ja:['患者が左側に偏っている','患者が右側に偏っている','カメラが上に傾いている','カメラが下に傾いている']
-  },
-  {
-    key:'frame', label:'FRAME',
-    ko:['머리가 잘림','겨드랑이선이 잘림','겨드랑이선 아래까지 너무 넓게 촬영됨','정면・측면 촬영 거리가 다름'],
-    ja:['頭が切れている','脇のラインが切れている','脇のライン以下まで広く撮影されている','正面・側面の撮影距離が異なる']
-  },
-  {
-    key:'quality', label:'QUALITY',
-    ko:['초점이 맞지 않음'],
-    ja:['ピントが合っていない']
-  }
-];
+const EVAL_CRITERIA_MAP = {
+  oral_front: [
+    {key:'setup', label:'SETUP',
+      ko:['촬영자가 환자 정면에 위치하지 않음','환자의 고개가 정면을 향하지 않음','리트렉션이 부족해 구치부가 가려짐','리트렉션이 부족해 소대가 가려짐','평소 교합대로 물지 않음'],
+      ja:['撮影者が患者の正面に位置していない','患者の頭が正面を向いていない','リトラクションが不足し臼歯部が隠れている','リトラクションが不足し小帯が隠れている','普段の咬合で噛んでいない']},
+    {key:'angle', label:'ANGLE',
+      ko:['카메라가 위로 기울어짐','카메라가 아래로 기울어짐'],
+      ja:['カメラが上に傾いている','カメラが下に傾いている']},
+    {key:'frame', label:'FRAME',
+      ko:['좌측 6번이 잘림','우측 6번이 잘림','소대가 잘림','입 주변 피부가 보임'],
+      ja:['左側の6番が切れている','右側の6番が切れている','小帯が切れている','口周りの皮膚が見えている']},
+    {key:'quality', label:'QUALITY',
+      ko:['초점이 맞지 않음','사진이 밝아 진단이 어려움','사진이 어두워 진단이 어려움'],
+      ja:['ピントが合っていない','写真が明るく診断が難しい','写真が暗く診断が難しい']}
+  ],
+  oral_left: [
+    {key:'setup', label:'SETUP',
+      ko:['촬영자가 환자 정면에 위치하지 않음','환자의 고개가 우측을 향하지 않음','리트렉션이 부족해 좌측 구치부가 가려짐','리트렉션이 부족해 소대가 가려짐','평소 교합대로 물지 않음'],
+      ja:['撮影者が患者の正面に位置していない','患者の頭が右側を向いていない','リトラクションが不足し左側臼歯部が隠れている','リトラクションが不足し小帯が隠れている','普段の咬合で噛んでいない']},
+    {key:'angle', label:'ANGLE',
+      ko:['카메라가 위로 기울어짐','카메라가 아래로 기울어짐'],
+      ja:['カメラが上に傾いている','カメラが下に傾いている']},
+    {key:'frame', label:'FRAME',
+      ko:['우측 측절치가 잘림','좌측 6번이 잘림','소대가 잘림','입 주변 피부가 보임'],
+      ja:['右側の側切歯が切れている','左側の6番が切れている','小帯が切れている','口周りの皮膚が見えている']},
+    {key:'quality', label:'QUALITY',
+      ko:['초점이 맞지 않음','사진이 밝아 진단이 어려움','사진이 어두워 진단이 어려움'],
+      ja:['ピントが合っていない','写真が明るく診断が難しい','写真が暗く診断が難しい']}
+  ],
+  oral_right: [
+    {key:'setup', label:'SETUP',
+      ko:['촬영자가 환자 정면에 위치하지 않음','환자의 고개가 좌측을 향하지 않음','리트렉션이 부족해 우측 구치부가 가려짐','리트렉션이 부족해 소대가 가려짐','평소 교합대로 물지 않음'],
+      ja:['撮影者が患者の正面に位置していない','患者の頭が左側を向いていない','リトラクションが不足し右側臼歯部が隠れている','リトラクションが不足し小帯が隠れている','普段の咬合で噛んでいない']},
+    {key:'angle', label:'ANGLE',
+      ko:['카메라가 위로 기울어짐','카메라가 아래로 기울어짐'],
+      ja:['カメラが上に傾いている','カメラが下に傾いている']},
+    {key:'frame', label:'FRAME',
+      ko:['좌측 측절치가 잘림','우측 6번이 잘림','소대가 잘림','입 주변 피부가 보임'],
+      ja:['左側の側切歯が切れている','右側の6番が切れている','小帯が切れている','口周りの皮膚が見えている']},
+    {key:'quality', label:'QUALITY',
+      ko:['초점이 맞지 않음','사진이 밝아 진단이 어려움','사진이 어두워 진단이 어려움'],
+      ja:['ピントが合っていない','写真が明るく診断が難しい','写真が暗く診断が難しい']}
+  ],
+  oral_upper_hook: [
+    {key:'setup', label:'SETUP',
+      ko:['촬영자가 환자 정면에 위치하지 않음','환자의 고개가 아래를 향하지 않음','리트렉션이 부족해 치은이 가려짐','블랙판이 끝까지 삽입되지 않아 빈틈이 생김'],
+      ja:['撮影者が患者の正面に位置していない','患者の頭が下を向いていない','リトラクションが不足し歯肉が隠れている','ブラックプレートが最後まで挿入されておらず隙間が生じている']},
+    {key:'angle', label:'ANGLE',
+      ko:['카메라가 위로 기울어짐','카메라가 아래로 기울어짐'],
+      ja:['カメラが上に傾いている','カメラが下に傾いている']},
+    {key:'frame', label:'FRAME',
+      ko:['좌측 6번이 잘림','우측 6번이 잘림','치은이 충분히 포함되지 않음','입 주변 피부가 보임'],
+      ja:['左側の6番が切れている','右側の6番が切れている','歯肉が十分に含まれていない','口周りの皮膚が見えている']},
+    {key:'quality', label:'QUALITY',
+      ko:['초점이 맞지 않음','사진이 밝아 진단이 어려움','사진이 어두워 진단이 어려움'],
+      ja:['ピントが合っていない','写真が明るく診断が難しい','写真が暗く診断が難しい']}
+  ],
+  oral_upper_occ: [
+    {key:'setup', label:'SETUP',
+      ko:['리트렉션이 부족해 전치부가 가려짐','미러 삽입이 부족해 전체 교합면이 보이지 않음'],
+      ja:['リトラクションが不足し前歯部が隠れている','ミラーの挿入が不足し全体の咬合面が見えない']},
+    {key:'angle', label:'ANGLE',
+      ko:['전치부 배열이 가려짐','미러가 좌측으로 기울어짐','미러가 우측으로 기울어짐'],
+      ja:['前歯部の配列が隠れている','ミラーが左側に傾いている','ミラーが右側に傾いている']},
+    {key:'frame', label:'FRAME',
+      ko:['악궁이 잘림','좌측 6번이 잘림','우측 6번이 잘림'],
+      ja:['歯列弓が切れている','左側の6番が切れている','右側の6番が切れている']},
+    {key:'quality', label:'QUALITY',
+      ko:['초점이 맞지 않음','사진이 밝아 진단이 어려움','사진이 어두워 진단이 어려움'],
+      ja:['ピントが合っていない','写真が明るく診断が難しい','写真が暗く診断が難しい']}
+  ],
+  oral_lower_hook: [
+    {key:'setup', label:'SETUP',
+      ko:['촬영자가 환자 정면에 위치하지 않음','환자의 고개가 위를 향하지 않음','리트렉션이 부족해 치은이 가려짐','블랙판이 끝까지 삽입되지 않아 빈틈이 생김'],
+      ja:['撮影者が患者の正面に位置していない','患者の頭が上を向いていない','リトラクションが不足し歯肉が隠れている','ブラックプレートが最後まで挿入されておらず隙間が生じている']},
+    {key:'angle', label:'ANGLE',
+      ko:['카메라가 위로 기울어짐','카메라가 아래로 기울어짐'],
+      ja:['カメラが上に傾いている','カメラが下に傾いている']},
+    {key:'frame', label:'FRAME',
+      ko:['좌측 6번이 잘림','우측 6번이 잘림','치은이 충분히 포함되지 않음','입 주변 피부가 보임'],
+      ja:['左側の6番が切れている','右側の6番が切れている','歯肉が十分に含まれていない','口周りの皮膚が見えている']},
+    {key:'quality', label:'QUALITY',
+      ko:['초점이 맞지 않음','사진이 밝아 진단이 어려움','사진이 어두워 진단이 어려움'],
+      ja:['ピントが合っていない','写真が明るく診断が難しい','写真が暗く診断が難しい']}
+  ],
+  oral_lower_occ: [
+    {key:'setup', label:'SETUP',
+      ko:['리트렉션이 부족해 전치부가 가려짐','미러 삽입이 부족해 전체 교합면이 보이지 않음'],
+      ja:['リトラクションが不足し前歯部が隠れている','ミラーの挿入が不足し全体の咬合面が見えない']},
+    {key:'angle', label:'ANGLE',
+      ko:['전치부 배열이 가려짐','미러가 좌측으로 기울어짐','미러가 우측으로 기울어짐'],
+      ja:['前歯部の配列が隠れている','ミラーが左側に傾いている','ミラーが右側に傾いている']},
+    {key:'frame', label:'FRAME',
+      ko:['악궁이 잘림','좌측 6번이 잘림','우측 6번이 잘림'],
+      ja:['歯列弓が切れている','左側の6番が切れている','右側の6番が切れている']},
+    {key:'quality', label:'QUALITY',
+      ko:['초점이 맞지 않음','사진이 밝아 진단이 어려움','사진이 어두워 진단이 어려움'],
+      ja:['ピントが合っていない','写真が明るく診断が難しい','写真が暗く診断が難しい']}
+  ],
+  block_shade: [
+    {key:'setup', label:'SETUP',
+      ko:['촬영자가 환자 정면에 위치하지 않음','환자의 고개가 정면을 향하지 않음','리트렉션이 부족해 구강 내에 그림자가 생김','쉐이드 가이드가 비교할 치아와 멀리 떨어짐','쉐이드 가이드가 비교할 치아를 가림','쉐이드 가이드의 절단연이 아래를 향함'],
+      ja:['撮影者が患者の正面に位置していない','患者の頭が正面を向いていない','リトラクションが不足し口腔内に影が生じている','シェードガイドが比較する歯から離れている','シェードガイドが比較する歯を隠している','シェードガイドの切縁が下を向いている']},
+    {key:'angle', label:'ANGLE',
+      ko:['카메라가 위로 기울어짐','카메라가 아래로 기울어짐'],
+      ja:['カメラが上に傾いている','カメラが下に傾いている']},
+    {key:'frame', label:'FRAME',
+      ko:['비교할 치아가 잘림','쉐이드 코드가 잘림'],
+      ja:['比較する歯が切れている','シェードコードが切れている']},
+    {key:'quality', label:'QUALITY',
+      ko:['초점이 맞지 않음','사진이 밝아 진단이 어려움','사진이 어두워 진단이 어려움'],
+      ja:['ピントが合っていない','写真が明るく診断が難しい','写真が暗く診断が難しい']}
+  ],
+  gum_shade: [
+    {key:'setup', label:'SETUP',
+      ko:['촬영자가 환자 정면에 위치하지 않음','환자의 고개가 정면을 향하지 않음','리트렉션이 부족해 구강 내에 그림자가 생김','쉐이드 가이드가 치은과 멀리 떨어짐','쉐이드 가이드가 치은을 가림'],
+      ja:['撮影者が患者の正面に位置していない','患者の頭が正面を向いていない','リトラクションが不足し口腔内に影が生じている','シェードガイドが歯肉から離れている','シェードガイドが歯肉を隠している']},
+    {key:'angle', label:'ANGLE',
+      ko:['카메라가 위로 기울어짐','카메라가 아래로 기울어짐'],
+      ja:['カメラが上に傾いている','カメラが下に傾いている']},
+    {key:'frame', label:'FRAME',
+      ko:['쉐이드 가이드와 비교할 치은이 충분히 보이지 않음','핑크 쉐이드 가이드의 일부 색상이 잘림','쉐이드 코드가 잘림'],
+      ja:['シェードガイドと比較する歯肉が十分に見えない','ピンクシェードガイドの一部の色が切れている','シェードコードが切れている']},
+    {key:'quality', label:'QUALITY',
+      ko:['초점이 맞지 않음','사진이 밝아 진단이 어려움','사진이 어두워 진단이 어려움'],
+      ja:['ピントが合っていない','写真が明るく診断が難しい','写真が暗く診断が難しい']}
+  ]
+};
+function getCriteria(catId) {
+  const base = catId.replace(/_p[23]$/, '');
+  return EVAL_CRITERIA_MAP[base] || EVAL_CRITERIA_MAP['oral_front'];
+}
 
 const {createClient} = supabase;
 const supa = createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -1287,7 +1401,7 @@ async function openReview(submissionId, name) {
         </div>
       </div>
       <div class="card-eval-section">
-        ${EVAL_CRITERIA.map((c,ci) => {
+        ${getCriteria(cat.id).map((c,ci) => {
           const st = ev[c.key] || {mark:'',items:[]};
           const subHtml = st.mark === '×'
             ? c.ko.map((ko,i) => `<label class="card-sub-chk"><input type="checkbox" ${(st.items||[]).includes(i)?'checked':''} onchange="cardCritItem('${cat.id}','${c.key}',${i},this.checked)"><span>${c.ja[i]}<small>（${ko}）</small></span></label>`).join('')
@@ -1333,11 +1447,11 @@ async function openReview(submissionId, name) {
 
         <div id="sp2-eval-${cat.id}" style="margin-top:7px;padding:6px 8px;background:#edf2f9;border-radius:6px;border:1px solid #c8d8ec;display:${secondPhotos[cat.id]?'block':'none'}">
           <div style="font-size:10px;font-weight:700;color:var(--primary);margin-bottom:4px">2次写真 評価<small style="font-weight:400;color:var(--muted);font-size:9px">（2차사진）</small></div>
-          ${EVAL_CRITERIA.map(c=>{const st=evalState[cat.id+'_p2']?.[c.key]||{mark:'',items:[]};const subHtml=st.mark==='×'?cardRenderSubItems(cat.id+'_p2',c.key):'';return `<div class="card-crit" id="cc-${cat.id+'_p2'}-${c.key}"><div class="card-crit-row"><span class="card-crit-lbl">${c.label}</span><button class="card-crit-btn${st.mark==='○'?' sel-o':''}" onclick="cardCritMark('${cat.id+'_p2'}','${c.key}','○')">○</button><button class="card-crit-btn${st.mark==='×'?' sel-x':''}" onclick="cardCritMark('${cat.id+'_p2'}','${c.key}','×')">×</button></div><div class="card-sub-items${st.mark==='×'?' show':''}" id="cc-sub-${cat.id+'_p2'}-${c.key}">${subHtml}</div></div>`;}).join('')}
+          ${getCriteria(cat.id).map(c=>{const st=evalState[cat.id+'_p2']?.[c.key]||{mark:'',items:[]};const subHtml=st.mark==='×'?cardRenderSubItems(cat.id+'_p2',c.key):'';return `<div class="card-crit" id="cc-${cat.id+'_p2'}-${c.key}"><div class="card-crit-row"><span class="card-crit-lbl">${c.label}</span><button class="card-crit-btn${st.mark==='○'?' sel-o':''}" onclick="cardCritMark('${cat.id+'_p2'}','${c.key}','○')">○</button><button class="card-crit-btn${st.mark==='×'?' sel-x':''}" onclick="cardCritMark('${cat.id+'_p2'}','${c.key}','×')">×</button></div><div class="card-sub-items${st.mark==='×'?' show':''}" id="cc-sub-${cat.id+'_p2'}-${c.key}">${subHtml}</div></div>`;}).join('')}
         </div>
         <div id="sp3-eval-${cat.id}" style="margin-top:7px;padding:6px 8px;background:#edf9ed;border-radius:6px;border:1px solid #b8e0b8;display:${thirdPhotos[cat.id]?'block':'none'}">
           <div style="font-size:10px;font-weight:700;color:#1a7a40;margin-bottom:4px">3次写真 評価<small style="font-weight:400;color:var(--muted);font-size:9px">（3차사진）</small></div>
-          ${EVAL_CRITERIA.map(c=>{const st=evalState[cat.id+'_p3']?.[c.key]||{mark:'',items:[]};const subHtml=st.mark==='×'?cardRenderSubItems(cat.id+'_p3',c.key):'';return `<div class="card-crit" id="cc-${cat.id+'_p3'}-${c.key}"><div class="card-crit-row"><span class="card-crit-lbl">${c.label}</span><button class="card-crit-btn${st.mark==='○'?' sel-o':''}" onclick="cardCritMark('${cat.id+'_p3'}','${c.key}','○')">○</button><button class="card-crit-btn${st.mark==='×'?' sel-x':''}" onclick="cardCritMark('${cat.id+'_p3'}','${c.key}','×')">×</button></div><div class="card-sub-items${st.mark==='×'?' show':''}" id="cc-sub-${cat.id+'_p3'}-${c.key}">${subHtml}</div></div>`;}).join('')}
+          ${getCriteria(cat.id).map(c=>{const st=evalState[cat.id+'_p3']?.[c.key]||{mark:'',items:[]};const subHtml=st.mark==='×'?cardRenderSubItems(cat.id+'_p3',c.key):'';return `<div class="card-crit" id="cc-${cat.id+'_p3'}-${c.key}"><div class="card-crit-row"><span class="card-crit-lbl">${c.label}</span><button class="card-crit-btn${st.mark==='○'?' sel-o':''}" onclick="cardCritMark('${cat.id+'_p3'}','${c.key}','○')">○</button><button class="card-crit-btn${st.mark==='×'?' sel-x':''}" onclick="cardCritMark('${cat.id+'_p3'}','${c.key}','×')">×</button></div><div class="card-sub-items${st.mark==='×'?' show':''}" id="cc-sub-${cat.id+'_p3'}-${c.key}">${subHtml}</div></div>`;}).join('')}
         </div>
       </div>
     </div>`;
@@ -1529,7 +1643,7 @@ function renderSlide() {
   const ev1 = evalState[cat.id] || {};
   const c1El = document.getElementById('ss-p1-comment');
   if (c1El) c1El.value = ev1.comment_ko || '';
-  EVAL_CRITERIA.forEach(c => {
+  getCriteria(cat.id).forEach(c => {
     ssUpdateCritUI(cat.id, 'p1', c.key);
     ssRenderSubItems('', c.key);
   });
@@ -1541,7 +1655,7 @@ function renderSlide() {
     const ev2 = evalState[cat.id+'_p2'] || {};
     const c2El = document.getElementById('ss-p2-comment');
     if (c2El) c2El.value = ev2.comment_ko || '';
-    EVAL_CRITERIA.forEach(c => {
+    getCriteria(cat.id).forEach(c => {
       ssUpdateCritUI(cat.id+'_p2', 'p2', c.key);
       ssRenderSubItems('_p2', c.key);
     });
@@ -1554,7 +1668,7 @@ function renderSlide() {
     const ev3 = evalState[cat.id+'_p3'] || {};
     const c3El = document.getElementById('ss-p3-comment');
     if (c3El) c3El.value = ev3.comment_ko || '';
-    EVAL_CRITERIA.forEach(c => {
+    getCriteria(cat.id).forEach(c => {
       ssUpdateCritUI(cat.id+'_p3', 'p3', c.key);
       ssRenderSubItems('_p3', c.key);
     });
@@ -1575,7 +1689,7 @@ function ssTouchEnd(e) {
 
 function ssRenderSubItems(pSuffix, critKey) {
   const cat = CATS[slideIdx];
-  const crit = EVAL_CRITERIA.find(c => c.key === critKey);
+  const crit = getCriteria(cat ? cat.id : 'oral_front').find(c => c.key === critKey);
   const pKey = pSuffix === '' ? 'p1' : pSuffix.replace('_','');
   const el = document.getElementById(`ss-sub-${pKey}-${critKey}`);
   if (!el || !cat || !crit) return;
@@ -1662,7 +1776,7 @@ function cardUpdateCritUI(catId, critKey) {
 }
 
 function cardRenderSubItems(catId, critKey) {
-  const crit = EVAL_CRITERIA.find(c => c.key === critKey);
+  const crit = getCriteria(catId).find(c => c.key === critKey);
   if (!crit) return '';
   const items = evalState[catId]?.[critKey]?.items || [];
   return crit.ko.map((ko, i) =>
@@ -2428,7 +2542,7 @@ async function mpLoadDetail(idx) {
     // Build criteria HTML
     let critHtml = '';
     if (ev._criteria) {
-      EVAL_CRITERIA.forEach(c => {
+      getCriteria(cat.id).forEach(c => {
         const st = ev._criteria[c.key] || {mark:'',items:[]};
         if (!st.mark) return;
         const itemsHtml = (st.items||[]).map(i => `<li>${c.ja[i]}（${c.ko[i]}）</li>`).join('');
@@ -2477,7 +2591,7 @@ async function mpLoadDetail(idx) {
         ${(() => {
           const ev2 = mpEvals[cat.id+'_p2'] || {};
           const m2 = ev2.mark || '';
-          const crit2Html = ev2._criteria ? EVAL_CRITERIA.map(c => {
+          const crit2Html = ev2._criteria ? getCriteria(cat.id).map(c => {
             const st = ev2._criteria[c.key]||{mark:'',items:[]};
             if (!st.mark) return '';
             const itemsHtml = (st.items||[]).map(i=>`<li>${c.ja[i]}（${c.ko[i]}）</li>`).join('');
@@ -2491,7 +2605,7 @@ async function mpLoadDetail(idx) {
         ${(() => {
           const ev3 = mpEvals[cat.id+'_p3'] || {};
           const m3 = ev3.mark || '';
-          const crit3Html = ev3._criteria ? EVAL_CRITERIA.map(c => {
+          const crit3Html = ev3._criteria ? getCriteria(cat.id).map(c => {
             const st = ev3._criteria[c.key]||{mark:'',items:[]};
             if (!st.mark) return '';
             const itemsHtml = (st.items||[]).map(i=>`<li>${c.ja[i]}（${c.ko[i]}）</li>`).join('');
