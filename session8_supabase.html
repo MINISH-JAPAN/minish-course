@@ -396,10 +396,29 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
 #cam-video {
   width:100%; height:100%; object-fit:cover; display:block;
 }
+/* 4:3 portrait viewfinder frame */
+.cam-video-frame {
+  position:relative;
+  /* portrait 4:3 = width:height = 3:4 */
+  aspect-ratio: 3/4;
+  height:100%; max-width:100%;
+  overflow:hidden; flex-shrink:0;
+}
 @media (orientation:landscape) {
-  #cam-video { object-fit:contain; }
-  .cam-top-bar { padding:6px 12px; }
-  .cam-bottom-bar { padding:8px 20px 12px; }
+  #cam-video { object-fit:cover; }
+  .cam-video-wrap { position:absolute; inset:0; }
+  .cam-video-frame {
+    /* In landscape use available height, keep 3:4 */
+    height:100%; width:auto; aspect-ratio:3/4;
+  }
+  .cam-top-bar {
+    position:absolute; top:0; left:0; right:0; z-index:10;
+    padding:6px 16px; background:rgba(0,0,0,.55);
+  }
+  .cam-bottom-bar {
+    position:absolute; bottom:0; left:0; right:0; z-index:10;
+    padding:8px 20px 16px; background:rgba(0,0,0,.55);
+  }
 }
 .cam-guide-wrap {
   position:absolute; inset:0; pointer-events:none;
@@ -430,7 +449,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
   font-size:8.5px; opacity:.8; margin-left:4px;
 }
 .cam-crosshair {
-  position:absolute; inset:0; transition:opacity .2s;
+  position:absolute; top:8%; bottom:8%; left:0; right:0; transition:opacity .2s;
 }
 .cam-crosshair-v {
   position:absolute; left:50%; top:0; bottom:0; width:0;
@@ -528,6 +547,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
     </div>
   </div>
   <div class="cam-video-wrap">
+    <div class="cam-video-frame">
     <video id="cam-video" autoplay playsinline muted></video>
     <div class="cam-guide-wrap">
       <div class="cam-zone-top"></div>
@@ -541,10 +561,12 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
         <div class="cam-crosshair-h"></div>
       </div>
     </div>
+    </div>
   </div>
   <div class="cam-bottom-bar">
     <div class="cam-zoom-group">
-      <button class="cam-zoom-btn active" id="cam-zoom2" onclick="setCameraZoom(2)">2x</button>
+      <button class="cam-zoom-btn active" id="cam-zoom1" onclick="setCameraZoom(1)">基本<span style="font-size:8px;opacity:.75;margin-left:1px">기본</span></button>
+      <button class="cam-zoom-btn" id="cam-zoom2" onclick="setCameraZoom(2)">2x</button>
       <button class="cam-zoom-btn" id="cam-zoom3" onclick="setCameraZoom(3)">3x</button>
     </div>
     <button class="cam-shutter" onclick="shootCamera()" title="撮影"></button>
@@ -744,7 +766,7 @@ const CATS = [
   {id:'smile_left_half',  jp:'スマイル左側（半貌）', kr:'스마일 좌측 반모', n:5},
   {id:'smile_right_half', jp:'スマイル右側（半貌）', kr:'스마일 우측 반모', n:6},
   {id:'prep_face',        jp:'プレップ後顔貌',  kr:'프렙후 안모',  n:7},
-  {id:'opener_face',      jp:'開口器顔貌',      kr:'개구기 안모',  n:8},
+  {id:'opener_face',      jp:'プレップ後開口器顔貌', kr:'프렙 후 개구기 안모', n:8},
 ];
 const TOTAL = 8;
 
@@ -1181,8 +1203,8 @@ async function renderParticipant() {
             ${m ? `<img src="${m}" alt="my photo">` : `<div class="frame-ph"><span class="icon">📷</span><span>写真を選択</span></div>`}
           </div>
           <div class="upload-btn-row">
-            <button class="upload-btn-attach" onclick="directUpload('${cat.id}','main')">📎 첨부</button>
-            <button class="upload-btn-shoot${m?' done':''}" onclick="directCamera('${cat.id}','main')">📷 촬영</button>
+            <button class="upload-btn-attach" onclick="directUpload('${cat.id}','main')">📎 添付<span style="font-size:8px;opacity:.75;margin-left:1px">첨부</span></button>
+            <button class="upload-btn-shoot${m?' done':''}" onclick="directCamera('${cat.id}','main')">📷 撮影<span style="font-size:8px;opacity:.75;margin-left:1px">촬영</span></button>
           </div>
           <input type="file" id="fi-${cat.id}" accept="image/*" style="display:none" onchange="handleMyPhoto('${cat.id}',this)">
         </div>
@@ -2062,7 +2084,7 @@ async function handleThirdPhoto(catId, input) {
 let choiceCatId = null;
 let choiceMode  = 'main';
 let camStream   = null;
-let camZoomLevel = 2;
+let camZoomLevel = 1;
 let crosshairVisible = true;
 
 // Direct upload/camera – bypasses choice sheet
@@ -2135,6 +2157,7 @@ function closeCameraOverlay() { _doCameraClose(); }
 function setCameraZoom(z) {
   camZoomLevel = z;
   applyCamZoom(z);
+  document.getElementById('cam-zoom1').classList.toggle('active', z === 1);
   document.getElementById('cam-zoom2').classList.toggle('active', z === 2);
   document.getElementById('cam-zoom3').classList.toggle('active', z === 3);
 }
@@ -2329,9 +2352,20 @@ function _doCameraClose() {
 async function shootCamera() {
   const v = document.getElementById('cam-video');
   if (!v.videoWidth) { toast('カメラ準備中...'); return; }
+  // Hard-crop to 4:3 from center of video
+  const targetAR = 4 / 3;
+  const videoAR = v.videoWidth / v.videoHeight;
+  let sx = 0, sy = 0, sw = v.videoWidth, sh = v.videoHeight;
+  if (videoAR > targetAR) {
+    sw = Math.round(v.videoHeight * targetAR);
+    sx = Math.round((v.videoWidth - sw) / 2);
+  } else if (videoAR < targetAR) {
+    sh = Math.round(v.videoWidth / targetAR);
+    sy = Math.round((v.videoHeight - sh) / 2);
+  }
   const canvas = document.createElement('canvas');
-  canvas.width = v.videoWidth; canvas.height = v.videoHeight;
-  canvas.getContext('2d').drawImage(v, 0, 0, canvas.width, canvas.height);
+  canvas.width = sw; canvas.height = sh;
+  canvas.getContext('2d').drawImage(v, sx, sy, sw, sh, 0, 0, sw, sh);
   const raw = canvas.toDataURL('image/jpeg', 0.92);
   const cid = choiceCatId, mode = choiceMode;
   closeCameraOverlay();
