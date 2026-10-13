@@ -357,6 +357,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
   overflow:hidden; flex-shrink:0;
 }
 @media (orientation:landscape) {
+  /* cam-video-wrap: 기존 absolute inset:0 유지 → iOS Safari 안정 */
   #cam-video { object-fit:cover; }
   .cam-video-wrap { position:absolute; inset:0; }
   .cam-video-frame {
@@ -364,14 +365,29 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
     height:100%; width:auto; aspect-ratio:4/3;
     max-width:100%;
   }
+  /* 좌 사이드바: max-width = 실제 검정 여백 너비 → 어떤 폰에서도 카메라 침범 안 함 */
   .cam-top-bar {
-    position:absolute; top:0; left:0; right:0; z-index:10;
-    padding:6px 16px; background:rgba(0,0,0,.55);
+    position:absolute !important; left:0 !important; top:0 !important; bottom:0 !important;
+    right:auto !important; z-index:10;
+    width:80px !important;
+    max-width:calc((100vw - 100vh * 4 / 3) / 2) !important;
+    flex-direction:column !important;
+    justify-content:space-between; align-items:center;
+    padding:16px 4px !important; background:rgba(0,0,0,.75) !important;
+    overflow:hidden;
   }
+  /* 우 사이드바: 동일하게 max-width 제한 */
   .cam-bottom-bar {
-    position:absolute; bottom:0; left:0; right:0; z-index:10;
-    padding:8px 20px 16px; background:rgba(0,0,0,.55);
+    position:absolute !important; right:0 !important; top:0 !important; bottom:0 !important;
+    left:auto !important; z-index:10;
+    width:84px !important;
+    max-width:calc((100vw - 100vh * 4 / 3) / 2) !important;
+    flex-direction:column !important;
+    justify-content:space-around; align-items:center;
+    padding:12px 4px !important; background:rgba(0,0,0,.75) !important;
+    overflow:hidden;
   }
+  .cam-zoom-group { flex-direction:column !important; gap:8px; }
   /* 가로 모드: 위아래 여백 가이드 및 라벨 숨기기 */
   .cam-zone-top, .cam-zone-bottom,
   .cam-zone-top-label, .cam-zone-bottom-label { display:none; }
@@ -496,7 +512,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
 
 
 <!-- Custom Camera Overlay -->
-<div id="cam-overlay" style="display:none;flex-direction:column;">
+<div id="cam-overlay" style="display:none;">
   <div class="cam-top-bar">
     <button class="cam-cancel-btn" onclick="closeCameraOverlay()">✕ キャンセル</button>
     <div style="display:flex;gap:8px;align-items:center;">
