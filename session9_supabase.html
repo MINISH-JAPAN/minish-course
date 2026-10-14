@@ -910,19 +910,22 @@ let mpSubsList = [];
 let ssStartX  = 0;
 
 function compress(file) {
-  // ★ colorSpace 옵션 제거 — session8과 동일 방식
-  // { colorSpace: 'srgb' }가 iOS Safari에서 오히려 밝기 이상 유발
+  // ★ session8_v17 코드 그대로 — colorSpace 없음, 4:3 center crop
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = e => {
       const img = new Image();
       img.onload = () => {
-        const MAX = 900;
-        let w = img.width, h = img.height;
-        if (w > MAX) { h = Math.round(h * MAX / w); w = MAX; }
+        const cropAR = 4 / 3;
+        let iw = img.width, ih = img.height;
+        let sx, sy, sw, sh;
+        if (iw / ih > cropAR) { sh = ih; sw = Math.round(ih * cropAR); sx = Math.round((iw - sw) / 2); sy = 0; }
+        else                  { sw = iw; sh = Math.round(iw / cropAR); sx = 0; sy = Math.round((ih - sh) / 2); }
+        const outW = Math.min(sw, 900);
+        const outH = Math.round(sh * outW / sw);
         const c = document.createElement('canvas');
-        c.width = w; c.height = h;
-        c.getContext('2d').drawImage(img, 0, 0, w, h);
+        c.width = outW; c.height = outH;
+        c.getContext('2d').drawImage(img, sx, sy, sw, sh, 0, 0, outW, outH);
         resolve(c.toDataURL('image/jpeg', 0.68));
       };
       img.onerror = reject;
