@@ -1650,7 +1650,7 @@ function renderSlide() {
   function qSet(id, src, ph) {
     const el = document.getElementById(id);
     if (!el) return;
-    el.innerHTML = src ? `<img src="${src}" style="width:100%;height:100%;object-fit:contain">` : ph;
+    el.innerHTML = src ? `<img src="${src}" style="max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain;display:block">` : ph;
   }
   qSet('ss-q-sample', s, '未登録');
   qSet('ss-q-photo1', p, '未提出');
@@ -2008,7 +2008,17 @@ async function startCamera() {
     const v = document.getElementById('cam-video');
     v.srcObject = stream;
     await v.play();
-    setTimeout(() => applyCamZoom(camZoomLevel), 600);
+    // ★ 접사(macro) 방지: 스트림 획득 직후 zoom + focusMode 고정
+    // iOS 자동 ultra-wide 매크로 전환 억제
+    try {
+      const track = stream.getVideoTracks()[0];
+      const caps  = track.getCapabilities ? track.getCapabilities() : {};
+      const adv = {};
+      if (caps.zoom) adv.zoom = Math.max(caps.zoom.min ?? 1, 1);
+      if (caps.focusMode && caps.focusMode.includes('continuous')) adv.focusMode = 'continuous';
+      if (Object.keys(adv).length) await track.applyConstraints({ advanced: [adv] });
+    } catch(_) {}
+    setTimeout(() => applyCamZoom(camZoomLevel), 300);
   } catch(e) {
     toast('カメラを開けませんでした');
     closeCameraOverlay();
@@ -2139,7 +2149,8 @@ async function shootCamera() {
   }
   const canvas = document.createElement('canvas');
   canvas.width = sw; canvas.height = sh;
-  canvas.getContext('2d').drawImage(v, sx, sy, sw, sh, 0, 0, sw, sh);
+  // ★ colorSpace:'srgb' — iOS P3 wide-color 자동변환으로 밝아지는 현상 방지
+  canvas.getContext('2d', { colorSpace: 'srgb' }).drawImage(v, sx, sy, sw, sh, 0, 0, sw, sh);
   const raw = canvas.toDataURL('image/jpeg', 0.92);
   const cid = choiceCatId, mode = choiceMode;
   closeCameraOverlay();
@@ -2174,7 +2185,8 @@ function applyFlip(catId, dataUrl) {
     img.onload = () => {
       const c = document.createElement('canvas');
       c.width = img.width; c.height = img.height;
-      const ctx = c.getContext('2d');
+      // ★ colorSpace:'srgb' — iOS P3 변환 방지
+      const ctx = c.getContext('2d', { colorSpace: 'srgb' });
       if (hFlip) {
         ctx.translate(img.width, 0);
         ctx.scale(-1, 1);
@@ -2235,7 +2247,8 @@ async function compressDataUrl(dataUrl) {
       }
       const c = document.createElement('canvas');
       c.width = w; c.height = h;
-      c.getContext('2d').drawImage(img, 0, 0, w, h);
+      // ★ colorSpace:'srgb' — iOS P3 변환 방지
+      c.getContext('2d', { colorSpace: 'srgb' }).drawImage(img, 0, 0, w, h);
       resolve(c.toDataURL('image/jpeg', 0.85));
     };
     img.onerror = reject;
