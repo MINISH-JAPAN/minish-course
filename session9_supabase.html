@@ -123,7 +123,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
 .ss-counter{color:rgba(255,255,255,.55);font-size:13px}
 .ss-close-btn{color:#fff;background:rgba(255,255,255,.15);border:none;border-radius:6px;padding:6px 13px;cursor:pointer;font-size:12px;font-family:'Noto Sans JP',sans-serif;transition:background .2s}
 .ss-close-btn:hover{background:rgba(255,255,255,.3)}
-.ss-body{flex:1;display:flex;flex-direction:row;min-height:0}
+.ss-body{flex:1;display:flex;flex-direction:row;min-height:0;justify-content:center;align-items:stretch}
 .ss-panel{flex:1;display:flex;flex-direction:column;min-height:0}
 .ss-panel+.ss-panel{border-left:2px solid rgba(255,255,255,.1)}
 .ss-panel-label{background:rgba(255,255,255,.07);color:rgba(255,255,255,.6);font-size:10px;text-align:center;padding:5px;text-transform:uppercase;letter-spacing:.5px;flex-shrink:0;font-family:'Noto Sans JP',sans-serif}
@@ -292,7 +292,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
 .ss-save-btn-inner:hover{background:var(--accent)}
 
 /* ── 4-quadrant slideshow grid ────────────────────────── */
-.ss-quad-grid{flex:1;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:0;min-height:0;background:#000}
+.ss-quad-grid{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:2px;flex:0 0 auto;aspect-ratio:4/3;min-height:0;background:#111}
 .ss-quad{display:flex;flex-direction:column;min-height:0;background:#000;overflow:hidden}
 .ss-quad-lbl{background:rgba(255,255,255,.07);color:rgba(255,255,255,.6);font-size:10px;text-align:center;padding:4px;text-transform:uppercase;letter-spacing:.4px;flex-shrink:0;font-family:'Noto Sans JP',sans-serif}
 .ss-quad-img{flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden;min-height:0}
@@ -920,7 +920,7 @@ function compress(file) {
         if (w > MAX) { h = Math.round(h * MAX / w); w = MAX; }
         const c = document.createElement('canvas');
         c.width = w; c.height = h;
-        c.getContext('2d').drawImage(img, 0, 0, w, h);
+        c.getContext('2d', { colorSpace: 'srgb' }).drawImage(img, 0, 0, w, h);
         resolve(c.toDataURL('image/jpeg', 0.68));
       };
       img.onerror = reject;
@@ -1534,7 +1534,7 @@ async function renderPageCanvas(cat, sUrl, pUrl, name) {
   const W = 1600, H = 900;
   const canvas = document.createElement('canvas');
   canvas.width = W; canvas.height = H;
-  const ctx = canvas.getContext('2d');
+  const ctx = canvas.getContext('2d', { colorSpace: 'srgb' });
 
   // Background
   ctx.fillStyle = '#0a1a18';
@@ -1647,20 +1647,18 @@ function renderSlide() {
   document.getElementById('ss-cat').textContent  = `${cat.n}.  ${cat.jp}  /  ${cat.kr}`;
   document.getElementById('ss-counter').textContent = `${slideIdx + 1} / ${CATS.length}`;
 
-  // ★ objPos: 좌열=right center(사진 우측정렬), 우열=left center(사진 좌측정렬)
-  // 사진이 중앙으로 모이고, 외측 빈 공간 = 평가 영역으로 활용
-  function qSet(id, src, ph, objPos = 'center') {
+  function qSet(id, src, ph) {
     const el = document.getElementById(id);
     if (!el) return;
     el.style.cssText = 'flex:1;min-height:0;overflow:hidden;position:relative;';
     el.innerHTML = src
-      ? `<img src="${src}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;object-position:${objPos};">`
+      ? `<img src="${src}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;">`
       : ph;
   }
-  qSet('ss-q-sample', s,                           '未登録', 'right center');
-  qSet('ss-q-photo1', p,                           '未提出', 'left center');
-  qSet('ss-q-photo2', secondPhotos[cat.id] || null, '—',    'right center');
-  qSet('ss-q-photo3', thirdPhotos[cat.id]  || null, '—',    'left center');
+  qSet('ss-q-sample', s, '未登録');
+  qSet('ss-q-photo1', p, '未提出');
+  qSet('ss-q-photo2', secondPhotos[cat.id] || null, '—');
+  qSet('ss-q-photo3', thirdPhotos[cat.id]  || null, '—');
 
   document.getElementById('ss-prev').disabled = slideIdx === 0;
   document.getElementById('ss-next').disabled = slideIdx === CATS.length - 1;
@@ -2945,7 +2943,7 @@ async function downloadEvalPDF() {
 async function renderEvalPageCanvas(cat, sUrl, pUrl, drawUrl, ev, name) {
   const W=1600, H=900;
   const cv = document.createElement('canvas'); cv.width=W; cv.height=H;
-  const c = cv.getContext('2d');
+  const c = cv.getContext('2d', { colorSpace: 'srgb' });
   c.fillStyle='#0a1a18'; c.fillRect(0,0,W,H);
   // Header
   const HDR=68;
@@ -2971,7 +2969,7 @@ async function renderEvalPageCanvas(cat, sUrl, pUrl, drawUrl, ev, name) {
   // Draw photo + drawing composite
   if (pUrl) {
     const tmp = document.createElement('canvas'); tmp.width=CW; tmp.height=IH;
-    const tc = tmp.getContext('2d');
+    const tc = tmp.getContext('2d', { colorSpace: 'srgb' });
     await drawImgFit(tc, pUrl, 0, 0, CW, IH, '');
     if (drawUrl) {
       const di=new Image(); di.src=drawUrl;
