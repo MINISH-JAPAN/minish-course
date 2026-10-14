@@ -292,7 +292,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
 .ss-save-btn-inner:hover{background:var(--accent)}
 
 /* ── 4-quadrant slideshow grid ────────────────────────── */
-.ss-quad-grid{flex:1;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:2px;min-height:0;background:#111}
+.ss-quad-grid{flex:1;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:0;min-height:0;background:#000}
 .ss-quad{display:flex;flex-direction:column;min-height:0;background:#000;overflow:hidden}
 .ss-quad-lbl{background:rgba(255,255,255,.07);color:rgba(255,255,255,.6);font-size:10px;text-align:center;padding:4px;text-transform:uppercase;letter-spacing:.4px;flex-shrink:0;font-family:'Noto Sans JP',sans-serif}
 .ss-quad-img{flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden;min-height:0}
@@ -1647,20 +1647,20 @@ function renderSlide() {
   document.getElementById('ss-cat').textContent  = `${cat.n}.  ${cat.jp}  /  ${cat.kr}`;
   document.getElementById('ss-counter').textContent = `${slideIdx + 1} / ${CATS.length}`;
 
-  function qSet(id, src, ph) {
+  // ★ objPos: 좌열=right center(사진 우측정렬), 우열=left center(사진 좌측정렬)
+  // 사진이 중앙으로 모이고, 외측 빈 공간 = 평가 영역으로 활용
+  function qSet(id, src, ph, objPos = 'center') {
     const el = document.getElementById(id);
     if (!el) return;
-    // ★ position:absolute 방식 — flex 컨테이너 안에서 max-height:100%가 불안정한 문제 해결
-    // el을 relative 컨테이너로, img를 inset:0으로 완전히 채움 → overflow:hidden으로 짤림 방지
     el.style.cssText = 'flex:1;min-height:0;overflow:hidden;position:relative;';
     el.innerHTML = src
-      ? `<img src="${src}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;">`
+      ? `<img src="${src}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;object-position:${objPos};">`
       : ph;
   }
-  qSet('ss-q-sample', s, '未登録');
-  qSet('ss-q-photo1', p, '未提出');
-  qSet('ss-q-photo2', secondPhotos[cat.id] || null, '—');
-  qSet('ss-q-photo3', thirdPhotos[cat.id]  || null, '—');
+  qSet('ss-q-sample', s,                           '未登録', 'right center');
+  qSet('ss-q-photo1', p,                           '未提出', 'left center');
+  qSet('ss-q-photo2', secondPhotos[cat.id] || null, '—',    'right center');
+  qSet('ss-q-photo3', thirdPhotos[cat.id]  || null, '—',    'left center');
 
   document.getElementById('ss-prev').disabled = slideIdx === 0;
   document.getElementById('ss-next').disabled = slideIdx === CATS.length - 1;
