@@ -254,7 +254,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
 .mp-photos.cols3{grid-template-columns:1fr 1fr 1fr}
 .mp-pcell{padding:6px;display:flex;flex-direction:column;gap:4px}
 .mp-pcell+.mp-pcell{border-left:1px solid var(--border)}
-.mp-plbl{font-size:9px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;text-align:center}
+.mp-plbl{font-size:9px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .mp-frame{width:100%;aspect-ratio:4/3;background:var(--bg);border-radius:6px;overflow:hidden;border:1px dashed var(--border);display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--muted);position:relative}
 .mp-frame img{width:100%;height:100%;object-fit:cover;border-radius:5px}
 .mp-shoot-btn{width:100%;padding:5px 8px;background:var(--accent);color:#fff;border:none;border-radius:5px;font-size:10px;font-family:'Noto Sans JP',sans-serif;cursor:pointer;margin-top:2px}
@@ -600,6 +600,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
 <!-- Native file input for gallery pick -->
 <input type="file" id="native-file-input" accept="image/*" style="position:absolute;left:-9999px;top:-9999px;opacity:0;" onchange="nativeFileSelected(this)">
 <input type="file" id="native-file-input-all" accept="*/*" style="position:absolute;left:-9999px;top:-9999px;opacity:0;" onchange="nativeFileSelected(this)">
+<!-- native-cam-input 제거 — 파일피커(native-file-input)가 카메라 포함 -->
 
 <!-- Slideshow overlay -->
 <div id="ss-overlay" class="ss-overlay" style="display:none"
@@ -2124,8 +2125,19 @@ function directCamera(catId, mode) {
 function handleUploadClick(catId)  { directUpload(catId, 'main'); }
 function openSecondCameraFn(catId) { openCameraOverlay(catId, 'second'); }
 function openThirdCameraFn(catId)  { openCameraOverlay(catId, 'third'); }
-function mpOpenCamera(catId)       { openCameraOverlay(catId, 'mypage'); }
-function mpOpenCamera3(catId)      { openCameraOverlay(catId, 'mypage3'); }
+// ★ 2次/3次 写真 — native-file-input (iOS 파일피커: 카메라/라이브러리/파일 통합)
+function mpOpenCamera(catId)  { mpOpenFile2(catId); } // alias
+function mpOpenCamera3(catId) { mpOpenFile3(catId); } // alias
+function mpOpenFile2(catId) {
+  choiceCatId = catId; choiceMode = 'mypage';
+  const inp = document.getElementById('native-file-input');
+  inp.value = ''; inp.click();
+}
+function mpOpenFile3(catId) {
+  choiceCatId = catId; choiceMode = 'mypage3';
+  const inp = document.getElementById('native-file-input');
+  inp.value = ''; inp.click();
+}
 
 function showChoiceSheet(catId, mode) { /* no-op */ }
 function closeChoiceSheet() { document.getElementById('upload-choice-ov').style.display = 'none'; }
@@ -3068,23 +3080,23 @@ async function mpLoadDetail(idx) {
       </div>
       <div class="mp-photos" style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px">
         <div class="mp-pcell">
-          <div class="mp-plbl">サンプル / 샘플</div>
+          <div class="mp-plbl">サンプル</div>
           <div class="mp-frame">${sample?`<img src="${sample}">`:'<span>未登録</span>'}</div>
         </div>
         <div class="mp-pcell">
-          <div class="mp-plbl">1次写真（1차사진）</div>
+          <div class="mp-plbl">1次写真</div>
           <div class="mp-frame">${photo?`<img src="${photo}">`:'<span>未提出</span>'}${photo&&ev.drawing_data_url?`<img src="${ev.drawing_data_url}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;pointer-events:none">`:''}
           </div>
         </div>
         <div class="mp-pcell">
-          <div class="mp-plbl">2次写真（2차사진）</div>
+          <div class="mp-plbl">2次写真</div>
           <div class="mp-frame" id="mp-frame2-${cat.id}">${photo2?`<img src="${photo2}">`:'<span style="font-size:9px;text-align:center">—</span>'}</div>
-          <button class="mp-shoot-btn" onclick="mpOpenCamera('${cat.id}')" id="mp-shoot2-${cat.id}">📷 撮影</button>
+          <button class="mp-shoot-btn" onclick="mpOpenFile2('${cat.id}')" id="mp-shoot2-${cat.id}">📷 撮影/添付</button>
         </div>
         <div class="mp-pcell">
-          <div class="mp-plbl">3次写真（3차사진）</div>
+          <div class="mp-plbl">3次写真</div>
           <div class="mp-frame" id="mp-frame3-${cat.id}">${photo3?`<img src="${photo3}">`:'<span style="font-size:9px;text-align:center">—</span>'}</div>
-          <button class="mp-shoot-btn" onclick="mpOpenCamera3('${cat.id}')" ${photo2?'':'disabled style="opacity:.4"'} id="mp-shoot3-${cat.id}">📷 撮影</button>
+          <button class="mp-shoot-btn" onclick="mpOpenFile3('${cat.id}')" ${photo2?'':'disabled style="opacity:.4"'} id="mp-shoot3-${cat.id}">📷 撮影/添付</button>
         </div>
       </div>
       <div class="mp-eval-trio">
