@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MINISH JAPAN 도쿄 42개 오피스 입지·통근·사진 비교 맵</title>
+  <title>MINISH JAPAN 도쿄 42개 오피스 입지 · 통근 · 스샷 비교 맵</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/@phosphor-icons/web"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -38,11 +38,19 @@
       stroke-linejoin: round;
     }
     .thumb-card:hover img {
-      transform: scale(1.08);
+      transform: scale(1.06);
     }
   </style>
 </head>
 <body class="bg-slate-100 text-slate-800 h-screen flex flex-col overflow-hidden">
+
+  <!-- Toast Notification -->
+  <div id="toast-box" class="fixed top-16 left-1/2 -translate-x-1/2 z-50 pointer-events-none opacity-0 transition-opacity duration-200">
+    <div id="toast-msg" class="bg-slate-900/95 text-white text-xs font-bold px-4 py-2.5 rounded-full shadow-xl border border-slate-700 flex items-center gap-2">
+      <i class="ph-fill ph-check-circle text-emerald-400 text-base"></i>
+      <span>저장되었습니다</span>
+    </div>
+  </div>
 
   <!-- Top Header -->
   <header class="bg-white border-b border-slate-200 px-4 py-2.5 flex flex-wrap items-center justify-between gap-3 z-20 shrink-0 shadow-xs">
@@ -53,18 +61,27 @@
       <div>
         <div class="flex items-center gap-2">
           <span class="text-[11px] font-bold tracking-wider uppercase bg-blue-50 text-blue-700 border border-blue-200 px-2 py-0.5 rounded-md">MINISH JAPAN</span>
-          <h1 class="text-sm sm:text-base font-extrabold text-slate-900">도쿄 4개 권역 42개 오피스 입지 · 통근 · 사진 비교 맵</h1>
+          <h1 class="text-sm sm:text-base font-extrabold text-slate-900">도쿄 4개 권역 42개 오피스 입지 · 통근 · 스샷 비교 맵</h1>
         </div>
-        <p class="text-[11px] text-slate-500 mt-0.5">Three Star 제안서 4종 통합 (외관/실내 썸네일 클릭 시 크게 확대)</p>
+        <p class="text-[11px] text-slate-500 mt-0.5">카드 선택 후 PDF 스크린샷을 <kbd class="px-1.5 py-0.2 bg-slate-100 border border-slate-300 rounded text-[10px] font-bold text-slate-700">Ctrl+V</kbd> / <kbd class="px-1.5 py-0.2 bg-slate-100 border border-slate-300 rounded text-[10px] font-bold text-slate-700">Cmd+V</kbd>로 붙여넣으면 자동 저장됩니다</p>
       </div>
     </div>
 
-    <!-- Header Stats & Layer Toggles -->
-    <div class="flex items-center gap-2 text-xs">
+    <!-- Header Controls -->
+    <div class="flex flex-wrap items-center gap-2 text-xs">
       <button id="toggle-corridors-btn" onclick="toggleCorridorLayer()" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-semibold border bg-indigo-50 text-indigo-700 border-indigo-200 hover:bg-indigo-100 transition-colors">
         <i class="ph-fill ph-house-line text-sm"></i>
-        <span>대형 거주구역(베드타운) 축 ON</span>
+        <span>거주구역 축 ON</span>
       </button>
+      <button onclick="exportScreenshotsJSON()" title="붙여넣은 스샷 전체 백업 파일 다운로드" class="flex items-center gap-1 px-2.5 py-1.5 rounded-xl font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors">
+        <i class="ph-bold ph-download-simple"></i>
+        <span class="hidden sm:inline">스샷 백업</span>
+      </button>
+      <label title="백업한 스샷 JSON 불러오기" class="flex items-center gap-1 px-2.5 py-1.5 rounded-xl font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors cursor-pointer">
+        <i class="ph-bold ph-upload-simple"></i>
+        <span class="hidden sm:inline">복원</span>
+        <input type="file" accept=".json" onchange="importScreenshotsJSON(event)" class="hidden">
+      </label>
       <button onclick="resetMapView()" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors">
         <i class="ph-bold ph-arrows-out-cardinal"></i>
         <span class="hidden sm:inline">전체 지도</span>
@@ -72,11 +89,14 @@
     </div>
   </header>
 
+  <!-- Hidden File Input for Manual Image Upload per Property -->
+  <input type="file" id="manual-file-input" accept="image/*" multiple class="hidden" onchange="handleManualFileUpload(event)">
+
   <!-- Main Workspace -->
   <div class="flex-1 flex flex-col lg:flex-row overflow-hidden relative">
 
-    <!-- Left Sidebar: Search, Filters, Property List with Photo Thumbnails -->
-    <aside class="w-full lg:w-[490px] xl:w-[540px] bg-white border-r border-slate-200 flex flex-col h-[54%] lg:h-full z-10 shrink-0 shadow-sm">
+    <!-- Left Sidebar: Search, Filters, Property List -->
+    <aside class="w-full lg:w-[500px] xl:w-[550px] bg-white border-r border-slate-200 flex flex-col h-[55%] lg:h-full z-10 shrink-0 shadow-sm">
       
       <!-- Filter & Control Panel -->
       <div class="p-3.5 bg-slate-50/90 border-b border-slate-200 space-y-2.5 shrink-0">
@@ -87,7 +107,7 @@
             전체 (42)
           </button>
           <button onclick="setGroupFilter('A')" id="tab-A" class="group-tab px-2.5 py-1.5 rounded-lg bg-white text-slate-700 border border-slate-200 hover:bg-slate-100 transition-all flex items-center gap-1">
-            <span class="w-2 h-2 rounded-full bg-rose-500"></span> 미나토·시부야·메구로 (12)
+            <span class="w-2 h-2 rounded-full bg-rose-500"></span> 미나토·시부야권 (12)
           </button>
           <button onclick="setGroupFilter('B')" id="tab-B" class="group-tab px-2.5 py-1.5 rounded-lg bg-white text-slate-700 border border-slate-200 hover:bg-slate-100 transition-all flex items-center gap-1">
             <span class="w-2 h-2 rounded-full bg-blue-600"></span> 치요다구 (12)
@@ -140,7 +160,7 @@
     </aside>
 
     <!-- Right Area: Interactive Vector Map & Floating Inspector -->
-    <main class="flex-1 relative h-[46%] lg:h-full bg-[#e9eff5] overflow-hidden flex flex-col">
+    <main class="flex-1 relative h-[45%] lg:h-full bg-[#e9eff5] overflow-hidden flex flex-col">
       
       <!-- Zoom Controls -->
       <div class="absolute top-4 right-4 z-20 flex flex-col gap-1.5 bg-white/95 backdrop-blur-md p-1.5 rounded-2xl shadow-lg border border-slate-200">
@@ -157,7 +177,7 @@
       </div>
 
       <!-- Map Legend (Top Left) -->
-      <div class="absolute top-4 left-4 z-20 bg-white/95 backdrop-blur-md rounded-2xl p-3 shadow-md border border-slate-200/90 text-[11px] max-w-[260px] hidden sm:block">
+      <div class="absolute top-4 left-4 z-20 bg-white/95 backdrop-blur-md rounded-2xl p-3 shadow-md border border-slate-200/90 text-[11px] max-w-[265px] hidden sm:block">
         <div class="font-extrabold text-slate-800 mb-1.5 flex items-center gap-1.5">
           <i class="ph-fill ph-map-pin text-blue-600"></i> PDF 권역별 마커 색상
         </div>
@@ -313,8 +333,8 @@
     </main>
   </div>
 
-  <!-- Full-Screen Photo Lightbox Modal -->
-  <div id="photo-lightbox" onclick="closeLightbox(event)" class="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-sm hidden flex items-center justify-center p-4">
+  <!-- Full-Screen Photo Lightbox Modal (Only for User Pasted Screenshots) -->
+  <div id="photo-lightbox" onclick="closeLightbox()" class="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-sm hidden flex items-center justify-center p-4">
     <div onclick="event.stopPropagation()" class="relative max-w-4xl w-full bg-slate-900 rounded-2xl overflow-hidden border border-slate-700 shadow-2xl flex flex-col">
       <!-- Top Bar -->
       <div class="px-5 py-3.5 bg-slate-900/95 border-b border-slate-800 flex items-center justify-between gap-3">
@@ -331,8 +351,8 @@
       </div>
 
       <!-- Main Enlarged Image Area -->
-      <div class="relative bg-black flex items-center justify-center h-[52vh] sm:h-[62vh] select-none">
-        <img id="lb-img" src="" alt="오피스 확대 사진" class="max-h-full max-w-full object-contain transition-opacity duration-200">
+      <div class="relative bg-black flex items-center justify-center h-[54vh] sm:h-[64vh] select-none">
+        <img id="lb-img" src="" alt="첨부한 스크린샷 확대" class="max-h-full max-w-full object-contain">
         
         <!-- Prev / Next Buttons -->
         <button onclick="stepLightbox(-1)" class="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-slate-900/80 hover:bg-blue-600 text-white border border-slate-700 flex items-center justify-center shadow-lg transition-colors">
@@ -342,56 +362,27 @@
           <i class="ph-bold ph-caret-right text-xl"></i>
         </button>
 
-        <!-- Photo Category Tag -->
+        <!-- Counter Tag -->
         <div class="absolute bottom-3 left-1/2 -translate-x-1/2 bg-slate-900/85 backdrop-blur-md text-white px-4 py-1.5 rounded-full text-xs font-bold border border-slate-700 flex items-center gap-2">
-          <span id="lb-caption">건물 외관</span>
+          <span>등록된 PDF 스크린샷</span>
           <span class="text-slate-400">|</span>
-          <span id="lb-counter" class="text-blue-400">1 / 3</span>
+          <span id="lb-counter" class="text-blue-400">1 / 1</span>
         </div>
       </div>
 
       <!-- Bottom Thumbnail Strip -->
-      <div id="lb-thumbs" class="p-3 bg-slate-900 border-t border-slate-800 flex items-center justify-center gap-3">
-        <!-- Rendered by JS -->
+      <div id="lb-thumbs" class="p-3 bg-slate-900 border-t border-slate-800 flex items-center justify-center gap-3 overflow-x-auto">
       </div>
     </div>
   </div>
 
   <script>
-    // Curated High-Resolution Office Exterior & Interior Photo Pools (Matched to PDF building styles)
-    const exteriorPhotos = [
-      'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=900&q=80',
-      'https://images.unsplash.com/photo-1554469384-e58fac16e23a?auto=format&fit=crop&w=900&q=80',
-      'https://images.unsplash.com/photo-1577495508048-b635879837f1?auto=format&fit=crop&w=900&q=80',
-      'https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=900&q=80',
-      'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=900&q=80',
-      'https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=900&q=80'
-    ];
-
-    const workspacePhotos = [
-      'https://images.unsplash.com/photo-1497366811353-6870744d04b2?auto=format&fit=crop&w=900&q=80',
-      'https://images.unsplash.com/photo-1524758631624-e2822e304c36?auto=format&fit=crop&w=900&q=80',
-      'https://images.unsplash.com/photo-1604328698692-f76ea9498e76?auto=format&fit=crop&w=900&q=80',
-      'https://images.unsplash.com/photo-1497215842964-222b430dc094?auto=format&fit=crop&w=900&q=80',
-      'https://images.unsplash.com/photo-1568992687947-868a62a9f521?auto=format&fit=crop&w=900&q=80',
-      'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&w=900&q=80'
-    ];
-
-    const meetingPhotos = [
-      'https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&w=900&q=80',
-      'https://images.unsplash.com/photo-1517502884422-41eaead166d4?auto=format&fit=crop&w=900&q=80',
-      'https://images.unsplash.com/photo-1572025442646-866d16c84a54?auto=format&fit=crop&w=900&q=80',
-      'https://images.unsplash.com/photo-1556761175-4b46a572b786?auto=format&fit=crop&w=900&q=80',
-      'https://images.unsplash.com/photo-1542744173-8e7e53415bb0?auto=format&fit=crop&w=900&q=80',
-      'https://images.unsplash.com/photo-1600508774634-4e11d34730e2?auto=format&fit=crop&w=900&q=80'
-    ];
-
-    // Complete 42 Properties Dataset from all 4 PDFs
+    // Complete 42 Properties Dataset from all 4 PDFs (ZERO fake images)
     const properties = [
       // ================= GROUP A: 港区・渋谷区・品川区・文京区・目黒区 (1~12) =================
       {
-        id: 1, group: 'A', groupName: '미나토·시부야·메구로', color: '#f43f5e',
-        name: 'I/O shimbashi (旧:鈴木ビル)', ward: '미나토구', address: '港区新橋1-11-2',
+        id: 1, group: 'A', pdfRef: '미나토·시부야 PDF · No.1', groupName: '미나토·시부야·메구로', color: '#f43f5e',
+        name: 'I/O shimbashi (旧:鈴木ビル)', ward: '미나토구', address: '東京都港区新橋1-11-2',
         station: '신바시역 도보 2분 / 우치사이와이초역 도보 6분', walkMin: 2,
         areaPyung: 17.53, areaM2: 59.73, rent: 620000, pyungPrice: 35368, deposit: '0개월',
         seats: '10인 · 회의실 1', built: '1964년 (구내진 보강완)',
@@ -400,8 +391,8 @@
         commuteEval: 'JR 야마노테선·도카이도선·긴자선·아사쿠사선 교차. [요코하마·가와사키·시나가와·오타구] 방면과 [이치카와·후나바시(지바)] 방면에서 환승 없이 직결 출퇴근이 매우 편리함.'
       },
       {
-        id: 2, group: 'A', groupName: '미나토·시부야·메구로', color: '#f43f5e',
-        name: 'Biz Feel Shimbashi (越後屋ビル)', ward: '미나토구', address: '港区西新橋2-6-3',
+        id: 2, group: 'A', pdfRef: '미나토·시부야 PDF · No.2', groupName: '미나토·시부야·메구로', color: '#f43f5e',
+        name: 'Biz Feel Shimbashi (越後屋ビル)', ward: '미나토구', address: '東京都港区西新橋2-6-3',
         station: '우치사이와이초역 도보 3분 / 신바시역 도보 7분', walkMin: 3,
         areaPyung: 19.16, areaM2: 63.34, rent: 700000, pyungPrice: 36534, deposit: '0개월',
         seats: '10인 · 회의실 1', built: '1990년 (신내진)',
@@ -410,8 +401,8 @@
         commuteEval: '도에이 미타선·긴자선·JR선 이용. [이타바시구·네리마구·사이타마 방면(미타선)] 및 [시부야·세타가야 방면(긴자선)] 거주 직원의 통근 편의성이 뛰어남.'
       },
       {
-        id: 3, group: 'A', groupName: '미나토·시부야·메구로', color: '#f43f5e',
-        name: 'ACN三田ビル (TASUKI MITA)', ward: '미나토구', address: '港区芝5-15-2',
+        id: 3, group: 'A', pdfRef: '미나토·시부야 PDF · No.3', groupName: '미나토·시부야·메구로', color: '#f43f5e',
+        name: 'ACN三田ビル (TASUKI MITA)', ward: '미나토구', address: '東京都港区芝5-15-2',
         station: '미타역 도보 4분 / 다마치역 도보 6분', walkMin: 4,
         areaPyung: 22.94, areaM2: 75.83, rent: 779960, pyungPrice: 34000, deposit: '3개월',
         seats: '10인 · 회의실 1', built: '2024년 6월 (신축)',
@@ -420,8 +411,8 @@
         commuteEval: 'JR 야마노테선·게이힌토호쿠선·미타선·아사쿠사선 이용. [가나가와(요코하마·가와사키)·시나가와구] 및 [이타바시·아다치구] 방면 대형 주거단지에서 통근하기 최상.'
       },
       {
-        id: 4, group: 'A', groupName: '미나토·시부야·메구로', color: '#f43f5e',
-        name: '三田マルハチビルヂング', ward: '미나토구', address: '港区三田3-1-10',
+        id: 4, group: 'A', pdfRef: '미나토·시부야 PDF · No.4', groupName: '미나토·시부야·메구로', color: '#f43f5e',
+        name: '三田マルハチビルヂング', ward: '미나토구', address: '東京都港区三田3-1-10',
         station: '미타역 도보 5분 / 다마치역 도보 7분', walkMin: 5,
         areaPyung: 27.45, areaM2: 90.74, rent: 823500, pyungPrice: 30000, deposit: '0개월',
         seats: '12인 · 회의실 2', built: '1984년 (신내진)',
@@ -430,8 +421,8 @@
         commuteEval: '[가와사키·요코하마·오타구(카마타)] 등 도쿄 남부·가나가와 대형 베드타운과 [시로카네·아자부] 도심 주거지에서 15~25분 내 출퇴근 가능.'
       },
       {
-        id: 5, group: 'A', groupName: '미나토·시부야·메구로', color: '#f43f5e',
-        name: 'SOLIX SHIBUYA', ward: '시부야구', address: '渋谷区渋谷3丁目',
+        id: 5, group: 'A', pdfRef: '미나토·시부야 PDF · No.5', groupName: '미나토·시부야·메구로', color: '#f43f5e',
+        name: 'SOLIX SHIBUYA', ward: '시부야구', address: '東京都渋谷区渋谷3丁目',
         station: '시부야역 도보 4분 / 신센역 도보 7분', walkMin: 4,
         areaPyung: 20.51, areaM2: 68.56, rent: 820400, pyungPrice: 40000, deposit: '5개월',
         seats: '13인 · 회의실 1', built: '2024년 6월 (신축)',
@@ -440,8 +431,8 @@
         commuteEval: '도큐 도요코선·덴엔토시선·JR·메트로 9개 노선 집결. [세타가야구(산겐자야·후타코타마가와)·메구로구·요코하마·무사시코스기] 거주 직원에게 압도적 1순위 통근지.'
       },
       {
-        id: 6, group: 'A', groupName: '미나토·시부야·메구로', color: '#f43f5e',
-        name: '시부야역근 셋업물건 (No.6)', ward: '시부야구', address: '渋谷区渋谷2丁目',
+        id: 6, group: 'A', pdfRef: '미나토·시부야 PDF · No.6', groupName: '미나토·시부야·메구로', color: '#f43f5e',
+        name: '시부야역근 셋업물건 (No.6)', ward: '시부야구', address: '東京都渋谷区渋谷2丁目',
         station: '시부야역 도보 4분', walkMin: 4,
         areaPyung: 22.87, areaM2: 75.60, rent: 950000, pyungPrice: 41539, deposit: '0개월',
         seats: '10인 · 회의실 1', built: '1998년 (신내진)',
@@ -450,8 +441,8 @@
         commuteEval: '[세타가야구·메구로구·가나가와현(덴엔토시선·도요코선)] 및 [이케부쿠로·사이타마 방면(후쿠토신선·사이쿄선)]에서 환승 없이 출퇴근 가능.'
       },
       {
-        id: 7, group: 'A', groupName: '미나토·시부야·메구로', color: '#f43f5e',
-        name: 'TRANS-EBISU (KHOビル)', ward: '시부야구', address: '渋谷区東2丁目',
+        id: 7, group: 'A', pdfRef: '미나토·시부야 PDF · No.7', groupName: '미나토·시부야·메구로', color: '#f43f5e',
+        name: 'TRANS-EBISU (KHOビル)', ward: '시부야구', address: '東京都渋谷区東2丁目',
         station: '에비스역 도보 7분 / 다이칸야마역 도보 9분', walkMin: 7,
         areaPyung: 21.95, areaM2: 72.59, rent: 790000, pyungPrice: 35991, deposit: '0개월',
         seats: '13인 · 회의실 1', built: '1992년 (신내진)',
@@ -460,8 +451,8 @@
         commuteEval: 'JR 야마노테선·사이쿄선·히비야선·도요코선 이용. [메구로구·나카메구로·지유가오카·요코하마] 및 [이케부쿠로·아카바네] 방면에서 직결 출근 편리.'
       },
       {
-        id: 8, group: 'A', groupName: '미나토·시부야·메구로', color: '#f43f5e',
-        name: 'M.BALANCE+GOTANDA', ward: '시나가와구', address: '品川区西五反田7丁目',
+        id: 8, group: 'A', pdfRef: '미나토·시부야 PDF · No.8', groupName: '미나토·시부야·메구로', color: '#f43f5e',
+        name: 'M.BALANCE+GOTANDA', ward: '시나가와구', address: '東京都品川区西五反田7丁目',
         station: '오사키히로코지역 도보 7분 / 고탄다역 도보 9분', walkMin: 7,
         areaPyung: 15.84, areaM2: 52.36, rent: 554400, pyungPrice: 35000, deposit: '상담',
         seats: '10인 · 회의실 1', built: '1987년 (신내진)',
@@ -470,8 +461,8 @@
         commuteEval: 'JR 야마노테선·도큐 이케가미선·아사쿠사선 이용. [시나가와구·오타구·가와사키·요코하마] 등 도쿄 남부 대단위 주거지역 직원의 출퇴근이 매우 수월함.'
       },
       {
-        id: 9, group: 'A', groupName: '미나토·시부야·메구로', color: '#f43f5e',
-        name: 'JP-BASE御茶ノ水ビル', ward: '분쿄구', address: '文京区湯島1丁目',
+        id: 9, group: 'A', pdfRef: '미나토·시부야 PDF · No.9', groupName: '미나토·시부야·메구로', color: '#f43f5e',
+        name: 'JP-BASE御茶ノ水ビル', ward: '분쿄구', address: '東京都文京区湯島1丁目',
         station: '오차노미즈역 도보 5분 / 유시마역 도보 8분', walkMin: 5,
         areaPyung: 19.37, areaM2: 64.03, rent: 503620, pyungPrice: 26000, deposit: '4개월',
         seats: '10인 · 회의실 1', built: '1987년 (신내진)',
@@ -480,8 +471,8 @@
         commuteEval: 'JR 주오선·소부선·마루노우치선·지요다선 이용. [나카노·스기나미·기치조지(주오선)] 및 [후나바시·이치카와(소부선)], [마쓰도·기타센주(지요다선)] 모두 직결.'
       },
       {
-        id: 10, group: 'A', groupName: '미나토·시부야·메구로', color: '#f43f5e',
-        name: 'コア本郷ビル (코어 혼고)', ward: '분쿄구', address: '文京区本郷3-43-16',
+        id: 10, group: 'A', pdfRef: '미나토·시부야 PDF · No.10', groupName: '미나토·시부야·메구로', color: '#f43f5e',
+        name: 'コア本郷ビル (코어 혼고)', ward: '분쿄구', address: '東京都文京区本郷3-43-16',
         station: '혼고산초메역 도보 5분 / 유시마역 도보 6분', walkMin: 5,
         areaPyung: 19.60, areaM2: 64.80, rent: 509600, pyungPrice: 26000, deposit: '0개월',
         seats: '12인 · 회의실 1', built: '1993년 (리뉴얼완)',
@@ -490,8 +481,8 @@
         commuteEval: '마루노우치선·도에이 오에도선 이용. [이케부쿠로·네리마구·히카리가오카(오에도선)] 및 [고토구(몬젠나카초·기요스미시라카와)] 거주자 통근에 최적화.'
       },
       {
-        id: 11, group: 'A', groupName: '미나토·시부야·메구로', color: '#f43f5e',
-        name: '青葉台四丁目ビル', ward: '메구로구', address: '目黒区青葉台4-2-16',
+        id: 11, group: 'A', pdfRef: '미나토·시부야 PDF · No.11', groupName: '미나토·시부야·메구로', color: '#f43f5e',
+        name: '青葉台四丁目ビル', ward: '메구로구', address: '東京都目黒区青葉台4-2-16',
         station: '신센역 도보 5분 / 고마바토다앞역 도보 9분', walkMin: 5,
         areaPyung: 25.21, areaM2: 83.34, rent: 882350, pyungPrice: 35000, deposit: '0개월',
         seats: '12인 · 회의실 1', built: '1991년 (신내진)',
@@ -500,8 +491,8 @@
         commuteEval: '게이오 이노카시라선·덴엔토시선(이케지리오하시) 인접. [세타가야구(시모기타자와·산겐자야)·스기나미구(에이후쿠초)·기치조지] 거주자에게 최고의 출퇴근 입지.'
       },
       {
-        id: 12, group: 'A', groupName: '미나토·시부야·메구로', color: '#f43f5e',
-        name: 'BIASTA MEGUROビル', ward: '메구로구', address: '目黒区下目黒2丁目',
+        id: 12, group: 'A', pdfRef: '미나토·시부야 PDF · No.12', groupName: '미나토·시부야·메구로', color: '#f43f5e',
+        name: 'BIASTA MEGUROビル', ward: '메구로구', address: '東京都目黒区下目黒2丁目',
         station: '메구로역 도보 10분', walkMin: 10,
         areaPyung: 24.22, areaM2: 80.06, rent: 847700, pyungPrice: 35000, deposit: '상담',
         seats: '12인 · 회의실 1', built: '2026년 6월 (최신축)',
@@ -512,8 +503,8 @@
 
       // ================= GROUP B: 千代田区 (13~24) =================
       {
-        id: 13, group: 'B', groupName: '치요다구', color: '#2563eb',
-        name: '神田ノースフロント', ward: '치요다구', address: '千代田区神田鍛冶町3丁目',
+        id: 13, group: 'B', pdfRef: '치요다구 PDF · No.1', groupName: '치요다구', color: '#2563eb',
+        name: '神田ノースフロント', ward: '치요다구', address: '東京都千代田区神田鍛冶町3丁目',
         station: '간다역 도보 3분 / 아와지초역 도보 5분', walkMin: 3,
         areaPyung: 25.31, areaM2: 83.66, rent: 800000, pyungPrice: 31608, deposit: '3개월',
         seats: '15인 · 회의실 1', built: '1980년 (보강완)',
@@ -522,8 +513,8 @@
         commuteEval: 'JR 주오선·야마노테선·게이힌토호쿠선·긴자선 집결. [나카노·스기나미·기치조지(주오선)] 및 [아카바네·우라와·오미야(게이힌토호쿠선)]에서 환승 없이 직통 출근.'
       },
       {
-        id: 14, group: 'B', groupName: '치요다구', color: '#2563eb',
-        name: '須田町ビルEAST', ward: '치요다구', address: '千代田区神田須田町1-3-2',
+        id: 14, group: 'B', pdfRef: '치요다구 PDF · No.2', groupName: '치요다구', color: '#2563eb',
+        name: '須田町ビルEAST', ward: '치요다구', address: '東京都千代田区神田須田町1-3-2',
         station: '오가와마치역 도보 2분 / 아와지초역 도보 2분', walkMin: 2,
         areaPyung: 20.96, areaM2: 69.28, rent: 544960, pyungPrice: 26000, deposit: '4개월',
         seats: '8인 · 회의실 1', built: '1980년',
@@ -532,8 +523,8 @@
         commuteEval: '도에이 신주쿠선·마루노우치선·지요다선 도보 2~5분. [에도가와구(모토야와타·후나보리)·이치카와(지바)] 및 [오기쿠보·나카노] 양방향 베드타운 통근 우수.'
       },
       {
-        id: 15, group: 'B', groupName: '치요다구', color: '#2563eb',
-        name: 'Biz Feel KANDA', ward: '치요다구', address: '千代田区神田須田町1-4-6',
+        id: 15, group: 'B', pdfRef: '치요다구 PDF · No.3', groupName: '치요다구', color: '#2563eb',
+        name: 'Biz Feel KANDA', ward: '치요다구', address: '東京都千代田区神田須田町1-4-6',
         station: '아와지초역 도보 2분 / 간다역 도보 4분', walkMin: 2,
         areaPyung: 23.24, areaM2: 76.82, rent: 697200, pyungPrice: 30000, deposit: '0개월',
         seats: '14인 · 회의실 1', built: '1989년 (신내진)',
@@ -542,8 +533,8 @@
         commuteEval: '[스기나미구·나카노구·무사시노시(주오선·마루노우치선)]와 [사이타마·가와구치(게이힌토호쿠선)] 대형 주거단지를 30분대 직결로 연결하는 사통팔달 입지.'
       },
       {
-        id: 16, group: 'B', groupName: '치요다구', color: '#2563eb',
-        name: 'NOVEL WORK Kanda', ward: '치요다구', address: '千代田区神田司町2丁目',
+        id: 16, group: 'B', pdfRef: '치요다구 PDF · No.4', groupName: '치요다구', color: '#2563eb',
+        name: 'NOVEL WORK Kanda', ward: '치요다구', address: '東京都千代田区神田司町2丁目',
         station: '오가와마치역 도보 2분 / 간다역 도보 5분', walkMin: 2,
         areaPyung: 26.98, areaM2: 88.06, rent: 863360, pyungPrice: 32000, deposit: '0개월',
         seats: '14인 · 회의실 1', built: '1990년 (신내진)',
@@ -552,8 +543,8 @@
         commuteEval: '도에이 신주쿠선·마루노우치선·JR 주오선 이용. [지바현 이치카와·모토야와타] 및 [고토구 오지마·스미요시] 동부 대형 주거구역 출퇴근이 특히 편리.'
       },
       {
-        id: 17, group: 'B', groupName: '치요다구', color: '#2563eb',
-        name: '(仮称)MUC Kodenmaビル', ward: '치요다구', address: '千代田区岩本町1-8-17',
+        id: 17, group: 'B', pdfRef: '치요다구 PDF · No.5', groupName: '치요다구', color: '#2563eb',
+        name: '(仮称)MUC Kodenmaビル', ward: '치요다구', address: '東京都千代田区岩本町1-8-17',
         station: '고덴마초역 도보 3분 / 이와모토초역 도보 6분', walkMin: 3,
         areaPyung: 24.37, areaM2: 80.56, rent: 690012, pyungPrice: 28314, deposit: '0개월',
         seats: '16인 · 회의실 1', built: '1962년 (보강완)',
@@ -562,8 +553,8 @@
         commuteEval: '메트로 히비야선·도에이 신주쿠선 이용. [기타센주·아다치구·가쓰시카구(히비야선/도부선 직통)] 및 [에도가와구·지바 방면] 동북부 거주 직원에게 매우 편리.'
       },
       {
-        id: 18, group: 'B', groupName: '치요다구', color: '#2563eb',
-        name: 'Biz Feel Iwamotocho', ward: '치요다구', address: '千代田区岩本町2-7-2',
+        id: 18, group: 'B', pdfRef: '치요다구 PDF · No.6', groupName: '치요다구', color: '#2563eb',
+        name: 'Biz Feel Iwamotocho', ward: '치요다구', address: '東京都千代田区岩本町2-7-2',
         station: '이와모토초역 도보 4분 / 간다역 도보 6분', walkMin: 4,
         areaPyung: 19.09, areaM2: 63.10, rent: 572700, pyungPrice: 30000, deposit: '0개월',
         seats: '12인 · 회의실 1', built: '1992년 (신내진)',
@@ -572,8 +563,8 @@
         commuteEval: '도에이 신주쿠선·JR선·히비야선 이용. [모토야와타·이치카와(지바)] 및 [신주쿠·사사즈카·조후(게이오선 직통)] 동서 횡단 통근 축의 중심.'
       },
       {
-        id: 19, group: 'B', groupName: '치요다구', color: '#2563eb',
-        name: 'グランファースト神田紺屋町', ward: '치요다구', address: '千代田区神田紺屋町15-1',
+        id: 19, group: 'B', pdfRef: '치요다구 PDF · No.7', groupName: '치요다구', color: '#2563eb',
+        name: 'グランファースト神田紺屋町', ward: '치요다구', address: '東京都千代田区神田紺屋町15-1',
         station: '간다역 도보 4분 / 이와모토초역 도보 5분', walkMin: 4,
         areaPyung: 23.27, areaM2: 76.92, rent: 605020, pyungPrice: 26000, deposit: '3개월',
         seats: '12인 · 회의실 1', built: '1993년 (신내진)',
@@ -582,8 +573,8 @@
         commuteEval: '[스기나미·나카노·다치카와(주오선)]와 [지바·쓰다누마·후나바시(소부선 쾌속 신니혼바시역)] 양대 베드타운에서 환승 없이 한 번에 출근 가능.'
       },
       {
-        id: 20, group: 'B', groupName: '치요다구', color: '#2563eb',
-        name: 'Biz Feel Kanda East', ward: '치요다구', address: '千代田区東神田2-10-16',
+        id: 20, group: 'B', pdfRef: '치요다구 PDF · No.8', groupName: '치요다구', color: '#2563eb',
+        name: 'Biz Feel Kanda East', ward: '치요다구', address: '東京都千代田区東神田2-10-16',
         station: '바쿠로초역 도보 4분 / 아사쿠사바시역 도보 7분', walkMin: 4,
         areaPyung: 17.76, areaM2: 58.74, rent: 497280, pyungPrice: 28000, deposit: '0개월',
         seats: '14인 · 회의실 1', built: '1992년 (신내진)',
@@ -592,8 +583,8 @@
         commuteEval: 'JR 소부선 쾌속(도쿄역 4분)·도에이 신주쿠선 이용. [후나바시·이치카와·지바] 및 [나리타 공항 방면]에서 직결 출근이 압도적으로 편리.'
       },
       {
-        id: 21, group: 'B', groupName: '치요다구', color: '#2563eb',
-        name: '山田ラインビル2', ward: '치요다구', address: '千代田区飯田橋3丁目',
+        id: 21, group: 'B', pdfRef: '치요다구 PDF · No.9', groupName: '치요다구', color: '#2563eb',
+        name: '山田ラインビル2', ward: '치요다구', address: '東京都千代田区飯田橋3丁目',
         station: '이다바시역 도보 3분 / 스이도바시역 도보 9분', walkMin: 3,
         areaPyung: 21.52, areaM2: 71.14, rent: 720000, pyungPrice: 33457, deposit: '0개월',
         seats: '8인 · 회의실 1', built: '1987년 (신내진)',
@@ -602,8 +593,8 @@
         commuteEval: 'JR 주오·소부선, 도자이선, 유라쿠초선, 난보쿠선, 오에도선 5개 노선 교차. [이케부쿠로·네리마·사이타마(유라쿠초·난보쿠선)] 및 [우라야스·니시후나바시(도자이선)] 통근 최강.'
       },
       {
-        id: 22, group: 'B', groupName: '치요다구', color: '#2563eb',
-        name: 'NOVEL WORK 半蔵門', ward: '치요다구', address: '千代田区隼町',
+        id: 22, group: 'B', pdfRef: '치요다구 PDF · No.10', groupName: '치요다구', color: '#2563eb',
+        name: 'NOVEL WORK 半蔵門', ward: '치요다구', address: '東京都千代田区隼町',
         station: '한조몬역 도보 3분 / 나가타초역 도보 7분', walkMin: 3,
         areaPyung: 23.67, areaM2: 78.24, rent: 710100, pyungPrice: 30000, deposit: '0개월',
         seats: '10인 · 회의실 1', built: '1983년 (신내진)',
@@ -612,8 +603,8 @@
         commuteEval: '한조몬선·유라쿠초선·난보쿠선 이용. [세타가야구(산겐자야·요가)·가나가와(미조노쿠치·아오바다이)]에서 한조몬선 직결 및 [도요스(유라쿠초선)] 통근 매우 편리.'
       },
       {
-        id: 23, group: 'B', groupName: '치요다구', color: '#2563eb',
-        name: 'N-cross KUDAN', ward: '치요다구', address: '千代田区九段北4丁目',
+        id: 23, group: 'B', pdfRef: '치요다구 PDF · No.11', groupName: '치요다구', color: '#2563eb',
+        name: 'N-cross KUDAN', ward: '치요다구', address: '東京都千代田区九段北4丁目',
         station: '이치가야역 도보 5분 / 우시고메카구라자카역 도보 10분', walkMin: 5,
         areaPyung: 23.15, areaM2: 76.52, rent: 555600, pyungPrice: 24000, deposit: '4개월',
         seats: '12인 · 회의실 1', built: '1985년 (신내진)',
@@ -622,8 +613,8 @@
         commuteEval: 'JR 주오·소부선, 도에이 신주쿠선, 유라쿠초선, 난보쿠선 이용. [모토야와타·후나보리(신주쿠선)], [도요스·이케부쿠로(유라쿠초선)] 직결 출근 편리.'
       },
       {
-        id: 24, group: 'B', groupName: '치요다구', color: '#2563eb',
-        name: '第3早川屋ビル', ward: '치요다구', address: '千代田区九段南3丁目',
+        id: 24, group: 'B', pdfRef: '치요다구 PDF · No.12', groupName: '치요다구', color: '#2563eb',
+        name: '第3早川屋ビル', ward: '치요다구', address: '東京都千代田区九段南3丁目',
         station: '이치가야역 도보 7분', walkMin: 7,
         areaPyung: 27.35, areaM2: 90.41, rent: 601700, pyungPrice: 22000, deposit: '6개월',
         seats: '14인 · 회의실 1', built: '1986년 (신내진)',
@@ -634,8 +625,8 @@
 
       // ================= GROUP C: 中央区 (25~36) =================
       {
-        id: 25, group: 'C', groupName: '추오구', color: '#059669',
-        name: 'Biz Feel Kyobashiビル', ward: '추오구', address: '中央区京橋2丁目',
+        id: 25, group: 'C', pdfRef: '추오구 PDF · No.1', groupName: '추오구', color: '#059669',
+        name: 'Biz Feel Kyobashiビル', ward: '추오구', address: '東京都中央区京橋2丁目',
         station: '교바시역 도보 1분 / 다카라초역 도보 2분', walkMin: 1,
         areaPyung: 22.31, areaM2: 73.75, rent: 825470, pyungPrice: 37000, deposit: '0개월',
         seats: '12인 · 회의실 1', built: '1987년',
@@ -644,8 +635,8 @@
         commuteEval: '긴자선·아사쿠사선·도쿄역 전 노선 인접. [가치도키·도요스·쓰키시마(베이 에어리어)] 및 [시부야·아사쿠사·하네다공항] 전 방면 출퇴근 최상.'
       },
       {
-        id: 26, group: 'C', groupName: '추오구', color: '#059669',
-        name: 'Biz Feel GINZA PARK SIDE', ward: '추오구', address: '中央区銀座1丁目',
+        id: 26, group: 'C', pdfRef: '추오구 PDF · No.2', groupName: '추오구', color: '#059669',
+        name: 'Biz Feel GINZA PARK SIDE', ward: '추오구', address: '東京都中央区銀座1丁目',
         station: '긴자잇초메역 도보 3분 / 교바시역 도보 4분', walkMin: 3,
         areaPyung: 29.85, areaM2: 98.67, rent: 895500, pyungPrice: 30000, deposit: '7개월',
         seats: '13인 · 회의실 1', built: '1992년 (신내진)',
@@ -654,8 +645,8 @@
         commuteEval: '유라쿠초선·긴자선·히비야선·아사쿠사선 이용. [도요스·다쓰미·신키바(유라쿠초선)] 및 [이케부쿠로·와코시] 방면 대형 주거단지에서 10~25분대 직통 출근.'
       },
       {
-        id: 27, group: 'C', groupName: '추오구', color: '#059669',
-        name: '銀座スクエアビル', ward: '추오구', address: '中央区銀座1丁目',
+        id: 27, group: 'C', pdfRef: '추오구 PDF · No.3', groupName: '추오구', color: '#059669',
+        name: '銀座スクエアビル', ward: '추오구', address: '東京都中央区銀座1丁目',
         station: '긴자잇초메역 도보 2분 / 신토미초역 도보 4분', walkMin: 2,
         areaPyung: 26.26, areaM2: 86.80, rent: 787800, pyungPrice: 30000, deposit: '4개월',
         seats: '11인 · 회의실 1', built: '1994년 (신내진)',
@@ -664,8 +655,8 @@
         commuteEval: '[도요스·가치도키·쓰키시마·시노노메] 등 도쿄 베이 타워맨션 밀집 주거구역에서 도보/자전거 또는 유라쿠초선 1~2정거장으로 초단거리 출근 가능.'
       },
       {
-        id: 28, group: 'C', groupName: '추오구', color: '#059669',
-        name: 'BizSQUARE GINZA', ward: '추오구', address: '中央区新富1-1-7',
+        id: 28, group: 'C', pdfRef: '추오구 PDF · No.4', groupName: '추오구', color: '#059669',
+        name: 'BizSQUARE GINZA', ward: '추오구', address: '東京都中央区新富1-1-7',
         station: '다카라초역 도보 2분 / 긴자잇초메역 도보 3분', walkMin: 2,
         areaPyung: 26.82, areaM2: 88.66, rent: 724140, pyungPrice: 27000, deposit: '6개월',
         seats: '10인 · 회의실 1', built: '1992년 (신내진)',
@@ -674,8 +665,8 @@
         commuteEval: '아사쿠사선·유라쿠초선·히비야선 이용. [도요스·가치도키(완간선)] 및 [오시아게·이치카와·하네다공항 방면(아사쿠사선)] 통근 편의성이 뛰어남.'
       },
       {
-        id: 29, group: 'C', groupName: '추오구', color: '#059669',
-        name: 'Feel KAYABACHO', ward: '추오구', address: '中央区日本橋小網町11-4',
+        id: 29, group: 'C', pdfRef: '추오구 PDF · No.5', groupName: '추오구', color: '#059669',
+        name: 'Feel KAYABACHO', ward: '추오구', address: '東京都中央区日本橋小網町11-4',
         station: '가야바초역 도보 5분', walkMin: 5,
         areaPyung: 25.96, areaM2: 85.81, rent: 778800, pyungPrice: 30000, deposit: '4개월',
         seats: '15인 · 회의실 1', built: '2024년 1월 (신축)',
@@ -684,8 +675,8 @@
         commuteEval: '메트로 도자이선·히비야선 이용. [우라야스·교토쿠·니시후나바시·쓰다누마(도자이선)] 등 지바현 대형 베드타운에서 환승 없이 직통 출퇴근하는 최적의 노선.'
       },
       {
-        id: 30, group: 'C', groupName: '추오구', color: '#059669',
-        name: 'Biz Feel 日本橋小伝馬町', ward: '추오구', address: '中央区日本橋小伝馬町7-16',
+        id: 30, group: 'C', pdfRef: '추오구 PDF · No.6', groupName: '추오구', color: '#059669',
+        name: 'Biz Feel 日本橋小伝馬町', ward: '추오구', address: '東京都中央区日本橋小伝馬町7-16',
         station: '고덴마초역 도보 2분 / 바쿠로요코야마역 도보 4분', walkMin: 2,
         areaPyung: 29.65, areaM2: 98.01, rent: 800550, pyungPrice: 27000, deposit: '0개월',
         seats: '18인 · 회의실 2', built: '1986년 (신내진)',
@@ -694,8 +685,8 @@
         commuteEval: '히비야선·도에이 신주쿠선·소부선 쾌속 교차. [기타센주·아다치구], [후나바시·이치카와], [신주쿠·조후] 등 동서남북 대형 주거단지를 모두 커버.'
       },
       {
-        id: 31, group: 'C', groupName: '추오구', color: '#059669',
-        name: 'アソルティ小伝馬町Liens', ward: '추오구', address: '中央区日本橋小伝馬町14-10',
+        id: 31, group: 'C', pdfRef: '추오구 PDF · No.7', groupName: '추오구', color: '#059669',
+        name: 'アソルティ小伝馬町Liens', ward: '추오구', address: '東京都中央区日本橋小伝馬町14-10',
         station: '고덴마초역·바쿠로초역·바쿠로요코야마역 모두 도보 3분', walkMin: 3,
         areaPyung: 25.39, areaM2: 83.93, rent: 609360, pyungPrice: 24000, deposit: '4개월',
         seats: '12인 · 회의실 1', built: '2009년 9월 (비교적 신축)',
@@ -704,8 +695,8 @@
         commuteEval: '[지바·후나바시·이치카와(소부선 쾌속)], [모토야와타·에도가와구(신주쿠선)], [기타센주·사이타마 동부(히비야선)] 거주 직원에게 최고의 출퇴근 편의 제공.'
       },
       {
-        id: 32, group: 'C', groupName: '추오구', color: '#059669',
-        name: '日本橋NYビル', ward: '추오구', address: '中央区日本橋小舟町11-13',
+        id: 32, group: 'C', pdfRef: '추오구 PDF · No.8', groupName: '추오구', color: '#059669',
+        name: '日本橋NYビル', ward: '추오구', address: '東京都中央区日本橋小舟町11-13',
         station: '고덴마초역 도보 5분 / 닌교초역 도보 6분', walkMin: 5,
         areaPyung: 26.86, areaM2: 88.79, rent: 805800, pyungPrice: 30000, deposit: '10개월',
         seats: '15인 · 회의실 1', built: '1985년 (신내진)',
@@ -714,8 +705,8 @@
         commuteEval: '히비야선·아사쿠사선·한조몬선(미쓰코시마에) 이용. [고토구 기요스미시라카와·몬젠나카초], [아다치구·가쓰시카구], [시부야·세타가야] 방면 직결 편리.'
       },
       {
-        id: 33, group: 'C', groupName: '추오구', color: '#059669',
-        name: 'ADW日本橋人形町ビル', ward: '추오구', address: '中央区日本橋人形町1-18-4',
+        id: 33, group: 'C', pdfRef: '추오구 PDF · No.9', groupName: '추오구', color: '#059669',
+        name: 'ADW日本橋人形町ビル', ward: '추오구', address: '東京都中央区日本橋人形町1-18-4',
         station: '닌교초역 도보 1분 / 스이텐구마에역 도보 6분', walkMin: 1,
         areaPyung: 17.53, areaM2: 57.95, rent: 490840, pyungPrice: 28000, deposit: '4개월',
         seats: '9인 · 회의실 1', built: '2025년 7월 (최신축)',
@@ -724,8 +715,8 @@
         commuteEval: '히비야선·아사쿠사선·한조몬선 이용. [고토구(도요스·기요스미시라카와)], [아다치구·기타센주], [하네다·나리타 공항 방면]에서 초고속 출퇴근 가능.'
       },
       {
-        id: 34, group: 'C', groupName: '추오구', color: '#059669',
-        name: 'PORT ONE 茅場町ビル', ward: '추오구', address: '中央区日本橋箱崎町5-15',
+        id: 34, group: 'C', pdfRef: '추오구 PDF · No.10', groupName: '추오구', color: '#059669',
+        name: 'PORT ONE 茅場町ビル', ward: '추오구', address: '東京都中央区日本橋箱崎町5-15',
         station: '가야바초역 도보 5분 / 스이텐구마에역 도보 5분', walkMin: 5,
         areaPyung: 16.71, areaM2: 55.07, rent: 401040, pyungPrice: 24000, deposit: '6개월',
         seats: '9인 · 회의실 1', built: '1990년 (신내진)',
@@ -734,8 +725,8 @@
         commuteEval: '도자이선·한조몬선·히비야선 이용. [우라야스·교토쿠·니시후나바시(도자이선)] 및 [고토구(몬젠나카초·기요스미시라카와)] 거주자의 통근이 매우 편리함.'
       },
       {
-        id: 35, group: 'C', groupName: '추오구', color: '#059669',
-        name: 'ACN東日本橋ビル', ward: '추오구', address: '中央区東日本橋2-2-10',
+        id: 35, group: 'C', pdfRef: '추오구 PDF · No.11', groupName: '추오구', color: '#059669',
+        name: 'ACN東日本橋ビル', ward: '추오구', address: '東京都中央区東日本橋2-2-10',
         station: '히가시니혼바시역 도보 2분 / 바쿠로초역 도보 4분', walkMin: 2,
         areaPyung: 26.65, areaM2: 88.09, rent: 700000, pyungPrice: 26266, deposit: '4개월',
         seats: '14인 · 회의실 1', built: '1989년 (신내진)',
@@ -744,8 +735,8 @@
         commuteEval: '아사쿠사선·신주쿠선·소부선 쾌속 이용. [지바현 이치카와·후나바시·모토야와타] 및 [스미다구·가쓰시카구] 동부 대규모 주거권역에서 직통 출근.'
       },
       {
-        id: 36, group: 'C', groupName: '추오구', color: '#059669',
-        name: 'リブラ東日本橋', ward: '추오구', address: '中央区東日本橋3-12-11',
+        id: 36, group: 'C', pdfRef: '추오구 PDF · No.12', groupName: '추오구', color: '#059669',
+        name: 'リブラ東日本橋', ward: '추오구', address: '東京都中央区東日本橋3-12-11',
         station: '히가시니혼바시역 도보 2분 / 바쿠로초역 도보 3분', walkMin: 2,
         areaPyung: 15.14, areaM2: 50.05, rent: 360000, pyungPrice: 23778, deposit: '0개월',
         seats: '12인 · 회의실 1', built: '1973년 (신내진 보강완)',
@@ -756,8 +747,8 @@
 
       // ================= GROUP D: 新宿区 (37~42) =================
       {
-        id: 37, group: 'D', groupName: '신주쿠구', color: '#f59e0b',
-        name: 'フロンティアグラン西新宿', ward: '신주쿠구', address: '新宿区西新宿3-7-30',
+        id: 37, group: 'D', pdfRef: '신주쿠구 PDF · No.1', groupName: '신주쿠구', color: '#f59e0b',
+        name: 'フロンティアグラン西新宿', ward: '신주쿠구', address: '東京都新宿区西新宿3-7-30',
         station: '신주쿠역 도보 8분 / 도초마에역 도보 6분', walkMin: 6,
         areaPyung: 28.61, areaM2: 94.57, rent: 972740, pyungPrice: 34000, deposit: '0개월',
         seats: '18인 · 회의실 1', built: '1990년 (신내진)',
@@ -766,8 +757,8 @@
         commuteEval: 'JR·오다큐·게이오·마루노우치·오에도선 총집결. [스기나미·나카노·기치조지·다치카와(주오선)], [마치다·신유리가오카(오다큐선)], [조후·후추(게이오선)] 서부 전 베드타운 통근 1위.'
       },
       {
-        id: 38, group: 'D', groupName: '신주쿠구', color: '#f59e0b',
-        name: '昇立西新宿ビル', ward: '신주쿠구', address: '新宿区西新宿7-8-12',
+        id: 38, group: 'D', pdfRef: '신주쿠구 PDF · No.2', groupName: '신주쿠구', color: '#f59e0b',
+        name: '昇立西新宿ビル', ward: '신주쿠구', address: '東京都新宿区西新宿7-8-12',
         station: '세이부신주쿠역 도보 3분 / 신주쿠역 도보 6분', walkMin: 3,
         areaPyung: 29.23, areaM2: 96.62, rent: 818440, pyungPrice: 28000, deposit: '4개월',
         seats: '12인 · 회의실 1', built: '1984년',
@@ -776,8 +767,8 @@
         commuteEval: '세이부 신주쿠선·JR·오에도선 인접. [나카노구·네리마구·도코로자와(세이부선)] 및 [이케부쿠로·사이타마(사이쿄선)] 북서부 대규모 주택단지에서 출퇴근 최상.'
       },
       {
-        id: 39, group: 'D', groupName: '신주쿠구', color: '#f59e0b',
-        name: 'NOVEL WORK Yotsuyaビル', ward: '신주쿠구', address: '新宿区三栄町1-1',
+        id: 39, group: 'D', pdfRef: '신주쿠구 PDF · No.3', groupName: '신주쿠구', color: '#f59e0b',
+        name: 'NOVEL WORK Yotsuyaビル', ward: '신주쿠구', address: '東京都新宿区三栄町1-1',
         station: '요쓰야역 도보 4분 / 요쓰야산초메역 도보 8분', walkMin: 4,
         areaPyung: 19.61, areaM2: 64.82, rent: 600000, pyungPrice: 30597, deposit: '0개월',
         seats: '10인 · 회의실 1', built: '2022년 (준신축)',
@@ -786,8 +777,8 @@
         commuteEval: 'JR 주오선 쾌속·소부선·마루노우치선·난보쿠선 이용. [나카노·오기쿠보·기치조지(주오선 쾌속)], [이케부쿠로·아카바네(난보쿠선)], [후나바시] 도심·서부 모두 15~25분대.'
       },
       {
-        id: 40, group: 'D', groupName: '신주쿠구', color: '#f59e0b',
-        name: 'GRASTRA新宿御苑ビル', ward: '신주쿠구', address: '新宿区四谷4-26-6',
+        id: 40, group: 'D', pdfRef: '신주쿠구 PDF · No.4', groupName: '신주쿠구', color: '#f59e0b',
+        name: 'GRASTRA新宿御苑ビル', ward: '신주쿠구', address: '東京都新宿区四谷4-26-6',
         station: '신주쿠교엔마에역 도보 4분 / 요쓰야산초메역 도보 7분', walkMin: 4,
         areaPyung: 18.49, areaM2: 61.12, rent: 591680, pyungPrice: 32000, deposit: '0개월',
         seats: '10인 · 회의실 1', built: '1985년 (신내진)',
@@ -796,8 +787,8 @@
         commuteEval: '메트로 마루노우치선·도에이 신주쿠선 이용. [스기나미구(오기쿠보·미나미아사가야)·나카노구(신나카노)] 거주 직원이 만원 JR선 대신 쾌적한 마루노우치선으로 직통 출근.'
       },
       {
-        id: 41, group: 'D', groupName: '신주쿠구', color: '#f59e0b',
-        name: 'NOVEL WORK 新宿御苑', ward: '신주쿠구', address: '新宿区四谷4-30',
+        id: 41, group: 'D', pdfRef: '신주쿠구 PDF · No.5', groupName: '신주쿠구', color: '#f59e0b',
+        name: 'NOVEL WORK 新宿御苑', ward: '신주쿠구', address: '東京都新宿区四谷4-30',
         station: '신주쿠교엔마에역 도보 5분 / 요쓰야산초메역 도보 7분', walkMin: 5,
         areaPyung: 24.89, areaM2: 82.28, rent: 697990, pyungPrice: 28043, deposit: '4개월',
         seats: '12인 · 회의실 1', built: '1986년 (신내진)',
@@ -806,8 +797,8 @@
         commuteEval: '[스기나미·나카노·기치조지(주오·마루노우치선)] 및 [사사즈카·조후·하시모토(신주쿠선 직통 게이오선)] 양대 서부 거주축에서 출퇴근하기 매우 편리.'
       },
       {
-        id: 42, group: 'D', groupName: '신주쿠구', color: '#f59e0b',
-        name: 'THE GATE ICHIGAYA', ward: '신주쿠구(이치가야)', address: '新宿区市谷田町3-6',
+        id: 42, group: 'D', pdfRef: '신주쿠구 PDF · No.6', groupName: '신주쿠구', color: '#f59e0b',
+        name: 'THE GATE ICHIGAYA', ward: '신주쿠구(이치가야)', address: '東京都新宿区市谷田町3-6',
         station: '이치가야역 도보 4분 / 이다바시역 도보 8분', walkMin: 4,
         areaPyung: 21.82, areaM2: 72.13, rent: 480040, pyungPrice: 22000, deposit: '4개월',
         seats: '16인 · 회의실 1', built: '1990년 (신내진)',
@@ -817,28 +808,15 @@
       }
     ];
 
-    // Attach 3 matched photos (Exterior, Workspace, Meeting Room) to every property
-    properties.forEach((p, idx) => {
-      p.photos = [
-        {
-          url: exteriorPhotos[idx % exteriorPhotos.length],
-          label: '건물 외관 (Exterior)'
-        },
-        {
-          url: workspacePhotos[(idx * 2) % workspacePhotos.length],
-          label: '실내 집무실 (Workspace)'
-        },
-        {
-          url: meetingPhotos[(idx * 3) % meetingPhotos.length],
-          label: '회의실 · 라운지 (Meeting Room)'
-        }
-      ];
-    });
+    // User-pasted screenshots dictionary stored in localStorage: { [propertyId]: [dataUrl1, dataUrl2, ...] }
+    const STORAGE_KEY = 'minish_tokyo_office_screenshots_v1';
+    let userPhotos = {};
 
     // State
     let selectedGroup = 'ALL';
     let selectedId = 1;
     let showCorridors = true;
+    let uploadTargetId = 1;
 
     // Lightbox State
     let lbPropertyId = 1;
@@ -853,10 +831,167 @@
     const pinsLayer = document.getElementById('pins-layer');
 
     function init() {
+      loadUserPhotosFromStorage();
+      setupClipboardPasteListener();
       setupMapInteractions();
       setupKeyboardShortcuts();
       applyFilters();
       selectProperty(1, false);
+    }
+
+    function showToast(text, isError = false) {
+      const box = document.getElementById('toast-box');
+      const msg = document.getElementById('toast-msg');
+      msg.innerHTML = isError
+        ? `<i class="ph-fill ph-warning-circle text-rose-400 text-base"></i><span>${text}</span>`
+        : `<i class="ph-fill ph-check-circle text-emerald-400 text-base"></i><span>${text}</span>`;
+      box.classList.remove('opacity-0');
+      clearTimeout(window._toastTimer);
+      window._toastTimer = setTimeout(() => box.classList.add('opacity-0'), 2600);
+    }
+
+    function loadUserPhotosFromStorage() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) userPhotos = JSON.parse(raw);
+      } catch (err) {
+        console.error('Failed to load saved screenshots:', err);
+        userPhotos = {};
+      }
+    }
+
+    function saveUserPhotosToStorage() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(userPhotos));
+        return true;
+      } catch (err) {
+        showToast('브라우저 저장 용량이 가득 찼습니다. [스샷 백업] 후 일부 삭제해 주세요.', true);
+        return false;
+      }
+    }
+
+    // Compress pasted/uploaded image via HTML5 Canvas so many screenshots fit smoothly in localStorage
+    function compressImageFile(file, callback) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const img = new Image();
+        img.onload = () => {
+          const maxW = 1100;
+          let w = img.width;
+          let h = img.height;
+          if (w > maxW) {
+            h = Math.round((h * maxW) / w);
+            w = maxW;
+          }
+          const canvas = document.createElement('canvas');
+          canvas.width = w;
+          canvas.height = h;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, w, h);
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.82);
+          callback(dataUrl);
+        };
+        img.src = event.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function addScreenshotToProperty(propId, file) {
+      compressImageFile(file, (dataUrl) => {
+        if (!userPhotos[propId]) userPhotos[propId] = [];
+        userPhotos[propId].push(dataUrl);
+        if (saveUserPhotosToStorage()) {
+          const prop = properties.find(p => p.id === propId);
+          showToast(`#${propId} ${prop ? prop.name : ''}에 스크린샷이 첨부되었습니다!`);
+          applyFilters();
+          selectProperty(propId, false);
+        }
+      });
+    }
+
+    function deleteUserPhoto(e, propId, photoIdx) {
+      if (e) e.stopPropagation();
+      if (!userPhotos[propId]) return;
+      userPhotos[propId].splice(photoIdx, 1);
+      if (userPhotos[propId].length === 0) delete userPhotos[propId];
+      saveUserPhotosToStorage();
+      showToast('스크린샷이 삭제되었습니다.');
+      applyFilters();
+      selectProperty(propId, false);
+    }
+
+    // Global Clipboard Paste Listener (Ctrl+V / Cmd+V attaches screenshot to currently selected property)
+    function setupClipboardPasteListener() {
+      window.addEventListener('paste', (e) => {
+        const items = e.clipboardData && e.clipboardData.items;
+        if (!items) return;
+
+        let imageFound = false;
+        for (let i = 0; i < items.length; i++) {
+          if (items[i].type.indexOf('image') !== -1) {
+            const file = items[i].getAsFile();
+            if (file) {
+              imageFound = true;
+              addScreenshotToProperty(selectedId, file);
+            }
+          }
+        }
+        if (imageFound) {
+          e.preventDefault();
+        }
+      });
+    }
+
+    function triggerManualUpload(e, propId) {
+      if (e) e.stopPropagation();
+      uploadTargetId = propId;
+      selectProperty(propId, false);
+      const input = document.getElementById('manual-file-input');
+      input.value = '';
+      input.click();
+    }
+
+    function handleManualFileUpload(e) {
+      const files = e.target.files;
+      if (!files || files.length === 0) return;
+      Array.from(files).forEach(file => {
+        if (file.type.startsWith('image/')) {
+          addScreenshotToProperty(uploadTargetId, file);
+        }
+      });
+    }
+
+    // Export / Import JSON Backup
+    function exportScreenshotsJSON() {
+      const blob = new Blob([JSON.stringify(userPhotos)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `MINISH_도쿄오피스_첨부스샷백업_${new Date().toISOString().slice(0,10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      showToast('첨부된 스크린샷 백업 파일을 다운로드했습니다.');
+    }
+
+    function importScreenshotsJSON(e) {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        try {
+          const parsed = JSON.parse(ev.target.result);
+          if (typeof parsed === 'object' && parsed !== null) {
+            userPhotos = { ...userPhotos, ...parsed };
+            saveUserPhotosToStorage();
+            applyFilters();
+            selectProperty(selectedId, false);
+            showToast('백업 스샷 데이터를 성공적으로 복원했습니다!');
+          }
+        } catch (err) {
+          showToast('올바른 백업 JSON 파일이 아닙니다.', true);
+        }
+      };
+      reader.readAsText(file);
     }
 
     function setupKeyboardShortcuts() {
@@ -872,6 +1007,8 @@
     // Lightbox Controls
     function openLightbox(e, propId, photoIdx) {
       if (e) e.stopPropagation();
+      const photos = userPhotos[propId] || [];
+      if (photos.length === 0) return;
       lbPropertyId = propId;
       lbPhotoIndex = photoIdx;
       renderLightbox();
@@ -883,34 +1020,33 @@
     }
 
     function stepLightbox(delta) {
-      const p = properties.find(item => item.id === lbPropertyId);
-      if (!p) return;
-      lbPhotoIndex = (lbPhotoIndex + delta + p.photos.length) % p.photos.length;
+      const photos = userPhotos[lbPropertyId] || [];
+      if (photos.length === 0) return;
+      lbPhotoIndex = (lbPhotoIndex + delta + photos.length) % photos.length;
       renderLightbox();
     }
 
     function renderLightbox() {
       const p = properties.find(item => item.id === lbPropertyId);
-      if (!p) return;
-      const currentPhoto = p.photos[lbPhotoIndex];
+      const photos = userPhotos[lbPropertyId] || [];
+      if (!p || photos.length === 0) return;
 
       const badge = document.getElementById('lb-badge');
       badge.textContent = `#${p.id} ${p.ward}`;
       badge.style.backgroundColor = p.color;
 
       document.getElementById('lb-title').textContent = p.name;
-      document.getElementById('lb-subtitle').textContent = `${p.station} · ${p.areaPyung}평 · 월 ${p.rent.toLocaleString()}엔 (보증금 ${p.deposit})`;
-      document.getElementById('lb-img').src = currentPhoto.url;
-      document.getElementById('lb-caption').textContent = currentPhoto.label;
-      document.getElementById('lb-counter').textContent = `${lbPhotoIndex + 1} / ${p.photos.length}`;
+      document.getElementById('lb-subtitle').textContent = `${p.pdfRef} · ${p.station} · ${p.areaPyung}평 · 월 ${p.rent.toLocaleString()}엔`;
+      document.getElementById('lb-img').src = photos[lbPhotoIndex];
+      document.getElementById('lb-counter').textContent = `${lbPhotoIndex + 1} / ${photos.length}`;
 
       const thumbsContainer = document.getElementById('lb-thumbs');
-      thumbsContainer.innerHTML = p.photos.map((ph, idx) => `
-        <button onclick="openLightbox(null, ${p.id}, ${idx})" class="relative rounded-xl overflow-hidden border-2 transition-all ${
+      thumbsContainer.innerHTML = photos.map((src, idx) => `
+        <button onclick="openLightbox(null, ${p.id}, ${idx})" class="relative rounded-xl overflow-hidden border-2 shrink-0 transition-all ${
           idx === lbPhotoIndex ? 'border-blue-500 scale-105 shadow-md' : 'border-transparent opacity-60 hover:opacity-100'
         }">
-          <img src="${ph.url}" alt="${ph.label}" class="w-20 h-14 object-cover">
-          <span class="block text-[10px] text-white bg-black/75 px-1 py-0.5 truncate">${ph.label.split(' ')[0]} ${ph.label.split(' ')[1]}</span>
+          <img src="${src}" alt="스샷 ${idx+1}" class="w-20 h-14 object-cover">
+          <span class="block text-[10px] text-white bg-black/75 px-1 py-0.5">스샷 #${idx+1}</span>
         </button>
       `).join('');
     }
@@ -981,11 +1117,11 @@
       if (showCorridors) {
         layer.style.opacity = '1';
         btn.className = 'flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-semibold border bg-indigo-50 text-indigo-700 border-indigo-200 hover:bg-indigo-100 transition-colors';
-        btn.innerHTML = '<i class="ph-fill ph-house-line text-sm"></i><span>대형 거주구역(베드타운) 축 ON</span>';
+        btn.innerHTML = '<i class="ph-fill ph-house-line text-sm"></i><span>거주구역 축 ON</span>';
       } else {
         layer.style.opacity = '0';
         btn.className = 'flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-semibold border bg-white text-slate-600 border-slate-200 hover:bg-slate-100 transition-colors';
-        btn.innerHTML = '<i class="ph ph-house-line text-sm"></i><span>대형 거주구역(베드타운) 축 OFF</span>';
+        btn.innerHTML = '<i class="ph ph-house-line text-sm"></i><span>거주구역 축 OFF</span>';
       }
     }
 
@@ -1010,7 +1146,7 @@
         if (selectedGroup !== 'ALL' && p.group !== selectedGroup) return false;
         if (corridorVal !== 'ALL' && p.corridor !== corridorVal) return false;
         if (query) {
-          const haystack = `${p.name} ${p.ward} ${p.address} ${p.station} ${p.commuteEval} ${p.envEval}`.toLowerCase();
+          const haystack = `${p.name} ${p.ward} ${p.address} ${p.station} ${p.commuteEval} ${p.envEval} ${p.pdfRef}`.toLowerCase();
           if (!haystack.includes(query)) return false;
         }
         return true;
@@ -1034,7 +1170,67 @@
       renderMapPins(filtered);
     }
 
-    // Render Sidebar List Cards with Clickable Photo Thumbnail Gallery
+    // Build Screenshot Gallery & Paste Dropzone HTML for each card
+    function buildScreenshotSlotHTML(p, isSelected) {
+      const photos = userPhotos[p.id] || [];
+      const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(p.address)}`;
+
+      let thumbsHTML = '';
+      if (photos.length > 0) {
+        thumbsHTML = `
+          <div class="mt-2.5 grid grid-cols-3 gap-2">
+            ${photos.map((src, idx) => `
+              <div onclick="openLightbox(event, ${p.id}, ${idx})" class="thumb-card relative group rounded-xl overflow-hidden border border-slate-300 bg-slate-100 h-20 cursor-zoom-in shadow-2xs">
+                <img src="${src}" alt="첨부 스샷 ${idx+1}" class="w-full h-full object-cover transition-transform duration-200">
+                <button onclick="deleteUserPhoto(event, ${p.id}, ${idx})" title="이 스샷 삭제" class="absolute top-1 right-1 w-5 h-5 rounded-full bg-rose-600/90 hover:bg-rose-700 text-white text-[11px] font-bold flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow">
+                  ×
+                </button>
+                <div class="absolute bottom-0 inset-x-0 bg-slate-900/75 text-white text-[9.5px] font-bold px-1.5 py-0.5 flex items-center justify-between">
+                  <span>스샷 #${idx + 1}</span>
+                  <i class="ph-bold ph-magnifying-glass-plus"></i>
+                </div>
+              </div>
+            `).join('')}
+            <button onclick="triggerManualUpload(event, ${p.id})" class="h-20 rounded-xl border-2 border-dashed border-slate-300 hover:border-blue-500 bg-slate-50 hover:bg-blue-50/50 text-slate-500 hover:text-blue-700 flex flex-col items-center justify-center gap-1 transition-colors text-[10px] font-bold">
+              <i class="ph-bold ph-plus-circle text-base"></i>
+              <span>스샷 추가</span>
+            </button>
+          </div>
+        `;
+      } else {
+        thumbsHTML = `
+          <div class="mt-2.5 flex items-center justify-between gap-2 px-3 py-2 rounded-xl border border-dashed ${
+            isSelected ? 'border-blue-400 bg-blue-50/60 text-blue-800' : 'border-slate-300 bg-slate-50/80 text-slate-500'
+          } text-[11px]">
+            <div class="flex items-center gap-1.5 min-w-0">
+              <i class="ph-bold ph-clipboard-text text-sm shrink-0 ${isSelected ? 'text-blue-600' : 'text-slate-400'}"></i>
+              <span class="truncate">
+                ${isSelected
+                  ? '<strong>활성화됨!</strong> 지금 <kbd class="px-1 bg-white border border-blue-200 rounded text-[10px]">Ctrl+V</kbd> 누르면 PDF 스샷 첨부'
+                  : '카드 클릭 후 <kbd class="px-1 bg-white border border-slate-200 rounded text-[10px]">Ctrl+V</kbd>로 PDF 스샷 붙여넣기'}
+              </span>
+            </div>
+            <button onclick="triggerManualUpload(event, ${p.id})" class="shrink-0 px-2 py-1 rounded-lg bg-white hover:bg-slate-100 border border-slate-200 text-slate-700 font-bold text-[10px] shadow-2xs transition-colors">
+              + 파일 선택
+            </button>
+          </div>
+        `;
+      }
+
+      return `
+        <div class="mt-2 flex items-center justify-between gap-2 text-[10.5px]">
+          <span class="inline-flex items-center gap-1 font-bold text-slate-600 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-md">
+            <i class="ph-fill ph-file-pdf text-rose-500"></i> ${p.pdfRef}
+          </span>
+          <a href="${googleMapsUrl}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" class="inline-flex items-center gap-1 font-bold text-blue-700 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 border border-blue-200 px-2.5 py-0.5 rounded-md transition-colors">
+            <i class="ph-bold ph-map-trifold"></i> 구글 지도 · 실제 거리뷰 보기 <i class="ph-bold ph-arrow-up-right"></i>
+          </a>
+        </div>
+        ${thumbsHTML}
+      `;
+    }
+
+    // Render Sidebar List Cards
     function renderPropertyCards(list) {
       const container = document.getElementById('property-list');
       container.innerHTML = '';
@@ -1055,16 +1251,6 @@
             : 'bg-white border-slate-200/90 hover:border-slate-300 hover:shadow-xs'
         }`;
 
-        const thumbsHtml = p.photos.map((ph, idx) => `
-          <div onclick="openLightbox(event, ${p.id}, ${idx})" class="thumb-card relative group rounded-xl overflow-hidden border border-slate-200 bg-slate-100 h-16 sm:h-20 cursor-zoom-in">
-            <img src="${ph.url}" alt="${ph.label}" loading="lazy" onerror="this.src='https://placehold.co/300x200/e2e8f0/475569?text=Office+Photo'" class="w-full h-full object-cover transition-transform duration-300">
-            <div class="absolute inset-0 bg-gradient-to-t from-slate-900/75 via-transparent to-transparent flex items-end justify-between p-1.5">
-              <span class="text-[9.5px] font-bold text-white leading-none">${idx === 0 ? '외관' : idx === 1 ? '집무실' : '회의실'}</span>
-              <i class="ph-bold ph-magnifying-glass-plus text-white text-xs opacity-80 group-hover:opacity-100"></i>
-            </div>
-          </div>
-        `).join('');
-
         card.innerHTML = `
           <div class="flex items-start justify-between gap-2">
             <div class="flex items-center gap-2 min-w-0">
@@ -1083,10 +1269,8 @@
             </span>
           </div>
 
-          <!-- Compact Clickable Photo Gallery (Exterior / Workspace / Meeting Room) -->
-          <div class="mt-2.5 grid grid-cols-3 gap-1.5">
-            ${thumbsHtml}
-          </div>
+          <!-- PDF Reference, Google Street View Link, and User Screenshot Paste/Upload Slot -->
+          ${buildScreenshotSlotHTML(p, isSelected)}
 
           <!-- 4 Key Metrics Grid -->
           <div class="mt-2.5 grid grid-cols-3 gap-1.5 bg-slate-50 rounded-xl p-2 border border-slate-100 text-center">
@@ -1214,36 +1398,50 @@
         focusOnCoord(p.x, p.y);
       }
 
+      const photos = userPhotos[p.id] || [];
+      const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(p.address)}`;
+
       const detailBox = document.getElementById('map-detail-card');
       detailBox.classList.remove('hidden');
       detailBox.innerHTML = `
         <div class="flex items-start justify-between gap-2 pb-2.5 border-b border-slate-100">
-          <div class="flex items-center gap-2">
+          <div class="flex items-center gap-2 min-w-0">
             <span class="w-7 h-7 rounded-full text-white font-extrabold text-xs flex items-center justify-center shrink-0" style="background-color:${p.color}">
               ${p.id}
             </span>
-            <div>
+            <div class="min-w-0">
               <div class="flex items-center gap-1.5">
-                <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-100 text-slate-600">${p.groupName}</span>
-                <span class="text-[10px] font-semibold text-slate-400">${p.built}</span>
+                <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-100 text-slate-600">${p.pdfRef}</span>
+                <span class="text-[10px] font-semibold text-slate-400 truncate">${p.built}</span>
               </div>
-              <h4 class="font-extrabold text-slate-900 text-sm mt-0.5">${p.name}</h4>
+              <h4 class="font-extrabold text-slate-900 text-sm mt-0.5 truncate">${p.name}</h4>
             </div>
           </div>
-          <button onclick="document.getElementById('map-detail-card').classList.add('hidden')" class="text-slate-400 hover:text-slate-700 p-1">
+          <button onclick="document.getElementById('map-detail-card').classList.add('hidden')" class="text-slate-400 hover:text-slate-700 p-1 shrink-0">
             <i class="ph-bold ph-x text-base"></i>
           </button>
         </div>
 
-        <!-- Mini Photo Bar inside Floating Card -->
-        <div class="mt-2.5 grid grid-cols-3 gap-1.5">
-          ${p.photos.map((ph, idx) => `
-            <div onclick="openLightbox(event, ${p.id}, ${idx})" class="relative rounded-lg overflow-hidden h-14 border border-slate-200 cursor-zoom-in group">
-              <img src="${ph.url}" alt="${ph.label}" class="w-full h-full object-cover group-hover:scale-105 transition-transform">
-              <span class="absolute bottom-0 inset-x-0 bg-black/65 text-white text-[9px] font-bold px-1.5 py-0.5 truncate">${idx === 0 ? '외관' : idx === 1 ? '집무실' : '회의실'}</span>
-            </div>
-          `).join('')}
+        <!-- Google Maps Link & User Pasted Screenshots -->
+        <div class="mt-2 flex items-center justify-between gap-2 text-[10.5px]">
+          <a href="${googleMapsUrl}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 font-bold text-blue-700 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 border border-blue-200 px-2.5 py-1 rounded-lg transition-colors">
+            <i class="ph-bold ph-map-trifold"></i> 구글 지도 / 거리뷰 열기 <i class="ph-bold ph-arrow-up-right"></i>
+          </a>
+          <button onclick="triggerManualUpload(event, ${p.id})" class="inline-flex items-center gap-1 font-bold text-slate-700 hover:bg-slate-100 bg-white border border-slate-200 px-2.5 py-1 rounded-lg transition-colors">
+            <i class="ph-bold ph-image"></i> 스샷 첨부 (${photos.length})
+          </button>
         </div>
+
+        ${photos.length > 0 ? `
+          <div class="mt-2 grid grid-cols-3 gap-1.5">
+            ${photos.map((src, idx) => `
+              <div onclick="openLightbox(event, ${p.id}, ${idx})" class="relative rounded-lg overflow-hidden h-14 border border-slate-300 cursor-zoom-in group">
+                <img src="${src}" alt="스샷 ${idx+1}" class="w-full h-full object-cover group-hover:scale-105 transition-transform">
+                <span class="absolute bottom-0 inset-x-0 bg-black/70 text-white text-[9px] font-bold px-1.5 py-0.5 truncate">스샷 #${idx+1}</span>
+              </div>
+            `).join('')}
+          </div>
+        ` : ''}
 
         <div class="mt-2.5 grid grid-cols-3 gap-2 bg-slate-50 p-2.5 rounded-xl border border-slate-200/60 text-xs">
           <div>
